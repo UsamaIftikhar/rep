@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell, PublicNavbar, PublicFooter } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Lock, Sparkles, BookOpen } from "lucide-react";

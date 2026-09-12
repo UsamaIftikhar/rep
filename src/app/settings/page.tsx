@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select } from "@/components/ui";
 import { ShieldCheck, CreditCard } from "lucide-react";
