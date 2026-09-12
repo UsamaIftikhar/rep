@@ -12,9 +12,14 @@ interface AppShellProps {
   isAdmin?: boolean;
 }
 
-export function AppShell({ children, isAdmin = true }: AppShellProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function AppShell({ children, isAdmin }: AppShellProps) {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  const isUserAdmin =
+    isAdmin !== undefined
+      ? isAdmin
+      : user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   // If user is not logged in, do NOT render the sidebar shell at all
   if (!isAuthenticated && !isLoading) {
@@ -35,7 +40,7 @@ export function AppShell({ children, isAdmin = true }: AppShellProps) {
       <AppSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        isAdmin={isAdmin}
+        isAdmin={isUserAdmin}
       />
 
       {/* Main Content Area */}

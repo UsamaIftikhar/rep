@@ -2,8 +2,16 @@ import OpenAI from "openai";
 import { db } from "./db";
 import { z } from "zod";
 
+export const getOpenAIClient = () => {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "mock_key_for_development",
+    dangerouslyAllowBrowser: true,
+  });
+};
+
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "mock_key_for_development",
+  dangerouslyAllowBrowser: true,
 });
 
 export const INTERVIEW_TIERS = {

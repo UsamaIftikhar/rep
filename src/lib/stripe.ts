@@ -94,7 +94,8 @@ export async function createStripeCheckoutSession({
           currency: "usd",
           product_data: {
             name: course?.title || "REP 1 Academy Course",
-            description: course?.description,
+            description: course?.description || undefined,
+            tax_code: "txcd_10000000",
           },
           unit_amount: course?.priceInCents || 4900,
         },
@@ -121,11 +122,12 @@ export async function createStripeCheckoutSession({
     ];
   }
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionParams: any = {
     customer_email: userEmail,
     line_items: lineItems,
     mode,
+    managed_payments: { enabled: false },
     success_url: `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/settings?checkout_cancelled=true`,
     metadata: {
@@ -133,7 +135,9 @@ export async function createStripeCheckoutSession({
       type,
       courseId: courseId || "",
     },
-  });
+  };
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
 
   return { url: session.url };
 }

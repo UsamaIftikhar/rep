@@ -1,241 +1,233 @@
 import { PrismaClient } from "@prisma/client";
+import * as fs from "fs";
+import * as path from "path";
 
 const prisma = new PrismaClient();
 
+interface CourseDefinition {
+  slug: string;
+  file: string;
+  title: string;
+  description: string;
+  category: string;
+  order: number;
+  isRequiredForAcademy: boolean;
+  includedWithMembership: boolean;
+  standalonePurchasable: boolean;
+  priceInCents: number;
+}
+
+const COURSES_CONFIG: CourseDefinition[] = [
+  {
+    slug: "financial-literacy",
+    file: "rep1FinancialLiteracy-curriculum.md",
+    title: "Financial Literacy (12-Week Program)",
+    description: "A 12-week comprehensive financial literacy course for Rep1 student-athletes built with Wealthi. Covers saving, budgeting, investing, credit, NIL taxes, and financial decision-making.",
+    category: "Financial Literacy",
+    order: 1,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "australia-to-america",
+    file: "rep1Australia-curriculum.md",
+    title: "Australia to America Pathway",
+    description: "Complete roadmap for Australian student-athletes transitioning to US collegiate programs: recruiting, eligibility, visas, travel, NIL, and US life setup.",
+    category: "Recruiting Pathway",
+    order: 2,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "athletes-for-impact",
+    file: "rosaAthletesForImpact-curriculum.md",
+    title: "Athletes for Impact",
+    description: "Learn how to build your community foundation, launch non-profit initiatives, manage fundraising, and establish lasting social leadership.",
+    category: "Leadership",
+    order: 3,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "behavioral-analysis",
+    file: "rosaBehavAnalysis-curriculum.md",
+    title: "Behavioral Analytics & Decision-Making",
+    description: "Master recruiter evaluation frameworks, body language under pressure, emotional intelligence, triggers, and executive interview poise.",
+    category: "Behavioral Analytics",
+    order: 4,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "conflict-resolution",
+    file: "rosaConflictResolution-curriculum.md",
+    title: "Conflict Resolution & Locker Room Leadership",
+    description: "Navigating team dynamics, tough coaching feedback, depth chart conversations, and de-escalation under competitive pressure.",
+    category: "Community Engagement",
+    order: 5,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "marketing-playbook",
+    file: "rosaMarketingp-curriculum.md",
+    title: "The Marketing Playbook",
+    description: "Strategic athlete branding, sponsor pitching, deal pricing, deliverables, FTC compliance, and personal marketing systems.",
+    category: "Marketing Playbook",
+    order: 6,
+    isRequiredForAcademy: true,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "personal-branding",
+    file: "rosaPersonalBranding-curriculum.md",
+    title: "Personal Branding & Identity",
+    description: "Develop your digital identity, reputation, content pillars, audience mapping, usage rights, and long-term brand strategy.",
+    category: "Personal Branding",
+    order: 7,
+    isRequiredForAcademy: false,
+    includedWithMembership: true,
+    standalonePurchasable: true,
+    priceInCents: 4900,
+  },
+  {
+    slug: "diagnostic-report",
+    file: "Rep1-Diagnostic-Report.md",
+    title: "Rep 1 System Diagnostic Report",
+    description: "Full technical audit, architecture breakdown, data model analysis, privacy rules verification, and launch roadmap for Rep 1.",
+    category: "System Audit",
+    order: 8,
+    isRequiredForAcademy: false,
+    includedWithMembership: true,
+    standalonePurchasable: false,
+    priceInCents: 0,
+  },
+];
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 async function main() {
-  console.log("Seeding REP 1 Student Academy courses...");
+  console.log("Seeding full REP 1 Student Academy courses from markdown files...");
 
-  const academyCourses = [
-    {
-      title: "Financial Literacy",
-      slug: "financial-literacy",
-      description: "Master budgeting, tax fundamentals, banking, and wealth management tailored specifically for student athletes.",
-      category: "Financial Literacy",
-      order: 1,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "Introduction to Athlete Banking & Budgeting",
-          slug: "intro-banking-budgeting",
-          order: 1,
-          estimatedMinutes: 15,
-          content: `# Introduction to Athlete Banking & Budgeting
+  const coursesDir = path.join(process.cwd(), "public", "courses");
 
-Welcome to **Financial Literacy Class 1**. As a student athlete, managing your cash flow is just as critical as managing your training schedule.
+  for (const config of COURSES_CONFIG) {
+    const filePath = path.join(coursesDir, config.file);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`File not found: ${filePath}`);
+      continue;
+    }
 
-## Key Objectives
-1. Setting up a dedicated high-yield savings account.
-2. The 50/30/20 budget rule applied to stipends and NIL income.
-3. Tracking fixed expenses vs athletic gear & travel costs.
+    const rawContent = fs.readFileSync(filePath, "utf-8");
 
-> "Financial discipline on day one guarantees freedom when your playing career transitions."
-
-### Recommended Action Items
-- Download a budget tracking app.
-- Separate personal spending money from tax reserves if earning NIL compensation.
-`,
-        },
-        {
-          title: "Understanding NIL Taxes & W-9 Requirements",
-          slug: "nil-taxes-w9",
-          order: 2,
-          estimatedMinutes: 20,
-          content: `# Understanding NIL Taxes & W-9 Requirements
-
-NIL deals are classified as self-employment income by the IRS. In this lesson, you will learn how to estimate quarterly tax payments.
-
-## What You Need to Know
-- **Self-Employment Tax**: Federal and state taxes apply to gross NIL payments.
-- **Form 1099-NEC**: Issued by brands if paid over $600 annually.
-- **Tax Reserve Rule**: Save 25–30% of every deal in a separate tax account immediately.
-`,
-        },
-      ],
-    },
-    {
-      title: "Athletes for Impact",
-      slug: "athletes-for-impact",
-      description: "Learn how to leverage your athletic platform for community leadership, philanthropy, and lasting social impact.",
-      category: "Leadership",
-      order: 2,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "Building Your Community Foundation",
-          slug: "building-community-foundation",
-          order: 1,
-          estimatedMinutes: 15,
-          content: `# Building Your Community Foundation
-
-Leadership extends beyond the field. Discover how elite athletes launch youth clinics, charity partnerships, and community initiatives.
-
-## Core Pillars
-- Identifying causes aligned with your personal story.
-- Partnering with verified 501(c)(3) non-profits.
-- Measuring real community outcomes.
-`,
-        },
-      ],
-    },
-    {
-      title: "Marketing Playbook",
-      slug: "marketing-playbook",
-      description: "Strategic brand partnerships, contract negotiations, sponsorship pitching, and agency alignment for athletes.",
-      category: "Marketing Playbook",
-      order: 3,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "Pitching Brands & Deal Structuring",
-          slug: "pitching-brands-deal-structuring",
-          order: 1,
-          estimatedMinutes: 20,
-          content: `# Pitching Brands & Deal Structuring
-
-Learn how to craft professional pitch decks and negotiate deliverables with local and national sponsors.
-
-## Key Concepts
-- Defining your engagement rate vs follower count.
-- Exclusivity clauses and category restrictions.
-- Delivering high-ROI content for sponsor brands.
-`,
-        },
-      ],
-    },
-    {
-      title: "Personal Branding",
-      slug: "personal-branding",
-      description: "Develop your digital identity, storytelling, media presence, and professional athletic posture.",
-      category: "Personal Branding",
-      order: 4,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "Crafting Your Authentic Athlete Brand Story",
-          slug: "authentic-brand-story",
-          order: 1,
-          estimatedMinutes: 15,
-          content: `# Crafting Your Authentic Athlete Brand Story
-
-Your brand is what recruiters and coaches say about you when you leave the room.
-
-## Brand Audit Checklist
-1. High-resolution athletic profile headshot.
-2. Clean, professional social media bios across Instagram & X.
-3. Consistently highlighted athletic reel links.
-`,
-        },
-      ],
-    },
-    {
-      title: "Conflict Resolution",
-      slug: "conflict-resolution",
-      description: "Navigating team dynamics, tough coaching feedback, locker room tension, and high-pressure adversity.",
-      category: "Community Engagement",
-      order: 5,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "De-escalation & Productive Coach Dialogue",
-          slug: "deescalation-coach-dialogue",
-          order: 1,
-          estimatedMinutes: 15,
-          content: `# De-escalation & Productive Coach Dialogue
-
-How to handle tough coaching, playing time discussions, and constructive criticism with executive maturity.
-
-## Practical Steps
-- Focus on performance facts rather than emotion.
-- Request explicit measurable milestones for depth chart progression.
-- Practice active listening in film breakdown sessions.
-`,
-        },
-      ],
-    },
-    {
-      title: "Behavioral Analysis",
-      slug: "behavioral-analysis",
-      description: "Understanding recruiter evaluation frameworks, body language, emotional intelligence, and interview performance.",
-      category: "Behavioral Analytics",
-      order: 6,
-      isRequiredForAcademy: true,
-      includedWithMembership: true,
-      standalonePurchasable: true,
-      priceInCents: 4900,
-      lessons: [
-        {
-          title: "Recruiter Evaluation Frameworks & Executive Poise",
-          slug: "recruiter-evaluation-frameworks",
-          order: 1,
-          estimatedMinutes: 25,
-          content: `# Recruiter Evaluation Frameworks & Executive Poise
-
-Collegiate coaches evaluate how athletes respond to adversity, peer accountability, and media scrutiny.
-
-## Evaluation Dimensions
-1. Coachability under stress.
-2. Communication clarity during interviews.
-3. Teammate accountability and leadership presence.
-`,
-        },
-      ],
-    },
-  ];
-
-  for (const cData of academyCourses) {
-    const { lessons, ...courseFields } = cData;
-
+    // Upsert Course
     const course = await prisma.course.upsert({
-      where: { slug: courseFields.slug },
+      where: { slug: config.slug },
       update: {
-        title: courseFields.title,
-        description: courseFields.description,
-        category: courseFields.category,
-        order: courseFields.order,
-        isRequiredForAcademy: courseFields.isRequiredForAcademy,
-        includedWithMembership: courseFields.includedWithMembership,
-        standalonePurchasable: courseFields.standalonePurchasable,
-        priceInCents: courseFields.priceInCents,
+        title: config.title,
+        description: config.description,
+        category: config.category,
+        order: config.order,
+        isRequiredForAcademy: config.isRequiredForAcademy,
+        includedWithMembership: config.includedWithMembership,
+        standalonePurchasable: config.standalonePurchasable,
+        priceInCents: config.priceInCents,
+        isPublished: true,
       },
-      create: courseFields,
+      create: {
+        slug: config.slug,
+        title: config.title,
+        description: config.description,
+        category: config.category,
+        order: config.order,
+        isRequiredForAcademy: config.isRequiredForAcademy,
+        includedWithMembership: config.includedWithMembership,
+        standalonePurchasable: config.standalonePurchasable,
+        priceInCents: config.priceInCents,
+        isPublished: true,
+      },
     });
 
-    for (const lData of lessons) {
+    // Parse sections split by ## headings
+    const rawSections = rawContent.split(/^##\s+/m);
+    const parsedLessons: { title: string; slug: string; content: string; order: number; estimatedMins: number }[] = [];
+
+    let lessonIndex = 1;
+    for (let i = 0; i < rawSections.length; i++) {
+      const section = rawSections[i].trim();
+      if (!section) continue;
+
+      if (i === 0) {
+        // Preamble / Overview section
+        const firstH1 = section.split("\n").find((l) => l.startsWith("# ")) || `# ${config.title}`;
+        parsedLessons.push({
+          title: "Course Overview & Objectives",
+          slug: "overview-and-objectives",
+          content: section.startsWith("# ") ? section : `${firstH1}\n\n${section}`,
+          order: lessonIndex++,
+          estimatedMins: Math.max(5, Math.ceil(section.split(/\s+/).length / 150)),
+        });
+      } else {
+        const lines = section.split("\n");
+        const headingLine = lines[0].trim();
+        const bodyContent = lines.slice(1).join("\n").trim();
+        const lessonTitle = headingLine.replace(/[\*\#]/g, "").trim();
+        const lessonSlug = slugify(lessonTitle) || `lesson-${lessonIndex}`;
+        const wordCount = section.split(/\s+/).length;
+        const estimatedMins = Math.max(5, Math.ceil(wordCount / 180));
+
+        parsedLessons.push({
+          title: lessonTitle,
+          slug: lessonSlug,
+          content: `## ${headingLine}\n\n${bodyContent}`,
+          order: lessonIndex++,
+          estimatedMins,
+        });
+      }
+    }
+
+    console.log(`Course [${course.title}]: Seeding ${parsedLessons.length} full-fidelity lessons...`);
+
+    for (const pLesson of parsedLessons) {
       await prisma.lesson.upsert({
         where: {
           courseId_slug: {
             courseId: course.id,
-            slug: lData.slug,
+            slug: pLesson.slug,
           },
         },
         update: {
-          title: lData.title,
-          content: lData.content,
-          order: lData.order,
-          estimatedMinutes: lData.estimatedMinutes,
+          title: pLesson.title,
+          content: pLesson.content,
+          order: pLesson.order,
+          estimatedMinutes: pLesson.estimatedMins,
+          isPublished: true,
         },
         create: {
           courseId: course.id,
-          title: lData.title,
-          slug: lData.slug,
-          content: lData.content,
-          order: lData.order,
-          estimatedMinutes: lData.estimatedMinutes,
+          title: pLesson.title,
+          slug: pLesson.slug,
+          content: pLesson.content,
+          order: pLesson.order,
+          estimatedMinutes: pLesson.estimatedMins,
+          isPublished: true,
         },
       });
     }
@@ -246,13 +238,13 @@ Collegiate coaches evaluate how athletes respond to adversity, peer accountabili
     where: { key: "ACADEMY_GRADUATE" },
     update: {
       title: "REP 1 Academy Graduate",
-      description: "Awarded for completing all 6 required Student Academy classes.",
+      description: "Awarded for completing all required Student Academy classes.",
       icon: "Trophy",
     },
     create: {
       key: "ACADEMY_GRADUATE",
       title: "REP 1 Academy Graduate",
-      description: "Awarded for completing all 6 required Student Academy classes.",
+      description: "Awarded for completing all required Student Academy classes.",
       icon: "Trophy",
     },
   });
@@ -283,7 +275,7 @@ Collegiate coaches evaluate how athletes respond to adversity, peer accountabili
     },
   });
 
-  console.log("Academy seeding completed successfully.");
+  console.log("Full course curriculum seeding completed successfully.");
 }
 
 main()

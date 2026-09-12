@@ -19,9 +19,9 @@ export function PublicNavbar() {
     { label: "Mock AI Interview", href: "/interview" },
   ];
 
-  // Student Academy only shows when logged in
+  // Classroom & Student Academy show when logged in
   const links = isAuthenticated
-    ? [...baseLinks, { label: "Student Academy", href: "/academy" }]
+    ? [...baseLinks, { label: "Classroom", href: "/courses" }, { label: "Student Academy", href: "/academy" }]
     : baseLinks;
 
   return (

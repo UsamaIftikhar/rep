@@ -217,6 +217,22 @@ export default function ElitePacificPage() {
           )}
         </div>
 
+        {/* WHAT IS REP 1 Section Card */}
+        <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-[#111111] via-[#161616] to-[#111111] border border-[#F21717]/30 shadow-[0_0_30px_rgba(242,23,23,0.15)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F21717]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 space-y-3">
+            <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
+              WHAT IS REP 1
+            </span>
+            <h3 className="font-display uppercase text-2xl md:text-3xl font-black text-white leading-tight">
+              The Recruiting Platform Built for Athletes
+            </h3>
+            <p className="text-sm md:text-base text-[#D4D4D4] leading-relaxed max-w-3xl">
+              Rep 1 connects student-athletes with college recruiters through combine-testing data, verified performance metrics, and academy training progress. Build a standout profile, track your athletic growth, and get discovered by the programs looking for players just like you.
+            </p>
+          </div>
+        </div>
+
         {/* Two Column Grid: About & Prospects */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
           {/* Left Column: About */}

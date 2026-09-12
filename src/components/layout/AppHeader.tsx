@@ -20,7 +20,7 @@ export function AppHeader({ onMenuToggle }: AppHeaderProps) {
   const getSectionTitle = () => {
     if (pathname.startsWith("/elite-pacific")) return "Elite Pacific Sports";
     if (pathname.startsWith("/academy")) return "Student Academy";
-    if (pathname.startsWith("/courses")) return "Student Academy";
+    if (pathname.startsWith("/courses")) return "Classroom";
     if (pathname.startsWith("/interview")) return "Mock AI Interview";
     if (pathname.startsWith("/settings")) return "Settings";
     if (pathname.startsWith("/recruiting")) return "Recruiter Directory";

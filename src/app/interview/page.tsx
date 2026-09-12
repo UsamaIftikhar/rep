@@ -14,6 +14,9 @@ import {
   Brain,
   ShieldCheck,
   TrendingUp,
+  Mic,
+  MicOff,
+  Volume2,
 } from "lucide-react";
 import { INTERVIEW_TIERS } from "@/lib/ai";
 
@@ -48,6 +51,94 @@ export default function MockInterviewPage() {
   const [isSubmittingGrading, setIsSubmittingGrading] = React.useState(false);
   const [gradedResult, setGradedResult] = React.useState<AttemptResult | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Voice-to-Text Speech Recognition State
+  const [isListening, setIsListening] = React.useState(false);
+  const [speechSupported, setSpeechSupported] = React.useState(true);
+  const recognitionRef = React.useRef<unknown | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as unknown as Record<string, unknown>).SpeechRecognition ||
+        (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
+      }
+    }
+  }, []);
+
+  const toggleVoiceRecording = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as unknown as Record<string, unknown>).SpeechRecognition ||
+      (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+      setError("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari, or type your answer.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current && typeof (recognitionRef.current as { stop: () => void }).stop === "function") {
+        (recognitionRef.current as { stop: () => void }).stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const recognition = new (SpeechRecognition as any)();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setError(null);
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+
+        if (transcript.trim()) {
+          setAnswers((prev) => {
+            const updated = [...prev];
+            const existingText = updated[currentQuestionIndex] ? updated[currentQuestionIndex] + " " : "";
+            // Append or update current transcript
+            updated[currentQuestionIndex] = (existingText + transcript).replace(/\s+/g, " ").trim();
+            return updated;
+          });
+        }
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+        if (event.error === "not-allowed") {
+          setError("Microphone access was denied. Please allow microphone permissions in your browser settings.");
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
+      setIsListening(false);
+    }
+  };
 
   const startAttempt = async (tierKey: string) => {
     setSelectedTier(tierKey);
@@ -244,22 +335,92 @@ export default function MockInterviewPage() {
                 </p>
               </div>
 
-              {/* Answer Input Textarea */}
+              {/* Answer Input Textarea & Voice-to-Text Speech Controls */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-[#A3A3A3] block">
-                  Your Answer (Be concise, athletic, and structured):
-                </label>
-                <Textarea
-                  value={answers[currentQuestionIndex] || ""}
-                  onChange={(e) => {
-                    const newAns = [...answers];
-                    newAns[currentQuestionIndex] = e.target.value;
-                    setAnswers(newAns);
-                  }}
-                  placeholder="Type your response here..."
-                  rows={6}
-                  disabled={isSavingAnswer}
-                />
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-[#A3A3A3] block">
+                    Your Answer (Type or click the Mic to speak):
+                  </label>
+
+                  {/* Mic Voice-to-Text Action Button */}
+                  <Button
+                    type="button"
+                    onClick={toggleVoiceRecording}
+                    variant={isListening ? "athletic" : "outline"}
+                    size="sm"
+                    className={`gap-2 text-xs font-bold transition-all cursor-pointer ${
+                      isListening
+                        ? "bg-[#F21717] hover:bg-[#D90F0F] text-white animate-pulse shadow-[0_0_15px_rgba(242,23,23,0.6)]"
+                        : "bg-[#171717] hover:bg-white/10 text-white border-white/10"
+                    }`}
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff className="w-3.5 h-3.5" /> Stop Recording
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-3.5 h-3.5 text-[#F21717]" /> Voice Answer (Mic)
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Active Speech Recording Waveform Status Banner */}
+                {isListening && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#F21717]/15 border border-[#F21717]/40 text-xs text-[#F21717] animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4 animate-bounce text-[#F21717]" />
+                      <span className="font-bold uppercase tracking-wider text-[11px]">
+                        Microphone Active — Speak clearly now
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[#A3A3A3]">Transcribing to text live...</span>
+                  </div>
+                )}
+
+                <div className="relative">
+                  <Textarea
+                    value={answers[currentQuestionIndex] || ""}
+                    onChange={(e) => {
+                      const newAns = [...answers];
+                      newAns[currentQuestionIndex] = e.target.value;
+                      setAnswers(newAns);
+                    }}
+                    placeholder={
+                      isListening
+                        ? "Listening... Speak your answer now into your microphone..."
+                        : "Type your response here or click 'Voice Answer (Mic)' to speak..."
+                    }
+                    rows={6}
+                    disabled={isSavingAnswer}
+                    className={isListening ? "border-[#F21717] ring-1 ring-[#F21717]/50" : ""}
+                  />
+                  
+                  {!speechSupported && (
+                    <p className="text-[11px] text-[#737373] mt-1">
+                      💡 Tip: Voice recognition works best in Chrome, Edge, or Safari.
+                    </p>
+                  )}
+
+                  {/* Inside Textarea Floating Mic Quick Action Button */}
+                  <button
+                    type="button"
+                    onClick={toggleVoiceRecording}
+                    title={isListening ? "Stop voice recording" : "Click to speak your answer (Voice-to-Text)"}
+                    className={`absolute right-3 bottom-3 p-2 rounded-full transition-all cursor-pointer shadow-lg flex items-center justify-center ${
+                      isListening
+                        ? "bg-[#F21717] text-white animate-pulse shadow-[0_0_12px_rgba(242,23,23,0.8)]"
+                        : "bg-white/10 hover:bg-[#F21717] text-[#A3A3A3] hover:text-white border border-white/10"
+                    }`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Navigation Controls */}

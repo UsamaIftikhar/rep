@@ -14,6 +14,7 @@ import {
   X,
   Flame,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,15 +31,21 @@ const navItems: NavItem[] = [
     icon: Home,
   },
   {
-    title: "Elite Pacific Sports",
-    href: "/elite-pacific",
-    icon: MapPin,
+    title: "Classroom",
+    href: "/courses",
+    icon: BookOpen,
+    requiresAuth: true,
   },
   {
     title: "Student Academy",
     href: "/academy",
     icon: GraduationCap,
     requiresAuth: true,
+  },
+  {
+    title: "Elite Pacific Sports",
+    href: "/elite-pacific",
+    icon: MapPin,
   },
   {
     title: "Mock AI Interview",
@@ -58,9 +65,14 @@ interface AppSidebarProps {
   isAdmin?: boolean;
 }
 
-export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSidebarProps) {
+export function AppSidebar({ isOpen = false, onClose, isAdmin }: AppSidebarProps) {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
+
+  const isUserAdmin =
+    isAdmin !== undefined
+      ? isAdmin
+      : user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   return (
     <>
@@ -76,12 +88,12 @@ export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSideb
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 flex flex-col w-60 bg-[#0A0A0A] border-r border-white/10 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-30",
+          "fixed top-0 bottom-0 left-0 z-50 flex flex-col h-screen w-60 bg-[#0A0A0A] border-r border-white/10 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:z-30 overflow-hidden shrink-0 select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Brand & User Header (Matches Bubble App) */}
-        <div className="pt-6 px-6 pb-6">
+        <div className="pt-6 px-6 pb-6 shrink-0">
           <div className="flex items-center justify-between">
             <Link
               href="/dashboard"
@@ -116,7 +128,7 @@ export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSideb
         </div>
 
         {/* Navigation List */}
-        <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-1 overflow-hidden">
           {navItems
             .filter((item) => !item.requiresAuth || isAuthenticated)
             .map((item) => {
@@ -150,8 +162,8 @@ export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSideb
         </nav>
 
         {/* Bottom Actions: Admin & Logout */}
-        <div className="p-3 border-t border-white/5 space-y-1">
-          {isAdmin && (
+        <div className="p-3 border-t border-white/5 space-y-1 shrink-0">
+          {isUserAdmin && (
             <Link
               href="/admin"
               onClick={onClose}

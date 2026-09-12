@@ -245,38 +245,97 @@ export default function CoursePlayerPage() {
                   )}
                 </div>
 
-                {/* Lesson Markdown Content */}
-                <div className="prose prose-invert max-w-none text-sm leading-relaxed text-[#D4D4D4] space-y-4">
+                {/* Lesson Interactive Documentation Renderer */}
+                <div className="prose prose-invert max-w-none text-sm leading-relaxed text-[#D4D4D4] space-y-5">
                   {currentLesson.content.split("\n\n").map((paragraph, pIdx) => {
-                    if (paragraph.startsWith("# ")) {
+                    const trimmed = paragraph.trim();
+                    if (!trimmed) return null;
+
+                    // Divider ---
+                    if (trimmed === "---") {
+                      return <hr key={pIdx} className="border-white/10 my-6" />;
+                    }
+
+                    // Main Header #
+                    if (trimmed.startsWith("# ")) {
                       return (
-                        <h1 key={pIdx} className="font-display uppercase text-2xl font-black text-white pt-2 pb-1 border-b border-white/10">
-                          {paragraph.replace("# ", "")}
+                        <h1 key={pIdx} className="font-display uppercase text-2xl md:text-3xl font-black text-white pt-2 pb-2 border-b border-white/10 flex items-center gap-2">
+                          <span className="w-2.5 h-6 bg-[#F21717] rounded-sm inline-block" />
+                          {trimmed.replace(/^#\s+/, "")}
                         </h1>
                       );
                     }
-                    if (paragraph.startsWith("## ")) {
+
+                    // Section Header ##
+                    if (trimmed.startsWith("## ")) {
                       return (
-                        <h2 key={pIdx} className="font-display uppercase text-xl font-bold text-white pt-2">
-                          {paragraph.replace("## ", "")}
+                        <h2 key={pIdx} className="font-display uppercase text-xl font-bold text-white pt-4 pb-1 border-b border-white/5 text-[#F5F5F5]">
+                          {trimmed.replace(/^##\s+/, "")}
                         </h2>
                       );
                     }
-                    if (paragraph.startsWith("### ")) {
+
+                    // Subsection Header ###
+                    if (trimmed.startsWith("### ")) {
                       return (
-                        <h3 key={pIdx} className="font-display uppercase text-lg font-bold text-white pt-1">
-                          {paragraph.replace("### ", "")}
+                        <h3 key={pIdx} className="font-display uppercase text-base font-bold text-[#F21717] pt-2">
+                          {trimmed.replace(/^###\s+/, "")}
                         </h3>
                       );
                     }
-                    if (paragraph.startsWith("> ")) {
+
+                    // Quote / Key Takeaway Callout Box >
+                    if (trimmed.startsWith("> ")) {
                       return (
-                        <blockquote key={pIdx} className="border-l-2 border-[#F21717] pl-4 py-2 my-3 text-white italic bg-white/5 rounded-r">
-                          {paragraph.replace("> ", "")}
-                        </blockquote>
+                        <div key={pIdx} className="p-4 my-4 rounded-xl bg-[#171717] border-l-4 border-[#F21717] shadow-lg space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717]">Key Takeaway & Rule</span>
+                          <p className="text-sm font-medium text-white italic">
+                            {trimmed.replace(/^>\s+/, "").replace(/"/g, "")}
+                          </p>
+                        </div>
                       );
                     }
-                    return <p key={pIdx}>{paragraph}</p>;
+
+                    // Bulleted Points List (- or * or 1.)
+                    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || /^\d+\.\s/.test(trimmed)) {
+                      const items = trimmed.split("\n").filter(Boolean);
+                      return (
+                        <div key={pIdx} className="bg-[#141414] p-4 rounded-xl border border-white/10 space-y-2.5 my-3">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#737373]">Action Items & Points</span>
+                          <ul className="space-y-2">
+                            {items.map((rawItem, itemIdx) => {
+                              const cleanItem = rawItem.replace(/^[-*]|\d+\.\s*/, "").trim();
+                              return (
+                                <li key={itemIdx} className="flex items-start gap-2.5 text-xs text-[#E5E5E5] group">
+                                  <div className="w-4 h-4 rounded bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center text-[#F21717] flex-shrink-0 mt-0.5 group-hover:bg-[#F21717] group-hover:text-white transition-colors">
+                                    <span className="text-[10px] font-bold">{itemIdx + 1}</span>
+                                  </div>
+                                  <span className="flex-1 font-medium leading-relaxed">{cleanItem}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      );
+                    }
+
+                    // Bold metadata lines (e.g. **Phase:** Foundation)
+                    if (trimmed.startsWith("**") && trimmed.includes(":**")) {
+                      return (
+                        <div key={pIdx} className="bg-[#171717] p-3 rounded-lg border border-white/5 text-xs text-[#E5E5E5] leading-relaxed">
+                          {trimmed.split("\n").map((line, lIdx) => (
+                            <p key={lIdx} className="my-0.5">{line}</p>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    // Standard Paragraph
+                    return (
+                      <p key={pIdx} className="text-sm text-[#D4D4D4] leading-relaxed whitespace-pre-line">
+                        {trimmed}
+                      </p>
+                    );
                   })}
                 </div>
 
