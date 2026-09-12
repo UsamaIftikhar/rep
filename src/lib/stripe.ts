@@ -152,7 +152,7 @@ export async function createStripeBillingPortal({ userId, origin }: { userId: st
   });
 
   if (!sub || !sub.stripeCustomerId) {
-    throw new Error("No active Stripe subscription found for this account.");
+    return { url: `${origin}/pricing?notice=no_active_subscription` };
   }
 
   if (sub.stripeCustomerId.startsWith("cus_mock_")) {

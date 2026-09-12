@@ -66,6 +66,33 @@ export async function POST(req: Request) {
                 sourceReferenceId: session.id,
               },
             });
+          } else if (type === "SUBSCRIPTION" || type === "ELITE_PACIFIC") {
+            const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
+            const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id || `sub_${session.id}`;
+
+            if (customerId) {
+              await db.subscription.upsert({
+                where: { stripeSubscriptionId: subId },
+                update: { status: "active", stripeCustomerId: customerId },
+                create: {
+                  userId,
+                  stripeCustomerId: customerId,
+                  stripeSubscriptionId: subId,
+                  stripePriceId: type === "ELITE_PACIFIC" ? "price_elite" : "price_academy",
+                  status: "active",
+                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                },
+              });
+
+              await db.entitlement.create({
+                data: {
+                  userId,
+                  type: type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
+                  source: "SUBSCRIPTION",
+                  sourceReferenceId: session.id,
+                },
+              });
+            }
           }
         }
         break;
