@@ -85,7 +85,10 @@ export async function createStripeCheckoutSession({
   if (type === "COURSE" && courseId) {
     mode = "payment";
     const course = await db.course.findUnique({ where: { id: courseId } });
-    lineItems = [
+    const coursePriceId = process.env.STRIPE_PRICE_COURSE || "price_1UEzLw8HF4AKFR6epQd27CQz";
+    lineItems = coursePriceId ? [
+      { price: coursePriceId, quantity: 1 }
+    ] : [
       {
         price_data: {
           currency: "usd",
@@ -100,33 +103,19 @@ export async function createStripeCheckoutSession({
     ];
   } else if (type === "ELITE_PACIFIC") {
     mode = "subscription";
+    const elitePriceId = process.env.STRIPE_PRICE_ELITE_PACIFIC || "price_1UEzKj8HF4AKFR6eZG2wz2zS";
     lineItems = [
       {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Elite Pacific Sports Recruiter Access",
-            description: "Full Australian athlete database & recruiting directory subscription",
-          },
-          unit_amount: 7500, // $75/mo
-          recurring: { interval: "month" },
-        },
+        price: elitePriceId,
         quantity: 1,
       },
     ];
   } else {
     mode = "subscription";
+    const athletePriceId = process.env.STRIPE_PRICE_ATHLETE || "price_1UEzKN8HF4AKFR6e5dSDSvGN";
     lineItems = [
       {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "REP 1 Full Athlete Membership",
-            description: "Includes Student Academy classes, Mock AI Interview prep, and recruiting tools",
-          },
-          unit_amount: 2999, // $29.99/mo
-          recurring: { interval: "month" },
-        },
+        price: athletePriceId,
         quantity: 1,
       },
     ];
@@ -162,10 +151,18 @@ export async function createStripeBillingPortal({ userId, origin }: { userId: st
     throw new Error("No active Stripe subscription found for this account.");
   }
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: sub.stripeCustomerId,
-    return_url: `${origin}/settings`,
-  });
+  if (sub.stripeCustomerId.startsWith("cus_mock_")) {
+    return { url: `${origin}/settings?portal_mock=true` };
+  }
 
-  return { url: portalSession.url };
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: sub.stripeCustomerId,
+      return_url: `${origin}/settings`,
+    });
+    return { url: portalSession.url };
+  } catch (err: unknown) {
+    console.error("Stripe billing portal error:", err);
+    return { url: `${origin}/settings?portal_error=true` };
+  }
 }
