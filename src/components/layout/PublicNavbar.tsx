@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ArrowRight, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
 
 export function PublicNavbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const baseLinks = [

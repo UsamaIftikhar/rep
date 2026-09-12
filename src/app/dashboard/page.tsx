@@ -7,13 +7,58 @@ import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MediaCarousel } from "@/components/ui/media-carousel";
-import { ArrowRight, CreditCard } from "lucide-react";
+import { ArrowRight, CreditCard, BookOpen, Brain, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const [academyProgress, setAcademyProgress] = React.useState<{ completed: number; total: number }>({
+    completed: 0,
+    total: 6,
+  });
+  const [latestInterview, setLatestInterview] = React.useState<{ tier: string; score: number } | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    fetch("/api/courses")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data?.summary) {
+          setAcademyProgress({
+            completed: data.summary.completedAcademyCount || 0,
+            total: data.summary.totalAcademyCount || 6,
+          });
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/interview")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data?.attempts && data.attempts.length > 0) {
+          const completedAttempts = data.attempts.filter((a: { status: string; overallScore: number | null }) => a.status === "COMPLETED" && a.overallScore !== null);
+          if (completedAttempts.length > 0) {
+            setLatestInterview({
+              tier: completedAttempts[0].tier,
+              score: completedAttempts[0].overallScore,
+            });
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const athleteName = user?.firstName || user?.name || "Athlete";
+
   return (
     <AppShell>
       <div className="space-y-6 pb-12">
-        {/* Hero Section (Matches Bubble Screenshot 4) */}
+        {/* Hero Section */}
         <div className="relative w-full h-[440px] md:h-[500px] rounded-2xl overflow-hidden border border-white/10 bg-[#0A0A0A]">
           {/* Athlete Imagery */}
           <Image
@@ -30,20 +75,20 @@ export default function DashboardPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           <div className="absolute inset-0 bg-radial from-[#F21717]/20 via-transparent to-transparent pointer-events-none" />
 
-          {/* Huge Stencil REP 1 Branding (Matches Screenshot) */}
+          {/* Huge Stencil REP 1 Branding */}
           <div className="absolute top-1/2 left-8 -translate-y-1/2 select-none pointer-events-none opacity-25 hidden md:block">
             <span className="font-display font-black text-8xl md:text-9xl tracking-tighter text-[#F21717]">
               REP 1
             </span>
           </div>
 
-          {/* Welcome Card Overlay (Matches Screenshot 4) */}
+          {/* Welcome Card Overlay */}
           <div className="absolute bottom-6 left-6 z-10 max-w-md w-[calc(100%-3rem)] bg-[#111111]/90 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-2xl">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1.5">
               ATHLETE DASHBOARD
             </span>
             <h2 className="font-display uppercase text-2xl md:text-3xl font-black text-white leading-tight mb-2">
-              Welcome back, Marvin Constant
+              Welcome back, {athleteName}
             </h2>
             <p className="text-xs text-[#A3A3A3] mb-4 leading-relaxed">
               Your recruiting profile, academy progress, and recruiter activity at a glance.
@@ -56,7 +101,52 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Carousel & Video Showcase Section (User Request) */}
+        {/* Dynamic Metric Widgets Bar */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="bg-[#111111] border-white/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/50 border border-red-800/50 text-[#F21717] flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#A3A3A3] uppercase tracking-wider block">Student Academy</span>
+                <span className="font-display font-bold text-sm text-white">
+                  {academyProgress.completed} of {academyProgress.total} Classes Complete
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#111111] border-white/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/50 border border-red-800/50 text-[#F21717] flex items-center justify-center flex-shrink-0">
+                <Brain className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#A3A3A3] uppercase tracking-wider block">Latest AI Interview</span>
+                <span className="font-display font-bold text-sm text-white">
+                  {latestInterview ? `${latestInterview.score} / 100 (${latestInterview.tier.toUpperCase()})` : "No Attempt Yet"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#111111] border-white/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-[#A3A3A3] uppercase tracking-wider block">Account Tier</span>
+                <span className="font-display font-bold text-sm text-emerald-400 uppercase">
+                  {user?.role || "ATHLETE MEMBER"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Carousel & Video Showcase Section */}
         <div>
           <div className="mb-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#F21717]">
@@ -69,7 +159,7 @@ export default function DashboardPage() {
           <MediaCarousel />
         </div>
 
-        {/* WHAT IS REP 1 Card (Matches Screenshot 4) */}
+        {/* WHAT IS REP 1 Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-2">
@@ -84,25 +174,25 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* UPCOMING EVENTS Card (Matches Screenshot 4) */}
+        {/* UPCOMING EVENTS Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-3">
               UPCOMING EVENTS
             </span>
-            <p className="text-xs text-[#737373]">No upcoming events</p>
+            <p className="text-xs text-[#737373]">No upcoming events scheduled.</p>
           </CardContent>
         </Card>
 
-        {/* SUBSCRIPTION Card (Matches Screenshot 4) */}
+        {/* SUBSCRIPTION Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
                 SUBSCRIPTION
               </span>
-              <h4 className="text-sm font-bold text-white">Plan</h4>
-              <p className="text-xs text-[#737373] mt-0.5">Renews on</p>
+              <h4 className="text-sm font-bold text-white">REP 1 Member Tier</h4>
+              <p className="text-xs text-[#737373] mt-0.5">Active via Stripe • Monthly renewal</p>
             </div>
             <Link href="/settings">
               <Button variant="primary" size="sm" className="gap-2 text-xs font-semibold">
@@ -112,7 +202,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* ATHLETES OF THE MONTH Card (Matches Screenshot 4) */}
+        {/* ATHLETES OF THE MONTH Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-3">
@@ -122,13 +212,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* FROM THE BLOG Card (Matches Screenshot 4) */}
+        {/* FROM THE BLOG Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-3">
               FROM THE BLOG
             </span>
-            <p className="text-xs text-[#737373]">No blog posts yet</p>
+            <p className="text-xs text-[#737373]">No blog posts published yet.</p>
           </CardContent>
         </Card>
       </div>

@@ -1,0 +1,284 @@
+// REP 1 SaaS — Database Schema (PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ATHLETE
+  RECRUITER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum EnrollmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum EnrollmentSource {
+  MEMBERSHIP
+  PURCHASE
+  ADMIN_GRANT
+}
+
+enum EntitlementType {
+  ACADEMY
+  ELITE_PACIFIC
+  COURSE
+  INTERVIEW
+}
+
+enum EntitlementSource {
+  SUBSCRIPTION
+  PURCHASE
+  ADMIN
+  SYSTEM
+}
+
+enum InterviewStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  name              String?
+  firstName         String?
+  lastName          String?
+  passwordHash      String?
+  role              UserRole           @default(ATHLETE)
+  status            UserStatus         @default(ACTIVE)
+  emailVerified     DateTime?
+  image             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  athleteProfile    AthleteProfile?
+  enrollments       Enrollment[]
+  lessonProgress    LessonProgress[]
+  interviewAttempts InterviewAttempt[]
+  entitlements      Entitlement[]
+  purchases         Purchase[]
+  subscriptions     Subscription[]
+  badges            UserBadge[]
+}
+
+model AthleteProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug                String   @unique
+  schoolClub          String?
+  graduationYear      Int?
+  location            String?
+  sport               String?
+  position            String?
+  bio                 String?
+  profilePhoto        String?
+  highlightVideoUrl   String?
+  profileVisibility   Boolean  @default(true)
+  profileCompleteness Int      @default(0)
+  metrics             Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Course {
+  id                     String       @id @default(cuid())
+  title                  String
+  slug                   String       @unique
+  description            String
+  category               String
+  order                  Int          @default(0)
+  isPublished            Boolean      @default(true)
+  isRequiredForAcademy   Boolean      @default(true)
+  includedWithMembership Boolean      @default(true)
+  standalonePurchasable  Boolean      @default(false)
+  priceInCents           Int          @default(0)
+  stripeProductId        String?
+  stripePriceId          String?
+  coverImage             String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  lessons                Lesson[]
+  enrollments            Enrollment[]
+  purchases              Purchase[]
+}
+
+model Lesson {
+  id               String           @id @default(cuid())
+  courseId         String
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title            String
+  slug             String
+  content          String           @db.Text
+  order            Int              @default(0)
+  isPublished      Boolean          @default(true)
+  estimatedMinutes Int?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  lessonProgress   LessonProgress[]
+
+  @@unique([courseId, slug])
+}
+
+model Enrollment {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId        String
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status          EnrollmentStatus @default(NOT_STARTED)
+  enrolledAt      DateTime         @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  progressPercent Int              @default(0)
+  source          EnrollmentSource @default(MEMBERSHIP)
+
+  @@unique([userId, courseId])
+}
+
+model LessonProgress {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId     String
+  lesson       Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+  lastViewedAt DateTime  @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  title       String
+  description String
+  icon        String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId    String
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt  DateTime @default(now())
+  source     String?
+
+  @@unique([userId, badgeId])
+}
+
+model InterviewAttempt {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier          String
+  status        InterviewStatus @default(IN_PROGRESS)
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  overallScore  Int?
+  summary       String?         @db.Text
+  strengths     Json?
+  improvements  Json?
+  model         String?
+  promptVersion String?
+  gradingError  String?         @db.Text
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  answers       InterviewAnswer[]
+}
+
+model InterviewAnswer {
+  id            String           @id @default(cuid())
+  attemptId     String
+  attempt       InterviewAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionIndex Int
+  question      String           @db.Text
+  answer        String           @db.Text
+  score         Int?
+  feedback      String?          @db.Text
+  strengths     Json?
+  improvements  Json?
+
+  @@unique([attemptId, questionIndex])
+}
+
+model Purchase {
+  id                      String    @id @default(cuid())
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId                String?
+  course                  Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  stripeCheckoutSessionId String    @unique
+  stripePaymentIntentId   String?
+  stripeCustomerId        String?
+  amountInCents           Int
+  currency                String    @default("usd")
+  status                  String
+  purchasedAt             DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String
+  stripeSubscriptionId String    @unique
+  stripePriceId        String
+  status               String
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Entitlement {
+  id                String            @id @default(cuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              EntitlementType
+  referenceId       String?
+  source            EntitlementSource
+  sourceReferenceId String?
+  startsAt          DateTime          @default(now())
+  endsAt            DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime          @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}

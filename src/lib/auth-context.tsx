@@ -6,17 +6,22 @@ import { useRouter } from "next/navigation";
 export interface UserProfile {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
-  role: "ATHLETE" | "RECRUITER" | "ADMIN";
-  avatar: string;
+  role: "ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN";
+  avatar?: string;
+  image?: string | null;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email?: string, password?: string) => void;
-  logout: () => void;
+  login: (email?: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refetchUser: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -26,43 +31,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
 
-  React.useEffect(() => {
+  const fetchUser = React.useCallback(async () => {
     try {
-      const stored = localStorage.getItem("rep1_auth_user");
-      if (stored) {
-        setUser(JSON.parse(stored));
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+          return;
+        }
       }
+      setUser(null);
     } catch {
-      // Local storage unavailable or parsing failed
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const login = (email?: string) => {
-    const defaultUser: UserProfile = {
-      id: "usr_marvin",
-      name: "Marvin Constant",
-      email: email || "marvin@rep1recruiting.com",
-      role: "ATHLETE",
-      avatar: "MC",
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data) => {
+        if (isMounted) {
+          if (data.authenticated && data.user) {
+            setUser(data.user);
+          } else {
+            setUser(null);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
     };
-    setUser(defaultUser);
+  }, []);
+
+  const login = async (email?: string, password?: string) => {
     try {
-      localStorage.setItem("rep1_auth_user", JSON.stringify(defaultUser));
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || "Sign in failed" };
+      }
+
+      setUser(data.user);
+      router.push("/dashboard");
+      return { success: true };
     } catch {
-      // ignore
+      return { success: false, error: "Network error during sign in" };
     }
-    router.push("/dashboard");
   };
 
-  const logout = () => {
-    setUser(null);
+  const signup = async (formData: Record<string, unknown>) => {
     try {
-      localStorage.removeItem("rep1_auth_user");
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || "Sign up failed" };
+      }
+
+      setUser(data.user);
+      router.push("/dashboard");
+      return { success: true };
     } catch {
-      // ignore
+      return { success: false, error: "Network error during sign up" };
     }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore network errors on logout
+    }
+    setUser(null);
     router.push("/");
   };
 
@@ -73,7 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        signup,
         logout,
+        refetchUser: fetchUser,
       }}
     >
       {children}
@@ -88,8 +151,10 @@ export function useAuth() {
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      login: () => {},
-      logout: () => {},
+      login: async () => ({ success: false, error: "Auth provider missing" }),
+      signup: async () => ({ success: false, error: "Auth provider missing" }),
+      logout: async () => {},
+      refetchUser: async () => {},
     };
   }
   return context;

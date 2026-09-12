@@ -1,0 +1,66 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { verifyPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
+import { signInSchema } from "@/lib/validation";
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const result = signInSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: result.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = result.data;
+
+    const user = await db.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!user || !user.passwordHash) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    if (user.status !== "ACTIVE") {
+      return NextResponse.json(
+        { error: "Your account is currently suspended. Please contact support." },
+        { status: 403 }
+      );
+    }
+
+    const isValid = await verifyPassword(password, user.passwordHash);
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    const sessionUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    };
+
+    const token = await createSessionToken(sessionUser);
+    await setSessionCookie(token);
+
+    return NextResponse.json({ success: true, user: sessionUser });
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred during sign in" },
+      { status: 500 }
+    );
+  }
+}

@@ -4,16 +4,30 @@ import * as React from "react";
 import Link from "next/link";
 import { Card, CardContent, Button, Input } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
-import { ArrowRight, Flame } from "lucide-react";
+import { ArrowRight, Flame, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = React.useState("marvin@rep1recruiting.com");
-  const [password, setPassword] = React.useState("••••••••");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const res = await login(email, password);
+      if (!res.success) {
+        setError(res.error || "Invalid sign in credentials");
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -38,6 +52,12 @@ export default function LoginPage() {
 
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="space-y-4 pt-6">
+            {error && (
+              <div className="p-3 bg-red-950/60 border border-red-800/80 rounded text-xs text-red-300">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">
@@ -49,6 +69,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="athlete@rep1.com"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -57,9 +78,9 @@ export default function LoginPage() {
                   <label className="text-xs font-semibold text-[#A3A3A3] block">
                     Password
                   </label>
-                  <a href="#" className="text-[11px] text-[#F21717] hover:underline">
+                  <Link href="/forgot-password" className="text-[11px] text-[#F21717] hover:underline">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <Input
                   type="password"
@@ -67,12 +88,27 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
 
               <div className="pt-2">
-                <Button type="submit" variant="athletic" size="md" className="w-full gap-2 font-bold">
-                  Sign In to REP 1 <ArrowRight className="w-4 h-4" />
+                <Button
+                  type="submit"
+                  variant="athletic"
+                  size="md"
+                  className="w-full gap-2 font-bold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign In to REP 1 <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

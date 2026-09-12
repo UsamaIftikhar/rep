@@ -7,7 +7,7 @@ import { PublicNavbar, PublicFooter } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MediaCarousel } from "@/components/ui/media-carousel";
-import { ArrowRight, Trophy, Users, ShieldCheck, Sparkles, LogIn } from "lucide-react";
+import { ArrowRight, Trophy, Users, Sparkles, LogIn } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function HomePage() {

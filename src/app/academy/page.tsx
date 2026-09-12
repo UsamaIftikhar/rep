@@ -1,69 +1,66 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
 import { AppShell, PublicNavbar, PublicFooter } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Lock, Sparkles, BookOpen } from "lucide-react";
+import { ArrowRight, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import Link from "next/link";
 
-interface AcademyClass {
-  classNumber: number;
+interface CourseItem {
+  id: string;
   title: string;
+  slug: string;
   category: string;
-  status: "In Progress" | "Not Started" | "Completed";
+  order: number;
+  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+  progressPercent: number;
 }
 
-const academyClasses: AcademyClass[] = [
-  {
-    classNumber: 1,
-    title: "Financial Literacy",
-    category: "Financial Literacy",
-    status: "In Progress",
-  },
-  {
-    classNumber: 2,
-    title: "Athletes for Impact",
-    category: "Leadership",
-    status: "Not Started",
-  },
-  {
-    classNumber: 3,
-    title: "Marketing Playbook",
-    category: "Marketing Playbook",
-    status: "Not Started",
-  },
-  {
-    classNumber: 4,
-    title: "Personal Branding",
-    category: "Personal Branding",
-    status: "Not Started",
-  },
-  {
-    classNumber: 5,
-    title: "Conflict Resolution",
-    category: "Community Engagement",
-    status: "Not Started",
-  },
-  {
-    classNumber: 6,
-    title: "Behavioral Analysis",
-    category: "Behavioral Analytics",
-    status: "In Progress",
-  },
-];
-
 export default function AcademyPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const [courses, setCourses] = React.useState<CourseItem[]>([]);
+  const [completedCount, setCompletedCount] = React.useState(0);
+  const [totalCount, setTotalCount] = React.useState(6);
+  const [loading, setLoading] = React.useState(true);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    let isMounted = true;
+    if (!isAuthenticated) {
+      const timer = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(timer);
+    }
+
+    fetch("/api/courses")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data) {
+          if (data.courses) setCourses(data.courses);
+          if (data.summary) {
+            setCompletedCount(data.summary.completedAcademyCount);
+            setTotalCount(data.summary.totalAcademyCount);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
+  if (isAuthLoading || (isAuthenticated && loading)) {
     return (
       <div className="min-h-screen bg-[#070707] flex items-center justify-center text-white">
-        <div className="w-8 h-8 rounded-full border-2 border-[#F21717] border-t-transparent animate-spin" />
+        <Loader2 className="w-8 h-8 rounded-full text-[#F21717] animate-spin" />
       </div>
     );
   }
 
-  // Locked Gate if user is not signed in (User Request: Student Academy only shows when logged in)
+  // Locked Gate if user is not signed in
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#070707] text-[#F5F5F5] flex flex-col">
@@ -102,10 +99,11 @@ export default function AcademyPage() {
       </div>
     );
   }
+
   return (
     <AppShell>
       <div className="space-y-8 pb-16 max-w-5xl">
-        {/* Student Academy Hero Card (Matches Screenshot 2) */}
+        {/* Student Academy Hero Card */}
         <div className="rounded-2xl bg-gradient-to-r from-[#990000] via-[#550000] to-[#1A0A0A] border border-white/10 p-8 md:p-10 shadow-2xl">
           <span className="text-xs font-bold tracking-widest text-red-300 uppercase block mb-3">
             STUDENT ACADEMY
@@ -117,7 +115,7 @@ export default function AcademyPage() {
             Finish all six required classes to boost your recruiting profile and unlock your Academy badge.
           </p>
           <p className="text-xs font-bold text-red-200 uppercase tracking-wider">
-            0 of 6 classes completed
+            {completedCount} of {totalCount} classes completed
           </p>
         </div>
 
@@ -131,16 +129,16 @@ export default function AcademyPage() {
           </h3>
         </div>
 
-        {/* The 6 Classes List (Matches Screenshot 2) */}
+        {/* The 6 Classes List */}
         <div className="space-y-6">
-          {academyClasses.map((item) => (
+          {courses.map((item, index) => (
             <div
-              key={item.classNumber}
+              key={item.id}
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-white/5"
             >
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-[#A3A3A3]">
-                  Class {item.classNumber}
+                  Class {item.order || index + 1}
                 </span>
                 <h4 className="font-display uppercase text-xl font-bold text-white tracking-wide">
                   {item.title}
@@ -149,26 +147,34 @@ export default function AcademyPage() {
               </div>
 
               <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-                {/* Status Badge (Matches Screenshot 2) */}
+                {/* Status Badge */}
                 <span
                   className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                    item.status === "In Progress"
+                    item.status === "COMPLETED"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      : item.status === "IN_PROGRESS"
                       ? "bg-white text-[#990000]"
                       : "bg-[#1E1E1E] text-[#A3A3A3]"
                   }`}
                 >
-                  {item.status}
+                  {item.status === "COMPLETED"
+                    ? "Completed"
+                    : item.status === "IN_PROGRESS"
+                    ? "In Progress"
+                    : "Not Started"}
                 </span>
 
-                {/* Enroll / Open Button (Matches Screenshot 2) */}
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="gap-1.5 h-9 px-4 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]"
-                >
-                  <span>Enroll / Open</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
+                {/* Enroll / Open Button */}
+                <Link href={`/courses/${item.slug}`}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="gap-1.5 h-9 px-4 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]"
+                  >
+                    <span>{item.status === "NOT_STARTED" ? "Enroll / Open" : "Continue"}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
               </div>
             </div>
           ))}
