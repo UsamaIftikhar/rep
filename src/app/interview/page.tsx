@@ -56,6 +56,7 @@ export default function MockInterviewPage() {
   const [isListening, setIsListening] = React.useState(false);
   const [speechSupported, setSpeechSupported] = React.useState(true);
   const recognitionRef = React.useRef<unknown | null>(null);
+  const baseTextRef = React.useRef<string>("");
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -90,6 +91,8 @@ export default function MockInterviewPage() {
     }
 
     try {
+      baseTextRef.current = answers[currentQuestionIndex] || "";
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const recognition = new (SpeechRecognition as any)();
       recognition.continuous = true;
@@ -103,20 +106,27 @@ export default function MockInterviewPage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (res.isFinal) {
+            finalTranscript += res[0].transcript + " ";
+          } else {
+            interimTranscript += res[0].transcript;
+          }
         }
 
-        if (transcript.trim()) {
-          setAnswers((prev) => {
-            const updated = [...prev];
-            const existingText = updated[currentQuestionIndex] ? updated[currentQuestionIndex] + " " : "";
-            // Append or update current transcript
-            updated[currentQuestionIndex] = (existingText + transcript).replace(/\s+/g, " ").trim();
-            return updated;
-          });
-        }
+        const combined = (baseTextRef.current + " " + finalTranscript + interimTranscript)
+          .replace(/\s+/g, " ")
+          .trim();
+
+        setAnswers((prev) => {
+          const updated = [...prev];
+          updated[currentQuestionIndex] = combined;
+          return updated;
+        });
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -16,12 +16,37 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.rep1exposure.com"),
   title: {
     template: "%s | REP 1",
     default: "REP 1 — Athlete Recruiting & Education Platform",
   },
   description:
-    "Next-generation athlete recruiting, Student Academy, and AI mock interview preparation platform.",
+    "REP 1 connects student-athletes with college recruiters through combine-testing data, verified performance metrics, and Student Academy training progress.",
+  keywords: [
+    "REP 1",
+    "Athlete Recruiting",
+    "College Recruiting",
+    "Sports Combine",
+    "Elite Pacific Sports",
+    "Student Academy",
+    "Mock AI Interview",
+  ],
+  openGraph: {
+    title: "REP 1 — Athlete Recruiting & Education Platform",
+    description:
+      "REP 1 connects student-athletes with college recruiters through combine-testing data, verified performance metrics, and Student Academy training progress.",
+    url: "https://www.rep1exposure.com",
+    siteName: "REP 1",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "REP 1 — Athlete Recruiting & Education Platform",
+    description:
+      "REP 1 connects student-athletes with college recruiters through combine-testing data, verified performance metrics, and Student Academy training progress.",
+  },
   icons: {
     icon: "/favicon.ico",
   },
