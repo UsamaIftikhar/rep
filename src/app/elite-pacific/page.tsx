@@ -89,7 +89,7 @@ export default function ElitePacificPage() {
         </div>
 
         {/* Media Photo Carousel */}
-        <div className="relative w-full h-80 md:h-[460px] rounded-2xl overflow-hidden border border-white/10 bg-[#0A0A0A] group">
+        <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border border-white/10 bg-[#0A0A0A] group">
           <Image
             src={slides[currentIndex].imageUrl}
             alt={slides[currentIndex].title}

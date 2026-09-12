@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 import {
   Home,
   MapPin,
@@ -12,12 +13,14 @@ import {
   Settings,
   X,
   Flame,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  requiresAuth?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -35,6 +38,7 @@ const navItems: NavItem[] = [
     title: "Student Academy",
     href: "/academy",
     icon: GraduationCap,
+    requiresAuth: true,
   },
   {
     title: "Mock AI Interview",
@@ -56,6 +60,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSidebarProps) {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <>
@@ -105,63 +110,78 @@ export function AppSidebar({ isOpen = false, onClose, isAdmin = true }: AppSideb
           {/* User Name Subtitle */}
           <div className="mt-4 pt-1">
             <p className="text-xs font-semibold text-[#A3A3A3] tracking-wide">
-              Marvin Constant
+              {user?.name || "Marvin Constant"}
             </p>
           </div>
         </div>
 
         {/* Navigation List */}
         <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          {navItems
+            .filter((item) => !item.requiresAuth || isAuthenticated)
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3.5 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                  isActive
-                    ? "bg-[#171717] text-white font-semibold"
-                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
-                )}
-              >
-                <Icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
                   className={cn(
-                    "w-4 h-4",
-                    isActive ? "text-[#F21717]" : "text-[#737373]"
+                    "flex items-center gap-3.5 px-4 py-2.5 rounded-lg text-sm transition-colors",
+                    isActive
+                      ? "bg-[#171717] text-white font-semibold"
+                      : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
                   )}
-                />
-                <span className="truncate">{item.title}</span>
-              </Link>
-            );
-          })}
+                >
+                  <Icon
+                    className={cn(
+                      "w-4 h-4",
+                      isActive ? "text-[#F21717]" : "text-[#737373]"
+                    )}
+                  />
+                  <span className="truncate">{item.title}</span>
+                </Link>
+              );
+            })}
         </nav>
 
-        {/* Admin Link at Bottom (Matches Bubble App) */}
-        {isAdmin && (
-          <div className="p-4 border-t border-white/5">
+        {/* Bottom Actions: Admin & Logout */}
+        <div className="p-3 border-t border-white/5 space-y-1">
+          {isAdmin && (
             <Link
               href="/admin"
               onClick={onClose}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-colors",
                 pathname.startsWith("/admin")
                   ? "bg-[#171717] text-white font-semibold"
                   : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
               )}
             >
-              <div className="w-7 h-7 rounded-full bg-[#00D1B2]/20 border border-[#00D1B2]/40 flex items-center justify-center text-[#00D1B2]">
-                <span className="text-xs">⚡</span>
+              <div className="w-6 h-6 rounded-full bg-[#00D1B2]/20 border border-[#00D1B2]/40 flex items-center justify-center text-[#00D1B2]">
+                <span className="text-[10px]">⚡</span>
               </div>
-              <span>Admin</span>
+              <span>Admin Panel</span>
             </Link>
-          </div>
-        )}
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                logout();
+                if (onClose) onClose();
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-[#737373] hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 text-red-400" />
+              <span>Sign Out</span>
+            </button>
+          )}
+        </div>
       </aside>
     </>
   );

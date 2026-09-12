@@ -33,6 +33,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { AuthProvider } from "@/lib/auth-context";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,7 +46,7 @@ export default function RootLayout({
       className={`${inter.variable} ${barlowCondensed.variable} dark h-full`}
     >
       <body className="min-h-full bg-[#070707] text-[#F5F5F5] antialiased selection:bg-[#F21717] selection:text-white">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

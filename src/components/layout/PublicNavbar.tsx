@@ -4,22 +4,28 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react";
 
 export function PublicNavbar() {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const links = [
+  const baseLinks = [
     { label: "Home", href: "/" },
-    { label: "Classroom", href: "/classroom" },
     { label: "Elite Pacific", href: "/elite-pacific" },
-    { label: "Pricing", href: "/pricing" },
+    { label: "Mock AI Interview", href: "/interview" },
   ];
 
+  // Student Academy only shows when logged in
+  const links = isAuthenticated
+    ? [...baseLinks, { label: "Student Academy", href: "/academy" }]
+    : baseLinks;
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#070707]/90 backdrop-blur-md border-b border-white/10">
+    <header className="sticky top-0 z-50 w-full bg-[#070707]/95 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-20 px-4 md:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -57,16 +63,35 @@ export function PublicNavbar() {
 
         {/* Action CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button variant="athletic" size="sm" className="gap-1.5">
-              Athlete Portal <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link href="/dashboard">
+                <Button variant="athletic" size="sm" className="gap-1.5 text-xs font-bold">
+                  <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+                </Button>
+              </Link>
+              <button
+                onClick={() => logout()}
+                className="p-2 rounded-lg text-[#737373] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="text-xs font-semibold text-[#A3A3A3] hover:text-white gap-1.5">
+                  <LogIn className="w-3.5 h-3.5" /> Sign In
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button variant="athletic" size="sm" className="gap-1.5 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]">
+                  <UserPlus className="w-3.5 h-3.5" /> Sign Up
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu hamburger */}
@@ -100,16 +125,37 @@ export function PublicNavbar() {
           </nav>
 
           <div className="pt-3 border-t border-white/10 flex flex-col gap-2.5">
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="secondary" size="md" className="w-full">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="athletic" size="md" className="w-full">
-                Enter Athlete Portal
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="athletic" size="md" className="w-full">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2 text-center text-xs text-red-400 hover:text-red-300 font-semibold"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="secondary" size="md" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="athletic" size="md" className="w-full">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
