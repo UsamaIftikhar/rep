@@ -15,6 +15,7 @@ interface SearchAthlete {
   sport: string | null;
   position: string | null;
   bio: string | null;
+  profilePhoto: string | null;
   profileCompleteness: number;
   user: {
     id: string;
@@ -184,8 +185,12 @@ export default function RecruitSearchPage() {
               <Card key={a.id} hoverEffect className="bg-[#111111] border-white/10 flex flex-col justify-between">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center font-display font-black text-white text-xl flex-shrink-0">
-                      {a.user.firstName?.[0] || a.user.name?.[0] || "A"}
+                    <div className="w-14 h-14 rounded-xl bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center font-display font-black text-white text-xl flex-shrink-0 overflow-hidden">
+                      {a.profilePhoto ? (
+                        <img src={a.profilePhoto} alt={a.user.name || "Athlete"} className="w-full h-full object-cover" />
+                      ) : (
+                        a.user.firstName?.[0] || a.user.name?.[0] || "A"
+                      )}
                     </div>
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717]">

@@ -158,8 +158,12 @@ export default function PublicAthleteProfilePage() {
             {/* Athlete Header Card */}
             <div className="rounded-2xl bg-[#111111] border border-white/10 p-6 md:p-8 relative overflow-hidden">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-[#F21717]/20 border-2 border-[#F21717]/50 flex items-center justify-center font-display font-black text-white text-3xl flex-shrink-0 shadow-[0_0_30px_rgba(242,23,23,0.3)]">
-                  {athlete.user.firstName?.[0] || athlete.user.name?.[0] || "A"}
+                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-[#F21717]/20 border-2 border-[#F21717]/50 flex items-center justify-center font-display font-black text-white text-3xl flex-shrink-0 shadow-[0_0_30px_rgba(242,23,23,0.3)] overflow-hidden">
+                  {athlete.profilePhoto ? (
+                    <img src={athlete.profilePhoto} alt={athlete.user.name || "Athlete"} className="w-full h-full object-cover" />
+                  ) : (
+                    athlete.user.firstName?.[0] || athlete.user.name?.[0] || "A"
+                  )}
                 </div>
 
                 <div className="space-y-2 flex-1">

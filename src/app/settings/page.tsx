@@ -3,13 +3,16 @@
 import * as React from "react";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Textarea } from "@/components/ui";
-import { ShieldCheck, CreditCard, CheckCircle2, Loader2 } from "lucide-react";
+import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
@@ -138,6 +141,37 @@ export default function SettingsPage() {
       }
     } catch {
       alert("Unable to open billing portal");
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || "Failed to upload profile photo");
+      } else {
+        setProfilePhoto(data.url);
+        setSuccessMessage("Profile photo uploaded successfully!");
+      }
+    } catch {
+      setErrorMessage("Network error uploading profile photo.");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -272,21 +306,78 @@ export default function SettingsPage() {
                 {/* Profile Media & Social Links */}
                 <div className="pt-2 space-y-4 border-t border-white/10">
                   <h4 className="font-display uppercase text-sm font-bold text-white">Media & Social Links</h4>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Profile Photo URL</label>
-                      <Input value={profilePhoto} onChange={(e) => setProfilePhoto(e.target.value)} placeholder="https://example.com/headshot.jpg" />
+
+                  {/* Upload Profile Photo */}
+                  <div className="p-4 rounded-2xl bg-[#171717] border border-white/10 space-y-3">
+                    <label className="text-xs font-semibold text-white block uppercase tracking-wider">
+                      Athlete Profile Photo
+                    </label>
+                    
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="w-20 h-20 rounded-2xl bg-[#F21717]/20 border-2 border-[#F21717]/50 flex items-center justify-center overflow-hidden flex-shrink-0 text-white font-black font-display text-2xl shadow-[0_0_20px_rgba(242,23,23,0.3)]">
+                        {profilePhoto ? (
+                          <img src={profilePhoto} alt="Profile Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          firstName?.[0] || user?.firstName?.[0] || "A"
+                        )}
+                      </div>
+
+                      <div className="space-y-2 flex-1">
+                        <p className="text-xs text-[#A3A3A3]">
+                          Upload a high-resolution headshot or athletic portrait. File is stored directly on the platform server. (JPG, PNG, WEBP — Max 5MB).
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handlePhotoUpload}
+                            accept="image/*"
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingPhoto}
+                            className="gap-2 text-xs font-bold border-white/20 hover:border-white text-white"
+                          >
+                            {uploadingPhoto ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading Photo...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-3.5 h-3.5 text-[#F21717]" /> Choose Image File
+                              </>
+                            )}
+                          </Button>
+
+                          {profilePhoto && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setProfilePhoto("")}
+                              className="text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                            >
+                              Remove Photo
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">X (Twitter) Profile Link</label>
                       <Input value={xUrl} onChange={(e) => setXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
-                    <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
+                      <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
+                    </div>
                   </div>
                 </div>
 
