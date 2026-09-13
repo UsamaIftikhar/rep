@@ -48,6 +48,27 @@ export async function GET(req: Request) {
           profileCompleteness: true,
         },
       },
+      subscriptions: {
+        where: { status: "active" },
+        select: {
+          id: true,
+          stripePriceId: true,
+          status: true,
+        },
+      },
+      entitlements: {
+        where: {
+          revokedAt: null,
+        },
+        select: {
+          type: true,
+        },
+      },
+      purchases: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 

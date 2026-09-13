@@ -28,6 +28,9 @@ interface AdminUserItem {
     graduationYear: number | null;
     profileCompleteness: number;
   } | null;
+  subscriptions?: { id: string; stripePriceId: string; status: string }[];
+  entitlements?: { type: string }[];
+  purchases?: { id: string }[];
 }
 
 interface AdminCourseItem {
@@ -279,13 +282,18 @@ export default function AdminDashboardPage() {
                       <tr className="border-b border-white/10 text-[#A3A3A3] uppercase tracking-wider font-semibold">
                         <th className="py-3 px-3">User</th>
                         <th className="py-3 px-3">Sport / School</th>
+                        <th className="py-3 px-3">Membership</th>
                         <th className="py-3 px-3">Role</th>
                         <th className="py-3 px-3">Status</th>
                         <th className="py-3 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {users.map((u) => (
+                      {users.map((u) => {
+                        const isPaidMember = (u.subscriptions && u.subscriptions.length > 0) || (u.entitlements && u.entitlements.some((e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"));
+                        const isCourseOwner = !isPaidMember && u.purchases && u.purchases.length > 0;
+
+                        return (
                         <tr key={u.id} className="hover:bg-white/5 transition-colors">
                           <td className="py-3 px-3">
                             <p className="font-bold text-white">{u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Athlete User"}</p>
@@ -298,6 +306,19 @@ export default function AdminDashboardPage() {
                               </span>
                             ) : (
                               <span className="text-[#737373] italic">No profile data</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            {isPaidMember ? (
+                              <Badge variant="success" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                                ⚡ Paid Member
+                              </Badge>
+                            ) : isCourseOwner ? (
+                              <Badge variant="neutral" className="bg-blue-500/15 text-blue-400 border-blue-500/30">
+                                📚 Single Course
+                              </Badge>
+                            ) : (
+                              <span className="text-[#737373] text-[11px] font-medium">Free User</span>
                             )}
                           </td>
                           <td className="py-3 px-3">
@@ -339,7 +360,8 @@ export default function AdminDashboardPage() {
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
