@@ -12,7 +12,7 @@ export default function SignupPage() {
   const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [sport, setSport] = React.useState("football");
+  const [sport, setSport] = React.useState("basketball");
   const [error, setError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -117,15 +117,11 @@ export default function SignupPage() {
                 </label>
                 <Select
                   options={[
-                    { value: "football", label: "American Football" },
-                    { value: "flag_football", label: "Flag Football" },
                     { value: "basketball", label: "Basketball" },
                     { value: "volleyball", label: "Volleyball" },
+                    { value: "flag_football", label: "Flag Football" },
                     { value: "swimming", label: "Swimming" },
                     { value: "golf", label: "Golf" },
-                    { value: "rugby", label: "Rugby League / Union" },
-                    { value: "soccer", label: "Soccer" },
-                    { value: "track", label: "Track & Field" },
                   ]}
                   value={sport}
                   onChange={(e) => setSport(e.target.value)}

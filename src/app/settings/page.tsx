@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [schoolClub, setSchoolClub] = React.useState("");
   const [graduationYear, setGraduationYear] = React.useState("2026");
   const [location, setLocation] = React.useState("");
-  const [sport, setSport] = React.useState("football");
+  const [sport, setSport] = React.useState("basketball");
   const [position, setPosition] = React.useState("");
   const [bio, setBio] = React.useState("");
   const [highlightVideoUrl, setHighlightVideoUrl] = React.useState("");
@@ -37,7 +37,7 @@ export default function SettingsPage() {
           setSchoolClub(p.schoolClub || "");
           setGraduationYear(p.graduationYear ? String(p.graduationYear) : "2026");
           setLocation(p.location || "");
-          setSport(p.sport || "football");
+          setSport(p.sport || "basketball");
           setPosition(p.position || "");
           setBio(p.bio || "");
           setHighlightVideoUrl(p.highlightVideoUrl || "");
@@ -203,15 +203,11 @@ export default function SettingsPage() {
                       value={sport}
                       onChange={(e) => setSport(e.target.value)}
                       options={[
-                        { value: "football", label: "American Football" },
-                        { value: "flag_football", label: "Flag Football" },
                         { value: "basketball", label: "Basketball" },
                         { value: "volleyball", label: "Volleyball" },
+                        { value: "flag_football", label: "Flag Football" },
                         { value: "swimming", label: "Swimming" },
                         { value: "golf", label: "Golf" },
-                        { value: "rugby", label: "Rugby League / Union" },
-                        { value: "soccer", label: "Soccer" },
-                        { value: "track", label: "Track & Field" },
                       ]}
                     />
                   </div>
