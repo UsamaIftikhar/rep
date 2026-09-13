@@ -16,7 +16,7 @@ const slides: MediaSlide[] = [
   {
     id: 1,
     title: "Elite Pacific Sports Prospects",
-    category: "Recruiting Combine • Brisbane",
+    category: "Global Recruiting Combine",
     imageUrl: "/images/athletes_team.jpeg",
     objectPosition: "object-center",
   },

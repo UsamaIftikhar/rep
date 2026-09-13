@@ -223,7 +223,7 @@ export default function HomePage() {
               2026 Combine & Showcase Schedule
             </h4>
             <p className="text-xs text-[#737373]">
-              Registration opens soon for the Brisbane & Sydney Winter Combines.
+              Registration opens soon for upcoming global combines & showcases hosted worldwide.
             </p>
           </Card>
 
