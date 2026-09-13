@@ -4,7 +4,7 @@ import { createStripeCheckoutSession } from "@/lib/stripe";
 import { z } from "zod";
 
 const checkoutSchema = z.object({
-  type: z.enum(["SUBSCRIPTION", "COURSE", "ELITE_PACIFIC"]),
+  type: z.enum(["SUBSCRIPTION", "COURSE", "ELITE_PACIFIC", "US_ATHLETE", "INTERNATIONAL"]),
   courseId: z.string().optional(),
 });
 

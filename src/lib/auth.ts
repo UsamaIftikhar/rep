@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import { db } from "./db";
 import { SessionUser } from "./permissions";
 
@@ -82,7 +82,7 @@ export async function getAuthenticatedUser(): Promise<(SessionUser & { id: strin
     },
   });
 
-  if (!dbUser || dbUser.status !== "ACTIVE") {
+  if (!dbUser || dbUser.status !== UserStatus.ACTIVE) {
     return null;
   }
 

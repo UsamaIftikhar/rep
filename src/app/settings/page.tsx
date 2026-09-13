@@ -21,6 +21,16 @@ export default function SettingsPage() {
   const [sport, setSport] = React.useState("basketball");
   const [position, setPosition] = React.useState("");
   const [bio, setBio] = React.useState("");
+  const [profilePhoto, setProfilePhoto] = React.useState("");
+  const [xUrl, setXUrl] = React.useState("");
+  const [benchPress, setBenchPress] = React.useState("");
+  const [squat, setSquat] = React.useState("");
+  const [powerClean, setPowerClean] = React.useState("");
+  const [fortyTime, setFortyTime] = React.useState("");
+  const [vertical, setVertical] = React.useState("");
+  const [shuttleTime, setShuttleTime] = React.useState("");
+  const [broadJump, setBroadJump] = React.useState("");
+  const [gpa, setGpa] = React.useState("");
   const [highlightVideoUrl, setHighlightVideoUrl] = React.useState("");
   const [profileVisibility, setProfileVisibility] = React.useState(true);
   const [profileCompleteness, setProfileCompleteness] = React.useState(0);
@@ -40,6 +50,16 @@ export default function SettingsPage() {
           setSport(p.sport || "basketball");
           setPosition(p.position || "");
           setBio(p.bio || "");
+          setProfilePhoto(p.profilePhoto || "");
+          setXUrl(p.xUrl || "");
+          setBenchPress(p.benchPress || "");
+          setSquat(p.squat || "");
+          setPowerClean(p.powerClean || "");
+          setFortyTime(p.fortyTime || "");
+          setVertical(p.vertical || "");
+          setShuttleTime(p.shuttleTime || "");
+          setBroadJump(p.broadJump || "");
+          setGpa(p.gpa || "");
           setHighlightVideoUrl(p.highlightVideoUrl || "");
           setProfileVisibility(p.profileVisibility ?? true);
           setProfileCompleteness(p.profileCompleteness || 0);
@@ -76,6 +96,16 @@ export default function SettingsPage() {
           sport,
           position,
           bio,
+          profilePhoto,
+          xUrl,
+          benchPress,
+          squat,
+          powerClean,
+          fortyTime,
+          vertical,
+          shuttleTime,
+          broadJump,
+          gpa,
           highlightVideoUrl,
           profileVisibility,
         }),
@@ -203,19 +233,30 @@ export default function SettingsPage() {
                       value={sport}
                       onChange={(e) => setSport(e.target.value)}
                       options={[
+                        { value: "football", label: "American Football" },
+                        { value: "flag_football", label: "Flag Football" },
                         { value: "basketball", label: "Basketball" },
                         { value: "volleyball", label: "Volleyball" },
-                        { value: "flag_football", label: "Flag Football" },
                         { value: "swimming", label: "Swimming" },
                         { value: "golf", label: "Golf" },
+                        { value: "rugby", label: "Rugby League / Union" },
+                        { value: "soccer", label: "Soccer" },
+                        { value: "track", label: "Track & Field" },
+                        { value: "other", label: "Other" },
                       ]}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Position / Event</label>
-                  <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="Quarterback / Safety" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Position / Event</label>
+                    <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="Quarterback / Safety" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Grade Point Average (GPA)</label>
+                    <Input value={gpa} onChange={(e) => setGpa(e.target.value)} placeholder="e.g. 3.85" />
+                  </div>
                 </div>
 
                 <div>
@@ -228,9 +269,67 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
-                  <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
+                {/* Profile Media & Social Links */}
+                <div className="pt-2 space-y-4 border-t border-white/10">
+                  <h4 className="font-display uppercase text-sm font-bold text-white">Media & Social Links</h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Profile Photo URL</label>
+                      <Input value={profilePhoto} onChange={(e) => setProfilePhoto(e.target.value)} placeholder="https://example.com/headshot.jpg" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">X (Twitter) Profile Link</label>
+                      <Input value={xUrl} onChange={(e) => setXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
+                    <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
+                  </div>
+                </div>
+
+                {/* Athletic Combine Metrics */}
+                <div className="pt-2 space-y-4 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-display uppercase text-sm font-bold text-white">Athletic Combine Metrics</h4>
+                    <span className="text-[10px] text-[#F21717] font-bold uppercase tracking-wider">Verified Combine Standards</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Bench Press</label>
+                      <Input value={benchPress} onChange={(e) => setBenchPress(e.target.value)} placeholder="e.g. 275 lbs" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Squat</label>
+                      <Input value={squat} onChange={(e) => setSquat(e.target.value)} placeholder="e.g. 405 lbs" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Power Clean</label>
+                      <Input value={powerClean} onChange={(e) => setPowerClean(e.target.value)} placeholder="e.g. 245 lbs" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">40-Yard Dash</label>
+                      <Input value={fortyTime} onChange={(e) => setFortyTime(e.target.value)} placeholder="e.g. 4.45s" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Vertical Jump</label>
+                      <Input value={vertical} onChange={(e) => setVertical(e.target.value)} placeholder="e.g. 34.5 in" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Shuttle Time</label>
+                      <Input value={shuttleTime} onChange={(e) => setShuttleTime(e.target.value)} placeholder="e.g. 4.12s" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Broad Jump</label>
+                      <Input value={broadJump} onChange={(e) => setBroadJump(e.target.value)} placeholder="e.g. 10'2&quot;" />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-2 flex items-center justify-between border-t border-white/10">

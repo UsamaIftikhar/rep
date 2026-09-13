@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { UserStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { verifyPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
 import { signInSchema } from "@/lib/validation";
@@ -28,9 +29,29 @@ export async function POST(req: Request) {
       );
     }
 
+    if (user.status === UserStatus.PENDING_PAYMENT) {
+      const origin = req.headers.get("origin") || "http://localhost:3000";
+      const { createStripeCheckoutSession } = await import("@/lib/stripe");
+      const session = await createStripeCheckoutSession({
+        userId: user.id,
+        userEmail: user.email,
+        type: "US_ATHLETE",
+        origin,
+      });
+
+      return NextResponse.json(
+        {
+          error: "Payment required: Your account registration is incomplete. You must complete your membership payment to activate your account.",
+          requiresPayment: true,
+          checkoutUrl: session.url,
+        },
+        { status: 402 }
+      );
+    }
+
     if (user.status !== "ACTIVE") {
       return NextResponse.json(
-        { error: "Your account is currently suspended. Please contact support." },
+        { error: "Your account is currently suspended or inactive. Please contact support." },
         { status: 403 }
       );
     }

@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { UserStatus } from "@prisma/client";
 import { db } from "./db";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock_key_for_development_build", {
@@ -14,13 +15,19 @@ export async function createStripeCheckoutSession({
 }: {
   userId: string;
   userEmail: string;
-  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC";
+  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL";
   courseId?: string;
   origin: string;
 }) {
   if (!process.env.STRIPE_SECRET_KEY) {
     // In dev mode without Stripe keys, simulate instant checkout completion for rapid testing
     const mockSessionId = `cs_test_mock_${Date.now().toString(36)}`;
+
+    // Activate user upon completed payment
+    await db.user.update({
+      where: { id: userId },
+      data: { status: UserStatus.ACTIVE },
+    });
 
     if (type === "COURSE" && courseId) {
       await db.purchase.create({
@@ -53,7 +60,7 @@ export async function createStripeCheckoutSession({
       return { url: `${origin}/courses/${courseId}?purchased=true` };
     }
 
-    if (type === "ELITE_PACIFIC" || type === "SUBSCRIPTION") {
+    if (type === "INTERNATIONAL" || type === "ELITE_PACIFIC") {
       await db.subscription.create({
         data: {
           userId,
@@ -61,14 +68,14 @@ export async function createStripeCheckoutSession({
           stripeSubscriptionId: `sub_mock_${Date.now().toString(36)}`,
           stripePriceId: "price_mock_elite_pacific",
           status: "active",
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         },
       });
 
       await db.entitlement.create({
         data: {
           userId,
-          type: type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
+          type: "ELITE_PACIFIC",
           source: "SUBSCRIPTION",
         },
       });
@@ -76,11 +83,32 @@ export async function createStripeCheckoutSession({
       return { url: `${origin}/dashboard?subscribed=true` };
     }
 
-    return { url: `${origin}/dashboard` };
+    // US_ATHLETE or SUBSCRIPTION
+    await db.subscription.create({
+      data: {
+        userId,
+        stripeCustomerId: `cus_mock_${userId}`,
+        stripeSubscriptionId: `sub_mock_${Date.now().toString(36)}`,
+        stripePriceId: "price_mock_us_athlete",
+        status: "active",
+        currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await db.entitlement.create({
+      data: {
+        userId,
+        type: "ACADEMY",
+        source: "SUBSCRIPTION",
+      },
+    });
+
+    return { url: `${origin}/dashboard?subscribed=true` };
   }
 
+
   let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-  let mode: Stripe.Checkout.SessionCreateParams.Mode = "subscription";
+  let mode: Stripe.Checkout.SessionCreateParams.Mode = "payment";
 
   if (type === "COURSE" && courseId) {
     mode = "payment";
@@ -102,21 +130,42 @@ export async function createStripeCheckoutSession({
         quantity: 1,
       },
     ];
-  } else if (type === "ELITE_PACIFIC") {
-    mode = "subscription";
+  } else if (type === "INTERNATIONAL" || type === "ELITE_PACIFIC") {
     const elitePriceId = process.env.STRIPE_PRICE_ELITE_PACIFIC || "price_1UEzKj8HF4AKFR6eZG2wz2zS";
-    lineItems = [
+    mode = elitePriceId ? "subscription" : "payment";
+    lineItems = elitePriceId ? [
+      { price: elitePriceId, quantity: 1 }
+    ] : [
       {
-        price: elitePriceId,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "REP 1 International Athlete Pass (Elite Pacific)",
+            description: "Full global roster placement, collegiate pathway, and student academy access",
+            tax_code: "txcd_10000000",
+          },
+          unit_amount: 7500,
+        },
         quantity: 1,
       },
     ];
   } else {
-    mode = "subscription";
+    // US_ATHLETE or SUBSCRIPTION
     const athletePriceId = process.env.STRIPE_PRICE_ATHLETE || "price_1UEzKN8HF4AKFR6e5dSDSvGN";
-    lineItems = [
+    mode = athletePriceId ? "subscription" : "payment";
+    lineItems = athletePriceId ? [
+      { price: athletePriceId, quantity: 1 }
+    ] : [
       {
-        price: athletePriceId,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "REP 1 US Student Athlete Pass",
+            description: "Full access to student academy, AI interview prep, and athlete profile tools",
+            tax_code: "txcd_10000000",
+          },
+          unit_amount: 2999,
+        },
         quantity: 1,
       },
     ];

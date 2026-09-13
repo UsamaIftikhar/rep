@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { UserStatus } from "@prisma/client";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import Stripe from "stripe";
@@ -35,6 +36,12 @@ export async function POST(req: Request) {
         const courseId = session.metadata?.courseId;
 
         if (userId) {
+          // Activate user account upon successful payment
+          await db.user.update({
+            where: { id: userId },
+            data: { status: UserStatus.ACTIVE },
+          });
+
           if (type === "COURSE" && courseId) {
             await db.purchase.upsert({
               where: { stripeCheckoutSessionId: session.id },

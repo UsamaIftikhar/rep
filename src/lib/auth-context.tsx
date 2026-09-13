@@ -85,6 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return { success: false, error: data.error, redirectingToCheckout: true };
+        }
         return { success: false, error: data.error || "Sign in failed" };
       }
 
@@ -107,6 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok || !data.success) {
         return { success: false, error: data.error || "Sign up failed" };
+      }
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return { success: true, redirectingToCheckout: true };
       }
 
       setUser(data.user);

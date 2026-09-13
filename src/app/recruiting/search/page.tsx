@@ -110,11 +110,16 @@ export default function RecruitSearchPage() {
                   }}
                   options={[
                     { value: "", label: "All Sports" },
+                    { value: "football", label: "American Football" },
+                    { value: "flag_football", label: "Flag Football" },
                     { value: "basketball", label: "Basketball" },
                     { value: "volleyball", label: "Volleyball" },
-                    { value: "flag_football", label: "Flag Football" },
                     { value: "swimming", label: "Swimming" },
                     { value: "golf", label: "Golf" },
+                    { value: "rugby", label: "Rugby League / Union" },
+                    { value: "soccer", label: "Soccer" },
+                    { value: "track", label: "Track & Field" },
+                    { value: "other", label: "Other" },
                   ]}
                   className="w-full sm:w-36"
                 />

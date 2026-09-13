@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { UserStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { hashPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { signUpSchema } from "@/lib/validation";
+import { sendNewUserRegistrationEmail } from "@/lib/email";
+import { createStripeCheckoutSession } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
@@ -28,11 +31,39 @@ export async function POST(req: Request) {
       position,
     } = result.data;
 
+    const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" =
+      body.planType === "international" || body.planType === "INTERNATIONAL"
+        ? "INTERNATIONAL"
+        : body.planType === "course" || body.planType === "COURSE"
+        ? "COURSE"
+        : "US_ATHLETE";
+
+    const courseId = body.courseId;
+
     const existingUser = await db.user.findUnique({
       where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
+      if (existingUser.status === "PENDING_PAYMENT") {
+        // Allow user to complete checkout if previous signup was left unpaid
+        const origin = req.headers.get("origin") || "http://localhost:3000";
+        const session = await createStripeCheckoutSession({
+          userId: existingUser.id,
+          userEmail: existingUser.email,
+          type: planType,
+          courseId,
+          origin,
+        });
+
+        return NextResponse.json({
+          success: true,
+          user: existingUser,
+          checkoutUrl: session.url,
+          requiresPayment: true,
+        });
+      }
+
       return NextResponse.json(
         { error: "An account with this email already exists" },
         { status: 400 }
@@ -44,6 +75,7 @@ export async function POST(req: Request) {
     const slugBase = `${firstName}-${lastName}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const uniqueSlug = `${slugBase}-${Date.now().toString(36)}`;
 
+    // Create user in PENDING_PAYMENT status until payment is confirmed
     const user = await db.user.create({
       data: {
         email: email.toLowerCase(),
@@ -52,6 +84,7 @@ export async function POST(req: Request) {
         lastName,
         name: fullName,
         role,
+        status: UserStatus.PENDING_PAYMENT,
         athleteProfile: {
           create: {
             slug: uniqueSlug,
@@ -70,13 +103,42 @@ export async function POST(req: Request) {
         firstName: true,
         lastName: true,
         role: true,
+        status: true,
       },
     });
 
-    const token = await createSessionToken(user);
-    await setSessionCookie(token);
+    // Send email alert to jrmarvinconstant@gmail.com
+    sendNewUserRegistrationEmail({
+      name: user.name || fullName,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName || firstName,
+      lastName: user.lastName || lastName,
+      sport,
+      position,
+      schoolClub,
+      graduationYear,
+      location,
+    }).catch((err) => {
+      console.error("Background email sending error:", err);
+    });
 
-    return NextResponse.json({ success: true, user });
+    // Mandatory Stripe Checkout URL creation
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const session = await createStripeCheckoutSession({
+      userId: user.id,
+      userEmail: user.email,
+      type: planType,
+      courseId,
+      origin,
+    });
+
+    return NextResponse.json({
+      success: true,
+      user,
+      checkoutUrl: session.url,
+      requiresPayment: true,
+    });
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
@@ -85,3 +147,5 @@ export async function POST(req: Request) {
     );
   }
 }
+
+

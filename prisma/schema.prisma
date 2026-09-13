@@ -19,6 +19,7 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   SUSPENDED
+  PENDING_PAYMENT
 }
 
 enum EnrollmentStatus {
@@ -89,6 +90,15 @@ model AthleteProfile {
   position            String?
   bio                 String?
   profilePhoto        String?
+  xUrl                String?
+  benchPress          String?
+  squat               String?
+  powerClean          String?
+  fortyTime           String?
+  vertical            String?
+  shuttleTime         String?
+  broadJump           String?
+  gpa                 String?
   highlightVideoUrl   String?
   profileVisibility   Boolean  @default(true)
   profileCompleteness Int      @default(0)

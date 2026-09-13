@@ -90,3 +90,45 @@ export async function canUseInterviewTier(userId: string): Promise<boolean> {
   if (!user) return false;
   return true;
 }
+
+export async function isMember(userId: string): Promise<boolean> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      subscriptions: {
+        where: { status: "active" },
+        take: 1,
+      },
+      purchases: {
+        where: { status: "completed" },
+        take: 1,
+      },
+      entitlements: {
+        where: {
+          revokedAt: null,
+          OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+        },
+        take: 1,
+      },
+    },
+  });
+
+  if (!user) return false;
+
+  if (
+    user.role === UserRole.ADMIN ||
+    user.role === UserRole.SUPER_ADMIN ||
+    user.role === UserRole.RECRUITER
+  ) {
+    return true;
+  }
+
+  return (
+    user.subscriptions.length > 0 ||
+    user.purchases.length > 0 ||
+    user.entitlements.length > 0
+  );
+}
+

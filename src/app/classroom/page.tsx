@@ -115,7 +115,7 @@ export default function ClassroomPage() {
                     </div>
 
                     {!isAuthenticated ? (
-                      <Link href="/login">
+                      <Link href={`/signup?plan=course&courseId=${c.id}&courseSlug=${c.slug}`}>
                         <Button variant="athletic" size="md" className="w-full gap-2 bg-[#F21717] hover:bg-[#D90F0F] font-bold">
                           Pay & Enroll ({formattedPrice}) <ArrowRight className="w-4 h-4" />
                         </Button>

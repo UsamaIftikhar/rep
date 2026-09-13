@@ -128,6 +128,76 @@ export default function HomePage() {
           </Card>
         </div>
 
+        {/* Membership Tiers & Pricing Section */}
+        <div className="space-y-6 pt-4">
+          <div className="text-center max-w-xl mx-auto space-y-2">
+            <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
+              MEMBERSHIP TIERS & REGISTRATION
+            </span>
+            <h2 className="font-display uppercase text-2xl md:text-3xl font-black text-white">
+              Choose Your Recruiting Plan
+            </h2>
+            <p className="text-xs text-[#A3A3A3]">
+              Select your region or course pass to register your athlete account today.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Tier 1: US Athlete Pass */}
+            <Card className="bg-[#111111] border-[#F21717]/40 p-6 flex flex-col justify-between space-y-4 relative overflow-hidden shadow-[0_0_30px_rgba(242,23,23,0.15)]">
+              <div className="absolute top-3 right-3">
+                <span className="px-2 py-0.5 rounded-full bg-[#F21717]/20 border border-[#F21717]/40 text-[9px] font-bold text-[#F21717] uppercase tracking-wider">
+                  MOST POPULAR
+                </span>
+              </div>
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
+                  US ATHLETES
+                </span>
+                <h3 className="font-display uppercase text-xl font-bold text-white">
+                  US Student Pass
+                </h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-display font-black text-3xl text-white">$29.99</span>
+                  <span className="text-xs text-[#A3A3A3]">/ one-time</span>
+                </div>
+                <p className="text-xs text-[#A3A3A3] leading-relaxed">
+                  Full access to student academy, AI interview scenarios, and athlete profile tools.
+                </p>
+              </div>
+              <Link href="/signup?plan=us_athlete">
+                <Button variant="athletic" size="sm" className="w-full text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F] text-white">
+                  Register US Pass ($29.99)
+                </Button>
+              </Link>
+            </Card>
+
+            {/* Tier 2: International Pass */}
+            <Card className="bg-[#111111] border-white/10 p-6 flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold tracking-widest text-amber-400 uppercase block">
+                  GLOBAL ATHLETES
+                </span>
+                <h3 className="font-display uppercase text-xl font-bold text-white">
+                  International Pass
+                </h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-display font-black text-3xl text-white">$75.00</span>
+                  <span className="text-xs text-[#A3A3A3]">/ one-time</span>
+                </div>
+                <p className="text-xs text-[#A3A3A3] leading-relaxed">
+                  Elite Pacific Sports roster placement, global recruiting pathways, and full academy access.
+                </p>
+              </div>
+              <Link href="/signup?plan=international">
+                <Button variant="outline" size="sm" className="w-full text-xs font-bold border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
+                  Register Global Pass ($75)
+                </Button>
+              </Link>
+            </Card>
+          </div>
+        </div>
+
         {/* WHAT IS REP 1 Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6 md:p-8 space-y-2">
