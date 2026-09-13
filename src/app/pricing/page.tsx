@@ -32,7 +32,7 @@ export default function PricingPage() {
         "One-time fee — lifetime access",
       ],
       cta: "Join US Membership",
-      href: "/signup",
+      href: "/signup?plan=us_athlete",
       highlight: true,
       badgeText: "Most Popular",
     },
@@ -49,7 +49,7 @@ export default function PricingPage() {
         "One-time fee — lifetime access",
       ],
       cta: "Join International Pass",
-      href: "/signup",
+      href: "/signup?plan=international",
       highlight: false,
     },
     {

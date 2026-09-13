@@ -156,7 +156,7 @@ export function MediaCarousel() {
           </button>
         </div>
 
-        {/* Embedded HTML5 Video Player playing IMG_7333.mov */}
+        {/* Embedded HTML5 Video Player playing video.mov */}
         <div className="relative flex-1 rounded-xl overflow-hidden border border-white/10 bg-black mb-3">
           <video
             ref={videoRef}
@@ -166,7 +166,8 @@ export function MediaCarousel() {
             poster="/images/athletes_team.jpeg"
             className="w-full h-full object-cover"
           >
-            <source src="/images/camp_video.mov" type="video/mp4" />
+            <source src="/images/video.mov" type="video/quicktime" />
+            <source src="/images/video.mov" type="video/mp4" />
             <source src="/images/IMG_7333.mov" type="video/quicktime" />
             Your browser does not support HTML5 video playback.
           </video>
@@ -212,7 +213,8 @@ export function MediaCarousel() {
                   poster="/images/athletes_team.jpeg"
                   className="w-full h-full object-contain"
                 >
-                  <source src="/images/camp_video.mov" type="video/mp4" />
+                  <source src="/images/video.mov" type="video/quicktime" />
+                  <source src="/images/video.mov" type="video/mp4" />
                   <source src="/images/IMG_7333.mov" type="video/quicktime" />
                   Your browser does not support HTML5 video.
                 </video>

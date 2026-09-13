@@ -43,3 +43,8 @@ next-env.d.ts
 # temporary scratch files
 scratch/
 
+# large media files
+*.mov
+video.mov
+
+

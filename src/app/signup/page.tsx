@@ -5,15 +5,19 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, Button, Input, Select } from "@/components/ui";
 import { useAuth } from "@/lib/auth-context";
-import { ArrowRight, Flame, Loader2, ShieldCheck, CheckCircle2, DollarSign } from "lucide-react";
+import { ArrowRight, Flame, Loader2, ShieldCheck, CheckCircle2, DollarSign, Lock } from "lucide-react";
 
 function SignupForm() {
   const { signup } = useAuth();
   const searchParams = useSearchParams();
 
-  const initialPlan = searchParams.get("plan") || "us_athlete";
+  const rawPlan = searchParams.get("plan");
   const courseSlugParam = searchParams.get("courseSlug") || "";
   const courseIdParam = searchParams.get("courseId") || "";
+
+  const isPlanLocked = searchParams.has("plan") || Boolean(courseSlugParam || courseIdParam);
+
+  const initialPlan = rawPlan || "us_athlete";
 
   const [region, setRegion] = React.useState<"us" | "international" | "course">(
     initialPlan === "course" || courseSlugParam || courseIdParam
@@ -137,9 +141,16 @@ function SignupForm() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">
-              Athlete Nationality / Membership Tier
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-[#A3A3A3]">
+                Selected Membership Tier / Pass
+              </label>
+              {isPlanLocked && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#F21717]">
+                  <Lock className="w-3 h-3" /> Selected & Locked
+                </span>
+              )}
+            </div>
             <Select
               options={[
                 { value: "us", label: "US / American Athlete ($29.99)" },
@@ -150,8 +161,17 @@ function SignupForm() {
               ]}
               value={region}
               onChange={(e) => setRegion(e.target.value as "us" | "international" | "course")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isPlanLocked}
             />
+            {isPlanLocked && (
+              <p className="text-[11px] text-[#737373] mt-1">
+                Locked to your selected option. To choose a different tier, visit our{" "}
+                <Link href="/pricing" className="text-[#F21717] hover:underline font-semibold">
+                  Pricing Page
+                </Link>
+                .
+              </p>
+            )}
           </div>
 
           <div>

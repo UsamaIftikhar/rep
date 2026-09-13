@@ -103,6 +103,17 @@ model AthleteProfile {
   profileVisibility   Boolean  @default(true)
   profileCompleteness Int      @default(0)
   metrics             Json?
+  
+  // Admin & Staff Scouting Evaluations
+  adminNotes          String?  @db.Text
+  ratingSpeed         Float?
+  ratingExplosiveness Float?
+  ratingAgility       Float?
+  ratingStrength      Float?
+  ratingToughness     Float?
+  ratingProduction    Float?
+  ratingTechnique     Float?
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
