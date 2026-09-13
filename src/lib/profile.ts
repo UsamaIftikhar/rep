@@ -59,6 +59,25 @@ export async function getPublicProfileBySlug(slug: string) {
               badge: true,
             },
           },
+          enrollments: {
+            where: {
+              status: "COMPLETED",
+            },
+            include: {
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  category: true,
+                  coverImage: true,
+                },
+              },
+            },
+            orderBy: {
+              completedAt: "desc",
+            },
+          },
         },
       },
     },
