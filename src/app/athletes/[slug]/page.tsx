@@ -599,29 +599,40 @@ export default function PublicAthleteProfilePage() {
                     </div>
 
                     {athlete.user.enrollments && athlete.user.enrollments.length > 0 ? (
-                      <div className="space-y-2.5">
+                      <div className="space-y-3">
                         {athlete.user.enrollments.map((e) => (
-                          <div key={e.id} className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#F21717]/40 transition-colors flex items-center justify-between gap-3">
+                          <Link
+                            key={e.id}
+                            href={`/courses/${e.course.slug}`}
+                            className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#F21717]/60 hover:bg-white/[0.08] transition-all flex items-center justify-between gap-3 group block"
+                          >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0 group-hover:scale-105 transition-transform">
                                 <CheckCircle2 className="w-5 h-5" />
                               </div>
                               <div className="min-w-0">
                                 <span className="text-[9px] font-bold text-[#F21717] uppercase tracking-wider block">
                                   {e.course.category || "Student Academy"}
                                 </span>
-                                <p className="text-xs font-bold text-white truncate">{e.course.title}</p>
+                                <h4 className="text-xs font-bold text-white group-hover:text-[#F21717] transition-colors leading-snug">
+                                  {e.course.title}
+                                </h4>
                                 {e.completedAt && (
-                                  <p className="text-[10px] text-[#A3A3A3]">
+                                  <p className="text-[10px] text-[#A3A3A3] mt-0.5">
                                     Completed {new Date(e.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                   </p>
                                 )}
                               </div>
                             </div>
-                            <span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] uppercase flex-shrink-0">
-                              Verified
-                            </span>
-                          </div>
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[9px] uppercase tracking-wider">
+                                Verified Pass
+                              </span>
+                              <span className="text-[10px] text-[#737373] group-hover:text-white font-semibold transition-colors flex items-center gap-0.5">
+                                View Course <ExternalLink className="w-2.5 h-2.5" />
+                              </span>
+                            </div>
+                          </Link>
                         ))}
                       </div>
                     ) : (
