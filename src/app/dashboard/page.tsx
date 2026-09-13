@@ -18,8 +18,20 @@ export default function DashboardPage() {
   });
   const [latestInterview, setLatestInterview] = React.useState<{ tier: string; score: number } | null>(null);
 
+  const [slug, setSlug] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
+
   React.useEffect(() => {
     let mounted = true;
+
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data?.profile?.slug) {
+          setSlug(data.profile.slug);
+        }
+      })
+      .catch(() => {});
 
     fetch("/api/courses")
       .then((res) => (res.ok ? res.json() : null))
@@ -55,6 +67,14 @@ export default function DashboardPage() {
 
   const athleteName = user?.firstName || user?.name || "Athlete";
 
+  const handleCopyLink = () => {
+    if (!slug) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/athletes/${slug}` : `https://rep1exposure.com/athletes/${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <AppShell>
       <div className="space-y-6 pb-12">
@@ -83,21 +103,45 @@ export default function DashboardPage() {
           </div>
 
           {/* Welcome Card Overlay */}
-          <div className="absolute bottom-6 left-6 z-10 max-w-md w-[calc(100%-3rem)] bg-[#111111]/90 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-2xl">
-            <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1.5">
-              ATHLETE DASHBOARD
-            </span>
-            <h2 className="font-display uppercase text-2xl md:text-3xl font-black text-white leading-tight mb-2">
-              Welcome back, {athleteName}
-            </h2>
-            <p className="text-xs text-[#A3A3A3] mb-4 leading-relaxed">
-              Your recruiting profile, academy progress, and recruiter activity at a glance.
-            </p>
-            <Link href="/settings">
-              <Button variant="primary" size="sm" className="gap-2 text-xs font-bold">
-                View Full Profile <ArrowRight className="w-3.5 h-3.5" />
-              </Button>
-            </Link>
+          <div className="absolute bottom-6 left-6 z-10 max-w-md w-[calc(100%-3rem)] bg-[#111111]/90 backdrop-blur-md p-6 rounded-xl border border-white/10 shadow-2xl space-y-3">
+            <div>
+              <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
+                ATHLETE DASHBOARD
+              </span>
+              <h2 className="font-display uppercase text-2xl md:text-3xl font-black text-white leading-tight">
+                Welcome back, {athleteName}
+              </h2>
+              <p className="text-xs text-[#A3A3A3] leading-relaxed">
+                Your recruiting profile, academy progress, and staff ratings at a glance.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Link href="/settings">
+                <Button variant="primary" size="sm" className="gap-2 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]">
+                  Profile Settings <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
+
+              {slug && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyLink}
+                    className="gap-1.5 text-xs font-semibold border-white/20 hover:border-white text-white"
+                  >
+                    {copied ? "Copied Link!" : "Copy Shareable Link"}
+                  </Button>
+                  <Link href={`/athletes/${slug}`} target="_blank">
+                    <Button variant="outline" size="sm" className="text-xs font-semibold border-white/20 hover:border-white text-white">
+                      View Profile
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Textarea } from "@/components/ui";
-import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2 } from "lucide-react";
+import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2, Copy, Check, ExternalLink, Share2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function SettingsPage() {
@@ -15,7 +15,9 @@ export default function SettingsPage() {
 
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
+  const [slug, setSlug] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [schoolClub, setSchoolClub] = React.useState("");
@@ -45,6 +47,7 @@ export default function SettingsPage() {
       .then((data) => {
         if (mounted && data?.profile) {
           const p = data.profile;
+          if (p.slug) setSlug(p.slug);
           setFirstName(p.user?.firstName || user?.firstName || "");
           setLastName(p.user?.lastName || user?.lastName || "");
           setSchoolClub(p.schoolClub || "");
@@ -175,6 +178,14 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCopyLink = () => {
+    if (!slug) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/athletes/${slug}` : `https://rep1exposure.com/athletes/${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   if (loading) {
     return (
       <AppShell>
@@ -196,6 +207,61 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          {slug && (
+            <Card className="bg-[#111111] border-[#F21717]/30 shadow-[0_0_30px_rgba(242,23,23,0.15)]">
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center text-[#F21717] flex-shrink-0">
+                      <Share2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display uppercase text-sm font-bold text-white tracking-wider">
+                        Your Shareable Recruiting Profile Link
+                      </h3>
+                      <p className="text-[11px] text-[#A3A3A3]">
+                        Share this verified URL with college coaches & scouts to view your profile and staff ratings.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyLink}
+                      className="gap-1.5 text-xs font-semibold"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? "Copied!" : "Copy Link"}
+                    </Button>
+
+                    <a href={`/athletes/${slug}`} target="_blank" rel="noreferrer">
+                      <Button
+                        type="button"
+                        variant="athletic"
+                        size="sm"
+                        className="gap-1.5 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> View Profile
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#171717] border border-white/10 flex items-center justify-between">
+                  <span className="font-mono text-xs text-white truncate mr-2">
+                    {typeof window !== "undefined" ? `${window.location.origin}/athletes/${slug}` : `https://rep1exposure.com/athletes/${slug}`}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 flex-shrink-0">
+                    Live Link
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
