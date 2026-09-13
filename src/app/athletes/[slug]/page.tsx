@@ -413,7 +413,7 @@ export default function PublicAthleteProfilePage() {
                           Official Staff Scouting Report
                         </h3>
                         <p className="text-[11px] text-[#A3A3A3]">
-                          Evaluated by Jesse & REP 1 Scouting Staff
+                          Evaluated by REP 1 Scouting Staff
                         </p>
                       </div>
                     </div>
@@ -601,7 +601,7 @@ export default function PublicAthleteProfilePage() {
             <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
               <div>
                 <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5">
-                  Jesse / Staff Scouting Notes
+                  Staff Scouting Notes
                 </label>
                 <textarea
                   value={evalAdminNotes}

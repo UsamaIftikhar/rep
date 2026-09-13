@@ -692,7 +692,7 @@ export default function AdminDashboardPage() {
                 <div className="space-y-6">
                   <div className="p-4 rounded-xl bg-[#F21717]/10 border border-[#F21717]/30 space-y-2">
                     <h4 className="font-display uppercase text-sm font-bold text-white flex items-center gap-1.5">
-                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Jesse & Staff Scouting Evaluation
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Staff Scouting Evaluation
                     </h4>
                     <p className="text-[11px] text-[#D4D4D4]">
                       Enter overall staff evaluation notes and rate the athlete on a scale of 1 to 5 for each attribute. These ratings will be visible on their verified public profile for scouts and recruiters.
@@ -701,7 +701,7 @@ export default function AdminDashboardPage() {
 
                   <div>
                     <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5">
-                      Jesse / Staff Scouting Notes & Assessment
+                      Staff Scouting Notes & Assessment
                     </label>
                     <textarea
                       value={formAdminNotes}
