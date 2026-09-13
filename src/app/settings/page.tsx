@@ -204,7 +204,11 @@ export default function SettingsPage() {
                       onChange={(e) => setSport(e.target.value)}
                       options={[
                         { value: "football", label: "American Football" },
+                        { value: "flag_football", label: "Flag Football" },
                         { value: "basketball", label: "Basketball" },
+                        { value: "volleyball", label: "Volleyball" },
+                        { value: "swimming", label: "Swimming" },
+                        { value: "golf", label: "Golf" },
                         { value: "rugby", label: "Rugby League / Union" },
                         { value: "soccer", label: "Soccer" },
                         { value: "track", label: "Track & Field" },

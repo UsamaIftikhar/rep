@@ -111,7 +111,11 @@ export default function RecruitSearchPage() {
                   options={[
                     { value: "", label: "All Sports" },
                     { value: "football", label: "Football" },
+                    { value: "flag_football", label: "Flag Football" },
                     { value: "basketball", label: "Basketball" },
+                    { value: "volleyball", label: "Volleyball" },
+                    { value: "swimming", label: "Swimming" },
+                    { value: "golf", label: "Golf" },
                     { value: "rugby", label: "Rugby" },
                     { value: "soccer", label: "Soccer" },
                     { value: "track", label: "Track & Field" },

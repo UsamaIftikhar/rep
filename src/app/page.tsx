@@ -21,7 +21,7 @@ export default function HomePage() {
         {/* Public Hero Banner */}
         <div className="relative w-full h-[460px] md:h-[540px] rounded-3xl overflow-hidden border border-white/10 bg-[#0A0A0A]">
           <Image
-            src="/images/IMG_7403.jpeg"
+            src="/images/hero-athletes.webp"
             alt="REP 1 Coaches and Athletes"
             fill
             unoptimized
@@ -45,7 +45,7 @@ export default function HomePage() {
           <div className="absolute bottom-8 left-6 md:left-10 z-10 max-w-xl w-[calc(100%-3rem)] bg-[#111111]/90 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-white/10 shadow-2xl space-y-4">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-[#F21717]/20 border border-[#F21717]/40 text-[10px] font-bold tracking-widest text-[#F21717] uppercase">
-                ATHLETE RECRUITING & COMBINE PLATFORM
+                ATHLETE RECRUITING & EDUCATION PLATFORM
               </span>
             </div>
             <h1 className="font-display uppercase text-3xl md:text-4xl lg:text-5xl font-black text-white leading-none">

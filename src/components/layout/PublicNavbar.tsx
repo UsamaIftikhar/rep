@@ -37,7 +37,7 @@ export function PublicNavbar() {
               REP <span className="text-[#F21717]">1</span>
             </span>
             <span className="text-[10px] tracking-widest text-[#737373] uppercase font-semibold">
-              Athletics & Recruiting
+              Exposure
             </span>
           </div>
         </Link>

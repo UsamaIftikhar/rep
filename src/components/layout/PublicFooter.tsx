@@ -9,7 +9,7 @@ export function PublicFooter() {
             R1
           </div>
           <span className="font-display uppercase tracking-widest text-sm font-bold text-white">
-            REP 1 Athletics & Recruiting
+            REP 1 Exposure
           </span>
         </div>
 
