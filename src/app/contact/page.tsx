@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { PublicNavbar, PublicFooter } from "@/components/layout";
 import { PageHeader, Card, CardContent, Button, Input, Textarea } from "@/components/ui";
