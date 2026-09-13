@@ -7,44 +7,63 @@ export default function PricingPage() {
   const plans = [
     {
       name: "Classroom Pass",
-      price: "A La Carte",
-      desc: "Single course purchase for individual development.",
+      price: "$9.99",
+      period: "/course",
+      desc: "Per course purchase for unlimited lifetime development.",
       features: [
-        "Individual course lifetime access",
+        "Unlimited lifetime access per course",
         "Lesson progress tracking",
-        "Downloadable athlete guides",
+        "Downloadable athlete guides & resources",
       ],
       cta: "Explore Courses",
       href: "/classroom",
       highlight: false,
     },
     {
-      name: "REP 1 Full Membership",
-      price: "$75",
-      period: "/month",
-      desc: "All-inclusive athlete development, Academy access, and AI interview prep.",
+      name: "American Student Pass",
+      price: "$29.99",
+      period: "One-time fee",
+      desc: "Full membership for US student-athletes.",
       features: [
-        "Full access to all 6+ Student Academy courses",
-        "Unlimited AI Mock Interview sessions",
-        "Verified profile on Elite Pacific Sports",
-        "Earn official Academy badges",
-        "Recruiting exposure & event priority",
+        "Full access to all Student Academy courses",
+        "Unlimited AI Mock Interview practice",
+        "Verified athletic profile & combine metrics",
+        "Earn official Academy completion badges",
+        "One-time fee — lifetime access",
       ],
-      cta: "Join REP 1 Membership",
+      cta: "Join US Membership",
       href: "/signup",
       highlight: true,
+      badgeText: "Most Popular",
+    },
+    {
+      name: "International Athlete Pass",
+      price: "$75",
+      period: "One-time fee",
+      desc: "Full membership for Australian & International prospects.",
+      features: [
+        "Full access to all Student Academy courses",
+        "Australia-to-America recruiting roadmap",
+        "Verified profile on Elite Pacific Sports network",
+        "Unlimited AI Mock Interview prep",
+        "One-time fee — lifetime access",
+      ],
+      cta: "Join International Pass",
+      href: "/signup",
+      highlight: false,
     },
     {
       name: "Recruiter & Scout Pass",
-      price: "Annual",
+      price: "$49.99",
+      period: "/year",
       desc: "For college coaches, athletic directors, and scout organizations.",
       features: [
-        "Full athlete roster search & filtering",
-        "Academic & physical verified stats",
+        "Access to search & view every recruit in the database",
+        "Academic & physical verified combine stats",
         "Direct athlete & coach contact details",
-        "Recruiting alert watchlist",
+        "Recruiting alert watchlist & scouting tools",
       ],
-      cta: "Contact Recruiting",
+      cta: "Get Recruiter Pass",
       href: "/contact",
       highlight: false,
     },
@@ -61,7 +80,7 @@ export default function PricingPage() {
           description="Invest in your athletic and collegiate career with comprehensive preparation and recruiting access."
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((p) => (
             <Card
               key={p.name}
@@ -70,12 +89,12 @@ export default function PricingPage() {
             >
               <CardHeader>
                 {p.highlight && (
-                  <Badge variant="athletic" className="mb-2 self-start">
-                    Most Popular
+                  <Badge variant="athletic" className="mb-2 self-start bg-[#F21717]">
+                    {p.badgeText || "Most Popular"}
                   </Badge>
                 )}
                 <CardTitle isDisplay>{p.name}</CardTitle>
-                <div className="flex items-baseline gap-1 my-3">
+                <div className="flex items-baseline gap-1.5 my-3">
                   <span className="font-display text-4xl font-black text-white">
                     {p.price}
                   </span>
@@ -100,7 +119,7 @@ export default function PricingPage() {
                   <Button
                     variant={p.highlight ? "athletic" : "secondary"}
                     size="md"
-                    className="w-full"
+                    className={p.highlight ? "w-full bg-[#F21717] hover:bg-[#D90F0F]" : "w-full"}
                   >
                     {p.cta}
                   </Button>

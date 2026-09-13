@@ -15,7 +15,7 @@ interface MediaSlide {
 const slides: MediaSlide[] = [
   {
     id: 1,
-    title: "Elite Pacific Football Prospects",
+    title: "Elite Pacific Sports Prospects",
     category: "Recruiting Combine • Brisbane",
     imageUrl: "/images/athletes_team.jpeg",
     objectPosition: "object-center",

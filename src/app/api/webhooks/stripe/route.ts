@@ -45,7 +45,7 @@ export async function POST(req: Request) {
                 stripeCheckoutSessionId: session.id,
                 stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
                 stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
-                amountInCents: session.amount_total || 4900,
+                amountInCents: session.amount_total || 999,
                 currency: session.currency || "usd",
                 status: "completed",
               },

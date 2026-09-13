@@ -3,7 +3,10 @@ import { EnrollmentStatus, EnrollmentSource } from "@prisma/client";
 
 export async function getCoursesWithUserProgress(userId?: string | null) {
   const courses = await db.course.findMany({
-    where: { isPublished: true },
+    where: {
+      isPublished: true,
+      slug: { notIn: ["diagnostic-report", "system-audit"] },
+    },
     orderBy: { order: "asc" },
     include: {
       lessons: {

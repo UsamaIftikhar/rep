@@ -13,16 +13,22 @@ export function PublicNavbar() {
   const { isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const baseLinks = [
+  const unauthLinks = [
     { label: "Home", href: "/" },
-    { label: "Elite Pacific", href: "/elite-pacific" },
+    { label: "Elite Pacific Sports", href: "/elite-pacific" },
+    { label: "Classroom", href: "/classroom" },
     { label: "Mock AI Interview", href: "/interview" },
   ];
 
-  // Classroom & Student Academy show when logged in
-  const links = isAuthenticated
-    ? [...baseLinks, { label: "Classroom", href: "/courses" }, { label: "Student Academy", href: "/academy" }]
-    : baseLinks;
+  const authLinks = [
+    { label: "Home", href: "/" },
+    { label: "Elite Pacific Sports", href: "/elite-pacific" },
+    { label: "Classroom", href: "/courses" },
+    { label: "Student Academy", href: "/academy" },
+    { label: "Mock AI Interview", href: "/interview" },
+  ];
+
+  const links = isAuthenticated ? authLinks : unauthLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070707]/95 backdrop-blur-md border-b border-white/10">

@@ -13,7 +13,7 @@ const courseSchema = z.object({
   isRequiredForAcademy: z.boolean().default(true),
   includedWithMembership: z.boolean().default(true),
   standalonePurchasable: z.boolean().default(false),
-  priceInCents: z.number().int().default(4900),
+  priceInCents: z.number().int().default(999),
 });
 
 export async function GET() {

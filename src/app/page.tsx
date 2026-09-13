@@ -96,19 +96,7 @@ export default function HomePage() {
         </div>
 
         {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-[#111111] border-white/10 p-6 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F21717]/15 border border-[#F21717]/30 flex items-center justify-center text-[#F21717]">
-              <Trophy className="w-5 h-5" />
-            </div>
-            <h3 className="font-display uppercase text-lg font-bold text-white">
-              Verified Combine Metrics
-            </h3>
-            <p className="text-xs text-[#A3A3A3] leading-relaxed">
-              Laser-timed 40-yard sprints, broad jumps, and verified athletic profiles scouted by college programs.
-            </p>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-[#111111] border-white/10 p-6 space-y-3">
             <div className="w-10 h-10 rounded-xl bg-[#00D1B2]/15 border border-[#00D1B2]/30 flex items-center justify-center text-[#00D1B2]">
               <Sparkles className="w-5 h-5" />
@@ -132,7 +120,7 @@ export default function HomePage() {
               Elite Pacific Sports
             </h3>
             <p className="text-xs text-[#A3A3A3] leading-relaxed">
-              Dedicated recruiting network connecting top Australian football prospects with global collegiate pathways.
+              Dedicated recruiting network connecting top Australian athletic prospects with global collegiate pathways.
             </p>
             <Link href="/elite-pacific" className="inline-block text-xs font-semibold text-amber-400 hover:underline">
               Explore Australian Talent →
@@ -155,7 +143,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        {/* Bottom 2-Col: Upcoming Events & Athletes of the Month */}
+        {/* Bottom 2-Col: Upcoming Events & Rep 1 Top Performers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-[#111111] border-white/10 p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-2">
@@ -171,10 +159,10 @@ export default function HomePage() {
 
           <Card className="bg-[#111111] border-white/10 p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-2">
-              ATHLETES OF THE MONTH
+              REP 1 TOP PERFORMERS
             </span>
             <h4 className="font-display uppercase text-lg font-bold text-white mb-2">
-              Gridiron & Track Standouts
+              Featured Athletes
             </h4>
             <p className="text-xs text-[#737373]">
               Nominations open for verified combine test leaders.

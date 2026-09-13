@@ -47,23 +47,28 @@ export async function canAccessCourse(userId: string, courseId: string): Promise
 
   const course = await db.course.findUnique({
     where: { id: courseId },
-    select: { includedWithMembership: true, standalonePurchasable: true },
+    select: { id: true, includedWithMembership: true, standalonePurchasable: true },
   });
 
   if (!course) return false;
 
-  // Membership included
-  if (course.includedWithMembership) {
+  // Active subscription or Full Access Membership entitlement unlocks all courses
+  const hasSub = user.subscriptions.length > 0;
+  const hasFullMembership = user.entitlements.some(
+    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC"
+  );
+
+  if (hasSub || hasFullMembership) {
     return true;
   }
 
-  // Check explicit course purchase or entitlement
+  // Check explicit single course purchase or course entitlement
   const hasPurchased = user.purchases.some((p) => p.courseId === courseId);
-  const hasEntitlement = user.entitlements.some(
+  const hasCourseEntitlement = user.entitlements.some(
     (e) => e.type === "COURSE" && e.referenceId === courseId
   );
 
-  return hasPurchased || hasEntitlement;
+  return hasPurchased || hasCourseEntitlement;
 }
 
 export async function canAccessElitePacific(userId: string): Promise<boolean> {

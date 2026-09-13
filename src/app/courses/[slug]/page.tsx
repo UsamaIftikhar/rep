@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { Button, Card, CardContent } from "@/components/ui";
-import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, BookOpen, Clock, Loader2, Award, Menu, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, BookOpen, Clock, Loader2, Award, Menu, X, Lock } from "lucide-react";
 
 interface LessonData {
   id: string;
@@ -36,6 +36,8 @@ export default function CoursePlayerPage() {
   const [completedLessonIds, setCompletedLessonIds] = React.useState<string[]>([]);
   const [progressPercent, setProgressPercent] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+  const [isLocked, setIsLocked] = React.useState(false);
+  const [isPurchasing, setIsPurchasing] = React.useState(false);
   const [completing, setCompleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -54,14 +56,15 @@ export default function CoursePlayerPage() {
       .then((data) => {
         if (data.course) {
           setCourse(data.course);
+          setIsLocked(!!data.isLocked);
           setCompletedLessonIds(data.course.completedLessonIds || []);
           setProgressPercent(data.course.progressPercent || 0);
 
           // Find first uncompleted lesson index or default to 0
-          const firstUncompleted = data.course.lessons.findIndex(
-            (l: LessonData) => !data.course.completedLessonIds.includes(l.id)
+          const firstUncompleted = data.course.lessons?.findIndex(
+            (l: LessonData) => !data.course.completedLessonIds?.includes(l.id)
           );
-          if (firstUncompleted !== -1) {
+          if (firstUncompleted !== undefined && firstUncompleted !== -1) {
             setActiveLessonIndex(firstUncompleted);
           }
         }
@@ -74,12 +77,90 @@ export default function CoursePlayerPage() {
       });
   }, [slug]);
 
+  const handlePurchase = async (type: "COURSE" | "SUBSCRIPTION") => {
+    setIsPurchasing(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: type === "SUBSCRIPTION" ? "US_ATHLETE" : "COURSE", courseId: course?.id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.replace(data.url);
+      } else {
+        alert(data.error || "Unable to initiate payment session");
+      }
+    } catch {
+      alert("Network error initiating payment session");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
   if (loading) {
     return (
       <AppShell>
         <div className="py-24 flex flex-col items-center justify-center text-[#A3A3A3]">
           <Loader2 className="w-8 h-8 animate-spin text-[#F21717] mb-2" />
           <p className="text-xs uppercase tracking-widest font-semibold">Loading Course Curriculum...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (isLocked && course) {
+    return (
+      <AppShell>
+        <div className="max-w-3xl mx-auto py-12 space-y-8">
+          <Link href="/classroom" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#A3A3A3] hover:text-white">
+            <ArrowLeft className="w-4 h-4" /> Back to Classroom
+          </Link>
+
+          <div className="p-8 rounded-2xl bg-gradient-to-r from-[#111111] via-[#161616] to-[#111111] border border-[#F21717]/40 shadow-[0_0_30px_rgba(242,23,23,0.2)] text-center space-y-6 relative overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl bg-[#F21717]/15 border border-[#F21717]/30 flex items-center justify-center text-[#F21717] mx-auto shadow-[0_0_20px_rgba(242,23,23,0.3)]">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
+                PREMIUM CURRICULUM • PAYMENT REQUIRED
+              </span>
+              <h2 className="font-display uppercase text-3xl font-black text-white">
+                {course.title} is Locked
+              </h2>
+              <p className="text-xs md:text-sm text-[#A3A3A3] max-w-xl mx-auto leading-relaxed">
+                {course.description}
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                onClick={() => handlePurchase("COURSE")}
+                disabled={isPurchasing}
+                variant="athletic"
+                size="lg"
+                className="w-full sm:w-auto bg-[#F21717] hover:bg-[#D90F0F] font-bold gap-2 text-xs"
+              >
+                {isPurchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                Unlock This Course ($9.99)
+              </Button>
+
+              <Button
+                onClick={() => handlePurchase("SUBSCRIPTION")}
+                disabled={isPurchasing}
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 font-bold gap-2 text-xs"
+              >
+                Get Full Access Pass ($29.99)
+              </Button>
+            </div>
+
+            <p className="text-[11px] text-[#737373]">
+              Full Access members unlock all Student Academy courses, unlimited AI Mock Interviews, and verified profile features.
+            </p>
+          </div>
         </div>
       </AppShell>
     );

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, LogIn, ChevronLeft, ChevronRight, CheckCircle2, Loader2, Shield } from "lucide-react";
+import { PlusCircle, LogIn, ChevronLeft, ChevronRight, CheckCircle2, Loader2, Shield, Trophy } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 interface MediaSlide {
@@ -21,7 +21,7 @@ interface MediaSlide {
 const slides: MediaSlide[] = [
   {
     id: 1,
-    title: "Elite Pacific Football Prospects",
+    title: "Elite Pacific Sports Prospects",
     category: "Recruiting Combine • Brisbane",
     imageUrl: "/images/athletes_team.jpeg",
     objectPosition: "object-center",
@@ -217,21 +217,25 @@ export default function ElitePacificPage() {
           )}
         </div>
 
-        {/* WHAT IS REP 1 Section Card */}
-        <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-[#111111] via-[#161616] to-[#111111] border border-[#F21717]/30 shadow-[0_0_30px_rgba(242,23,23,0.15)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F21717]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 space-y-3">
-            <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
-              WHAT IS REP 1
-            </span>
-            <h3 className="font-display uppercase text-2xl md:text-3xl font-black text-white leading-tight">
-              The Recruiting Platform Built for Athletes
-            </h3>
-            <p className="text-sm md:text-base text-[#D4D4D4] leading-relaxed max-w-3xl">
-              Rep 1 connects student-athletes with college recruiters through combine-testing data, verified performance metrics, and academy training progress. Build a standout profile, track your athletic growth, and get discovered by the programs looking for players just like you.
-            </p>
+        {/* Verified Combine Metrics Feature Card */}
+        <Card className="bg-[#111111] border-[#F21717]/30 p-6 space-y-3 shadow-[0_0_20px_rgba(242,23,23,0.1)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#F21717]/15 border border-[#F21717]/30 flex items-center justify-center text-[#F21717]">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#F21717] block">
+                OFFICIAL RECRUITING METRICS
+              </span>
+              <h3 className="font-display uppercase text-lg font-bold text-white">
+                Verified Combine Metrics
+              </h3>
+            </div>
           </div>
-        </div>
+          <p className="text-xs md:text-sm text-[#A3A3A3] leading-relaxed">
+            Laser-timed 40-yard sprints, vertical & broad jumps, and verified athletic profiles scouted by college programs across Australia and internationally.
+          </p>
+        </Card>
 
         {/* Two Column Grid: About & Prospects */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
@@ -272,11 +276,14 @@ export default function ElitePacificPage() {
                   <h5 className="font-display uppercase text-base font-semibold text-white">
                     Elite Pacific Sports
                   </h5>
-                  <div className="font-display font-black text-4xl text-[#F21717]">
-                    $75/mo
+                  <div className="flex items-baseline justify-center gap-1 my-1">
+                    <span className="font-display font-black text-4xl text-[#F21717]">
+                      $75
+                    </span>
+                    <span className="text-xs text-[#737373]">One-time fee</span>
                   </div>
                   <p className="text-xs text-[#737373]">
-                    Unlock the full Australian prospect database.
+                    One-time fee — unlock the full Australian prospect database with lifetime access.
                   </p>
                 </CardContent>
               </Card>

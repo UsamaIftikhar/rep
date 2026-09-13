@@ -28,7 +28,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "australia-to-america",
@@ -40,7 +40,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "athletes-for-impact",
@@ -52,7 +52,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "behavioral-analysis",
@@ -64,7 +64,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "conflict-resolution",
@@ -76,7 +76,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "marketing-playbook",
@@ -88,7 +88,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: true,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
+    priceInCents: 999,
   },
   {
     slug: "personal-branding",
@@ -100,19 +100,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     isRequiredForAcademy: false,
     includedWithMembership: true,
     standalonePurchasable: true,
-    priceInCents: 4900,
-  },
-  {
-    slug: "diagnostic-report",
-    file: "Rep1-Diagnostic-Report.md",
-    title: "Rep 1 System Diagnostic Report",
-    description: "Full technical audit, architecture breakdown, data model analysis, privacy rules verification, and launch roadmap for Rep 1.",
-    category: "System Audit",
-    order: 8,
-    isRequiredForAcademy: false,
-    includedWithMembership: true,
-    standalonePurchasable: false,
-    priceInCents: 0,
+    priceInCents: 999,
   },
 ];
 
@@ -125,6 +113,9 @@ function slugify(text: string): string {
 
 async function main() {
   console.log("Seeding full REP 1 Student Academy courses from markdown files...");
+
+  // Delete unwanted diagnostic report course if exists
+  await prisma.course.deleteMany({ where: { slug: "diagnostic-report" } });
 
   const coursesDir = path.join(process.cwd(), "public", "courses");
 

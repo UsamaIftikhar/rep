@@ -89,7 +89,7 @@ export default function ClassroomPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {courses.map((c) => {
-              const formattedPrice = c.priceInCents > 0 ? `$${(c.priceInCents / 100).toFixed(2)}` : "$49.00";
+              const formattedPrice = c.priceInCents > 0 ? `$${(c.priceInCents / 100).toFixed(2)}` : "$9.99";
               const isEntitled = isAuthenticated && (c.includedWithMembership || c.status !== "NOT_STARTED");
 
               return (
@@ -100,7 +100,7 @@ export default function ClassroomPage() {
                         {isEntitled ? "Included" : formattedPrice}
                       </span>
                       <Badge variant={isEntitled ? "success" : "neutral"}>
-                        {isEntitled ? "Active Access" : "One-time Access"}
+                        {isEntitled ? "Active Access" : "Unlimited Access"}
                       </Badge>
                     </div>
                     <CardTitle isDisplay>{c.title}</CardTitle>
@@ -116,8 +116,8 @@ export default function ClassroomPage() {
 
                     {!isAuthenticated ? (
                       <Link href="/login">
-                        <Button variant="primary" size="md" className="w-full gap-2">
-                          Sign In to Enroll <ArrowRight className="w-4 h-4" />
+                        <Button variant="athletic" size="md" className="w-full gap-2 bg-[#F21717] hover:bg-[#D90F0F] font-bold">
+                          Pay & Enroll ({formattedPrice}) <ArrowRight className="w-4 h-4" />
                         </Button>
                       </Link>
                     ) : isEntitled ? (

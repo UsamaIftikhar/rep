@@ -62,7 +62,7 @@ export default function DashboardPage() {
         <div className="relative w-full h-[440px] md:h-[500px] rounded-2xl overflow-hidden border border-white/10 bg-[#0A0A0A]">
           {/* Athlete Imagery */}
           <Image
-            src="/images/IMG_7403.jpeg"
+            src="/images/hero-athletes.webp"
             alt="REP 1 Coaches and Athletes"
             fill
             unoptimized
@@ -76,7 +76,7 @@ export default function DashboardPage() {
           <div className="absolute inset-0 bg-radial from-[#F21717]/20 via-transparent to-transparent pointer-events-none" />
 
           {/* Huge Stencil REP 1 Branding */}
-          <div className="absolute top-1/2 left-8 -translate-y-1/2 select-none pointer-events-none opacity-25 hidden md:block">
+          <div className="absolute top-2/5 left-8 -translate-y-1/2 select-none pointer-events-none opacity-25 hidden md:block">
             <span className="font-display font-black text-8xl md:text-9xl tracking-tighter text-[#F21717]">
               REP 1
             </span>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-3">
               UPCOMING EVENTS
             </span>
-            <p className="text-xs text-[#737373]">No upcoming events scheduled.</p>
+            <p className="text-xs text-[#737373]">Future events coming soon as scheduled</p>
           </CardContent>
         </Card>
 
@@ -191,8 +191,8 @@ export default function DashboardPage() {
               <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
                 SUBSCRIPTION
               </span>
-              <h4 className="text-sm font-bold text-white">REP 1 Member Tier</h4>
-              <p className="text-xs text-[#737373] mt-0.5">Active via Stripe • Monthly renewal</p>
+              <h4 className="text-sm font-bold text-white">REP 1 Full Access Member Tier</h4>
+              <p className="text-xs text-[#737373] mt-0.5">Active Membership • Unlimited Access to All Features</p>
             </div>
             <Link href="/settings">
               <Button variant="primary" size="sm" className="gap-2 text-xs font-semibold">
@@ -202,11 +202,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* ATHLETES OF THE MONTH Card */}
+        {/* REP 1 TOP PERFORMERS Card */}
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="p-6">
             <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-3">
-              ATHLETES OF THE MONTH
+              REP 1 TOP PERFORMERS
             </span>
             <p className="text-xs text-[#737373]">Nominations open for next combine testing cycle.</p>
           </CardContent>
