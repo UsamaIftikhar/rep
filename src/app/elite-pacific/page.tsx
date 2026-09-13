@@ -51,7 +51,7 @@ const slides: MediaSlide[] = [
     id: 5,
     title: "On-Field Technique & Position Drills",
     category: "Academy Training",
-    imageUrl: "/images/marvin_coaching.jpeg",
+    imageUrl: "/images/IMG_1960.jpeg",
     objectPosition: "object-[center_12%]",
   },
   {
