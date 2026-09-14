@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Badge } from "@/components/ui";
-import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera } from "lucide-react";
+import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera, Upload, Trash2 } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -135,6 +135,143 @@ export default function AdminDashboardPage() {
   const [adminResettingPassword, setAdminResettingPassword] = React.useState(false);
   const [adminPasswordResetSuccess, setAdminPasswordResetSuccess] = React.useState<string | null>(null);
   const [adminPasswordResetError, setAdminPasswordResetError] = React.useState<string | null>(null);
+
+  // Admin Profile Photo Upload State
+  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAdminPhotoUpload = async (file: File) => {
+    if (!file || !editingUser) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("targetUserId", editingUser.id);
+
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to upload profile photo");
+        return;
+      }
+
+      if (data.url) {
+        setFormPhoto(data.url);
+        setEditingUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                image: data.url,
+                athleteProfile: prev.athleteProfile
+                  ? { ...prev.athleteProfile, profilePhoto: data.url }
+                  : prev.athleteProfile,
+              }
+            : prev
+        );
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === editingUser.id
+              ? {
+                  ...u,
+                  image: data.url,
+                  athleteProfile: u.athleteProfile
+                    ? { ...u.athleteProfile, profilePhoto: data.url }
+                    : u.athleteProfile,
+                }
+              : u
+          )
+        );
+      }
+    } catch {
+      alert("Error uploading image");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const renderPhotoUploadSection = () => (
+    <div>
+      <label className="font-bold text-[#A3A3A3] block mb-2 flex items-center gap-1.5">
+        <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile Photo / Avatar
+      </label>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleAdminPhotoUpload(file);
+        }}
+      />
+
+      <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-4">
+        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#F21717]/60 bg-[#171717] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(242,23,23,0.3)]">
+          {formPhoto ? (
+            <img
+              src={formPhoto}
+              alt="Profile Photo"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="font-display font-black text-white text-xl">
+              {formFirstName?.[0] || editingUser?.name?.[0] || "A"}
+            </span>
+          )}
+          {isUploadingPhoto && (
+            <div className="absolute inset-0 bg-black/75 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-[#F21717] animate-spin" />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isUploadingPhoto}
+              onClick={() => fileInputRef.current?.click()}
+              className="gap-1.5 text-xs font-bold border-white/20 hover:border-[#F21717]"
+            >
+              {isUploadingPhoto ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F21717]" /> Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-3.5 h-3.5 text-[#F21717]" /> {formPhoto ? "Change Image" : "Upload Image"}
+                </>
+              )}
+            </Button>
+
+            {formPhoto && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={isUploadingPhoto}
+                onClick={() => setFormPhoto("")}
+                className="text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-950/30 gap-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-[10px] text-[#A3A3A3]">
+            Upload JPEG, PNG, or WEBP (Max 5MB). Photo updates live on user profile & roster cards.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   React.useEffect(() => {
     let mounted = true;
@@ -820,34 +957,7 @@ export default function AdminDashboardPage() {
                     <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
                   </div>
 
-                  <div>
-                    <label className="font-bold text-[#A3A3A3] block mb-1 flex items-center gap-1.5">
-                      <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile Photo URL / Avatar
-                    </label>
-                    <div className="flex items-center gap-3">
-                      {formPhoto ? (
-                        <img
-                          src={formPhoto}
-                          alt="User Avatar Preview"
-                          className="w-10 h-10 rounded-full object-cover border-2 border-[#F21717]/60 shrink-0 shadow-[0_0_10px_rgba(242,23,23,0.3)]"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#222222] border border-white/10 flex items-center justify-center text-xs text-[#737373] font-bold shrink-0">
-                          <Camera className="w-4 h-4 text-[#A3A3A3]" />
-                        </div>
-                      )}
-                      <Input
-                        type="url"
-                        value={formPhoto}
-                        onChange={(e) => setFormPhoto(e.target.value)}
-                        placeholder="https://images.unsplash.com/... or image link"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                  {renderPhotoUploadSection()}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -934,34 +1044,7 @@ export default function AdminDashboardPage() {
               {/* TAB 3: ATHLETE PROFILE & STATS */}
               {editTab === "profile" && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="font-bold text-[#A3A3A3] block mb-1 flex items-center gap-1.5">
-                      <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile / Athlete Photo URL
-                    </label>
-                    <div className="flex items-center gap-3">
-                      {formPhoto ? (
-                        <img
-                          src={formPhoto}
-                          alt="Athlete Profile Photo"
-                          className="w-10 h-10 rounded-full object-cover border-2 border-[#F21717]/60 shrink-0 shadow-[0_0_10px_rgba(242,23,23,0.3)]"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#222222] border border-white/10 flex items-center justify-center text-xs text-[#737373] font-bold shrink-0">
-                          <Camera className="w-4 h-4 text-[#A3A3A3]" />
-                        </div>
-                      )}
-                      <Input
-                        type="url"
-                        value={formPhoto}
-                        onChange={(e) => setFormPhoto(e.target.value)}
-                        placeholder="https://images.unsplash.com/... or profile image link"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                  {renderPhotoUploadSection()}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>

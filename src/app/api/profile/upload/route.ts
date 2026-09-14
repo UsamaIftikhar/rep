@@ -41,8 +41,12 @@ export async function POST(req: Request) {
     const uploadsDir = path.join(process.cwd(), "public", "uploads", "avatars");
     await fs.mkdir(uploadsDir, { recursive: true });
 
+    const targetUserId = (formData.get("targetUserId") as string) || (formData.get("userId") as string) || user.id;
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+    const effectiveUserId = isAdmin && targetUserId ? targetUserId : user.id;
+
     const fileExt = path.extname(file.name) || ".jpg";
-    const fileName = `avatar-${user.id}-${Date.now()}${fileExt}`;
+    const fileName = `avatar-${effectiveUserId}-${Date.now()}${fileExt}`;
     const filePath = path.join(uploadsDir, fileName);
 
     // Save image to filesystem
@@ -50,20 +54,26 @@ export async function POST(req: Request) {
 
     const publicUrl = `/uploads/avatars/${fileName}`;
 
+    // Target User record
+    const targetUser = await db.user.findUnique({
+      where: { id: effectiveUserId },
+      select: { firstName: true },
+    });
+
     // Update user athleteProfile in database
     await db.athleteProfile.upsert({
-      where: { userId: user.id },
+      where: { userId: effectiveUserId },
       update: { profilePhoto: publicUrl },
       create: {
-        userId: user.id,
-        slug: `${user.firstName || "athlete"}-${Date.now().toString(36)}`,
+        userId: effectiveUserId,
+        slug: `${targetUser?.firstName || "athlete"}-${Date.now().toString(36)}`,
         profilePhoto: publicUrl,
       },
     });
 
-    // Also update user image if null
+    // Also update user image
     await db.user.update({
-      where: { id: user.id },
+      where: { id: effectiveUserId },
       data: { image: publicUrl },
     });
 
