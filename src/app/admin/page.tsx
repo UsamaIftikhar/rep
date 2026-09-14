@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Badge } from "@/components/ui";
-import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity } from "lucide-react";
+import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -127,6 +127,12 @@ export default function AdminDashboardPage() {
   const [formRatingProduction, setFormRatingProduction] = React.useState<number>(0);
   const [formRatingTechnique, setFormRatingTechnique] = React.useState<number>(0);
 
+  // Admin Password Reset State
+  const [adminNewPassword, setAdminNewPassword] = React.useState("");
+  const [adminResettingPassword, setAdminResettingPassword] = React.useState(false);
+  const [adminPasswordResetSuccess, setAdminPasswordResetSuccess] = React.useState<string | null>(null);
+  const [adminPasswordResetError, setAdminPasswordResetError] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     let mounted = true;
 
@@ -156,6 +162,11 @@ export default function AdminDashboardPage() {
     setEditingUser(u);
     setEditTab("ratings");
     setSaveSuccess(false);
+
+    setAdminNewPassword("");
+    setAdminResettingPassword(false);
+    setAdminPasswordResetSuccess(null);
+    setAdminPasswordResetError(null);
 
     setFormFirstName(u.firstName || "");
     setFormLastName(u.lastName || "");
@@ -192,7 +203,40 @@ export default function AdminDashboardPage() {
     setFormRatingTechnique(prof.ratingTechnique || 0);
   };
 
+  const handleAdminResetPassword = async () => {
+    if (!editingUser || !adminNewPassword) return;
+    if (adminNewPassword.length < 6) {
+      setAdminPasswordResetError("Password must be at least 6 characters long.");
+      return;
+    }
+    setAdminResettingPassword(true);
+    setAdminPasswordResetSuccess(null);
+    setAdminPasswordResetError(null);
+
+    try {
+      const res = await fetch("/api/admin/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: editingUser.id, newPassword: adminNewPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to reset password.");
+      }
+
+      setAdminPasswordResetSuccess(data.message || "Password successfully reset!");
+      setAdminNewPassword("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to reset password.";
+      setAdminPasswordResetError(msg);
+    } finally {
+      setAdminResettingPassword(false);
+    }
+  };
+
   const handleSaveUserDetailChanges = async () => {
+
     if (!editingUser) return;
     setIsSaving(true);
     setSaveSuccess(false);
@@ -775,6 +819,57 @@ export default function AdminDashboardPage() {
                           { value: "PENDING_PAYMENT", label: "Pending Payment" },
                         ]}
                       />
+                    </div>
+                  </div>
+
+                  {/* Admin Reset User Password Section */}
+                  <div className="pt-4 border-t border-white/10 space-y-3">
+                    <h4 className="font-display uppercase text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-[#F21717]" /> Reset User Password
+                    </h4>
+                    <p className="text-[11px] text-[#A3A3A3]">
+                      Directly set a new password for this user account.
+                    </p>
+
+                    {adminPasswordResetSuccess && (
+                      <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{adminPasswordResetSuccess}</span>
+                      </div>
+                    )}
+
+                    {adminPasswordResetError && (
+                      <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span>{adminPasswordResetError}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="password"
+                        placeholder="Enter new password (min 6 chars)"
+                        value={adminNewPassword}
+                        onChange={(e) => setAdminNewPassword(e.target.value)}
+                        disabled={adminResettingPassword}
+                        className="bg-[#171717]"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAdminResetPassword}
+                        disabled={adminResettingPassword || !adminNewPassword}
+                        className="shrink-0 font-bold border-[#F21717]/50 text-[#F21717] hover:bg-[#F21717]/10"
+                      >
+                        {adminResettingPassword ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Resetting...
+                          </>
+                        ) : (
+                          "Reset Password"
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

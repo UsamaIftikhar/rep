@@ -3,20 +3,39 @@
 import * as React from "react";
 import Link from "next/link";
 import { Card, CardContent, Button, Input } from "@/components/ui";
-import { ArrowLeft, Flame, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Flame, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = React.useState("");
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate password reset email request dispatch
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to request password reset.");
+      }
+
+      setIsSubmitted(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setErrorMsg(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,6 +60,13 @@ export default function ForgotPasswordPage() {
 
         <Card className="bg-[#111111] border-white/10">
           <CardContent className="space-y-4 pt-6">
+            {errorMsg && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {isSubmitted ? (
               <div className="text-center py-4 space-y-3">
                 <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
@@ -48,7 +74,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">Instructions Sent</h2>
                 <p className="text-xs text-[#A3A3A3]">
-                  If an account exists for <span className="text-white font-medium">{email}</span>, password reset instructions have been sent.
+                  If an account exists for <span className="text-white font-medium">{email}</span>, password reset instructions have been sent to your inbox.
                 </p>
                 <div className="pt-2">
                   <Link href="/login">
