@@ -50,6 +50,9 @@ export async function getPublicProfileBySlug(slug: string) {
       user: {
         select: {
           id: true,
+          email: true,
+          status: true,
+          image: true,
           firstName: true,
           lastName: true,
           name: true,

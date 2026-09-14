@@ -49,10 +49,12 @@ export async function POST(req: Request) {
     const fileName = `avatar-${effectiveUserId}-${Date.now()}${fileExt}`;
     const filePath = path.join(uploadsDir, fileName);
 
-    // Save image to filesystem
+    // Save image to filesystem backup
     await fs.writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/avatars/${fileName}`;
+    // Generate base64 Data URL so images render 100% reliably in all production environments without 404s
+    const base64Data = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const publicUrl = base64Data;
 
     // Target User record
     const targetUser = await db.user.findUnique({

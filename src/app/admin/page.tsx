@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Badge } from "@/components/ui";
-import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera, Upload, Trash2 } from "lucide-react";
+import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera, Upload, Trash2, Plus, Shield, Lock } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -74,8 +74,19 @@ interface AdminCourseItem {
   _count: { enrollments: number };
 }
 
+interface AdminRoleItem {
+  id: string;
+  name: string;
+  displayName: string;
+  description?: string | null;
+  permissions?: string[] | null;
+  isSystem: boolean;
+  createdAt: string;
+  _count?: { users: number };
+}
+
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = React.useState<"overview" | "users" | "courses">("overview");
+  const [activeTab, setActiveTab] = React.useState<"overview" | "users" | "courses" | "roles">("overview");
   const [stats, setStats] = React.useState<AdminStats>({
     totalUsers: 0,
     activeMemberships: 0,
@@ -84,9 +95,34 @@ export default function AdminDashboardPage() {
   });
   const [users, setUsers] = React.useState<AdminUserItem[]>([]);
   const [courses, setCourses] = React.useState<AdminCourseItem[]>([]);
+  const [roles, setRoles] = React.useState<AdminRoleItem[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [updatingUserId, setUpdatingUserId] = React.useState<string | null>(null);
+
+  // Role Creation Form State
+  const [isCreatingRole, setIsCreatingRole] = React.useState(false);
+  const [newRoleName, setNewRoleName] = React.useState("");
+  const [newRoleDisplayName, setNewRoleDisplayName] = React.useState("");
+  const [newRoleDescription, setNewRoleDescription] = React.useState("");
+  const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([
+    "view_roster",
+    "edit_ratings",
+  ]);
+  const [roleSubmitLoading, setRoleSubmitLoading] = React.useState(false);
+  const [roleSubmitSuccess, setRoleSubmitSuccess] = React.useState<string | null>(null);
+  const [roleSubmitError, setRoleSubmitError] = React.useState<string | null>(null);
+
+  const availablePermissions = [
+    { key: "view_roster", label: "View User Roster" },
+    { key: "edit_ratings", label: "Edit Scouting Ratings & Notes" },
+    { key: "edit_user_details", label: "Edit Account & Profile Details" },
+    { key: "reset_passwords", label: "Reset User Passwords" },
+    { key: "manage_courses", label: "Manage & Publish Curriculum" },
+    { key: "ai_interviews", label: "Access AI Interviews" },
+    { key: "view_recruiting", label: "View Recruiter Search" },
+    { key: "manage_roles", label: "Manage Roles & Permissions" },
+  ];
 
   // User Edit Modal State
   const [editingUser, setEditingUser] = React.useState<AdminUserItem | null>(null);
@@ -280,12 +316,14 @@ export default function AdminDashboardPage() {
       fetch("/api/admin/stats").then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/admin/users?q=${encodeURIComponent(searchQuery)}`).then((r) => (r.ok ? r.json() : null)),
       fetch("/api/admin/courses").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/admin/roles").then((r) => (r.ok ? r.json() : null)),
     ])
-      .then(([statsData, usersData, coursesData]) => {
+      .then(([statsData, usersData, coursesData, rolesData]) => {
         if (mounted) {
           if (statsData?.stats) setStats(statsData.stats);
           if (usersData?.users) setUsers(usersData.users);
           if (coursesData?.courses) setCourses(coursesData.courses);
+          if (rolesData?.roles) setRoles(rolesData.roles);
         }
       })
       .catch(() => {})
@@ -297,6 +335,66 @@ export default function AdminDashboardPage() {
       mounted = false;
     };
   }, [searchQuery]);
+
+  const handleCreateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleName.trim() || !newRoleDisplayName.trim()) return;
+
+    setRoleSubmitLoading(true);
+    setRoleSubmitSuccess(null);
+    setRoleSubmitError(null);
+
+    try {
+      const res = await fetch("/api/admin/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newRoleName,
+          displayName: newRoleDisplayName,
+          description: newRoleDescription,
+          permissions: selectedPermissions,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setRoleSubmitError(data.error || "Failed to create role");
+      } else {
+        setRoleSubmitSuccess(`Role "${newRoleDisplayName}" created successfully!`);
+        setNewRoleName("");
+        setNewRoleDisplayName("");
+        setNewRoleDescription("");
+        setIsCreatingRole(false);
+
+        const rolesRes = await fetch("/api/admin/roles");
+        const rolesData = await rolesRes.json();
+        if (rolesData?.roles) setRoles(rolesData.roles);
+      }
+    } catch {
+      setRoleSubmitError("Network error creating role.");
+    } finally {
+      setRoleSubmitLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleId: string, roleName: string) => {
+    if (!confirm(`Are you sure you want to delete role "${roleName}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/roles?id=${roleId}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to delete role");
+      } else {
+        setRoles((prev) => prev.filter((r) => r.id !== roleId));
+      }
+    } catch {
+      alert("Error deleting role");
+    }
+  };
 
   const filteredUsers = React.useMemo(() => {
     if (!searchQuery.trim()) return users;
@@ -617,6 +715,16 @@ export default function AdminDashboardPage() {
           >
             Curriculum ({courses.length})
           </button>
+          <button
+            onClick={() => setActiveTab("roles")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
+              activeTab === "roles"
+                ? "bg-[#F21717] text-white shadow-[0_0_15px_rgba(242,23,23,0.4)]"
+                : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            Roles & Permissions ({roles.length})
+          </button>
         </div>
 
         {/* TAB 1: OVERVIEW & QUICK ACTIONS */}
@@ -828,6 +936,219 @@ export default function AdminDashboardPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* TAB 4: ROLE & PERMISSION MANAGEMENT */}
+        {activeTab === "roles" && (
+          <div className="space-y-6">
+            <Card className="bg-[#111111] border-white/10">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle isDisplay>System & Custom Database Roles</CardTitle>
+                  <CardDescription>
+                    Define new user roles, configure permissions, and manage database authorization policies.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => setIsCreatingRole(!isCreatingRole)}
+                  variant="athletic"
+                  size="sm"
+                  className="bg-[#F21717] gap-2 font-bold shrink-0"
+                >
+                  {isCreatingRole ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  {isCreatingRole ? "Close Role Form" : "Create New Role"}
+                </Button>
+              </CardHeader>
+
+              {isCreatingRole && (
+                <CardContent className="border-t border-white/10 pt-6">
+                  <form onSubmit={handleCreateRole} className="space-y-5 max-w-2xl bg-[#171717] p-5 rounded-2xl border border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-5 h-5 text-[#F21717]" />
+                      <h3 className="font-display uppercase text-lg font-bold text-white">Create Custom Database Role</h3>
+                    </div>
+
+                    {roleSubmitSuccess && (
+                      <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{roleSubmitSuccess}</span>
+                      </div>
+                    )}
+
+                    {roleSubmitError && (
+                      <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span>{roleSubmitError}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] text-xs block mb-1">
+                          Role Technical Identifier <span className="text-[#F21717]">*</span>
+                        </label>
+                        <Input
+                          value={newRoleName}
+                          onChange={(e) => setNewRoleName(e.target.value)}
+                          placeholder="e.g. SCOUT, COACH, ANALYST"
+                          required
+                          className="bg-[#111111]"
+                        />
+                        <span className="text-[10px] text-[#737373] mt-1 block">Upper-case system key identifier</span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] text-xs block mb-1">
+                          Role Display Name <span className="text-[#F21717]">*</span>
+                        </label>
+                        <Input
+                          value={newRoleDisplayName}
+                          onChange={(e) => setNewRoleDisplayName(e.target.value)}
+                          placeholder="e.g. Talent Scout & Evaluator"
+                          required
+                          className="bg-[#111111]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] text-xs block mb-1">Description / Notes</label>
+                      <textarea
+                        value={newRoleDescription}
+                        onChange={(e) => setNewRoleDescription(e.target.value)}
+                        placeholder="Describe what access and privileges users with this role possess..."
+                        rows={2}
+                        className="w-full bg-[#111111] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] text-xs block mb-2">Granted Access Permissions</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+                        {availablePermissions.map((perm) => {
+                          const isChecked = selectedPermissions.includes(perm.key);
+                          return (
+                            <label
+                              key={perm.key}
+                              className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2.5 cursor-pointer transition-colors ${
+                                isChecked
+                                  ? "bg-[#F21717]/15 border-[#F21717]/50 text-white"
+                                  : "bg-[#111111] border-white/5 text-[#A3A3A3] hover:text-white"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPermissions((prev) => [...prev, perm.key]);
+                                  } else {
+                                    setSelectedPermissions((prev) => prev.filter((k) => k !== perm.key));
+                                  }
+                                }}
+                                className="accent-[#F21717] w-4 h-4 rounded"
+                              />
+                              <span>{perm.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <Button
+                        type="submit"
+                        disabled={roleSubmitLoading}
+                        variant="athletic"
+                        size="sm"
+                        className="bg-[#F21717] gap-2 font-bold"
+                      >
+                        {roleSubmitLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Registering Role...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-4 h-4" /> Save & Register Role
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCreatingRole(false)}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* ROLES CARDS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {roles.map((r) => (
+                <Card key={r.id} className="bg-[#111111] border-white/10 p-5 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={r.isSystem ? "danger" : "neutral"} className="font-mono text-[10px]">
+                          {r.name}
+                        </Badge>
+                        {r.isSystem && (
+                          <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                            Built-in System Role
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-semibold text-[#A3A3A3]">
+                        {r._count?.users || 0} User(s)
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="font-display uppercase text-lg font-bold text-white">{r.displayName}</h3>
+                      <p className="text-xs text-[#A3A3A3] mt-1">{r.description || "No description specified."}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-[#737373] uppercase tracking-wider block mb-1.5">
+                        Assigned Permissions
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Array.isArray(r.permissions) && r.permissions.length > 0 ? (
+                          r.permissions.map((p) => (
+                            <span key={p} className="px-2 py-0.5 rounded bg-white/5 text-[10px] text-white font-mono border border-white/10">
+                              {p}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-[#737373] italic">No specific permissions</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {!r.isSystem && (
+                    <div className="pt-3 border-t border-white/5 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteRole(r.id, r.displayName)}
+                        className="h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30 gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete Custom Role
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

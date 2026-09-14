@@ -4,8 +4,8 @@ import * as React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PublicNavbar, PublicFooter } from "@/components/layout";
-import { Button, Card, CardContent, Badge as UIBadge } from "@/components/ui";
-import { Shield, Award, MapPin, School, Calendar, Trophy, ArrowLeft, Lock, Video, ExternalLink, Activity, Star, Edit3, X, Check, Loader2, MessageSquare, BookOpen, CheckCircle2 } from "lucide-react";
+import { Button, Card, CardContent, Badge as UIBadge, Input, Select } from "@/components/ui";
+import { Shield, Award, MapPin, School, Calendar, Trophy, ArrowLeft, Lock, Video, ExternalLink, Activity, Star, Edit3, X, Check, Loader2, MessageSquare, BookOpen, CheckCircle2, Users, KeyRound, AlertCircle, Camera, Upload, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 interface PublicAthlete {
@@ -44,10 +44,13 @@ interface PublicAthlete {
 
   user: {
     id: string;
+    email?: string | null;
     firstName: string | null;
     lastName: string | null;
     name: string | null;
+    image?: string | null;
     role: string;
+    status?: string | null;
     badges?: Array<{
       badge: {
         id: string;
@@ -83,19 +86,57 @@ export default function PublicAthleteProfilePage() {
   const [requiresLogin, setRequiresLogin] = React.useState(false);
   const [requiresMembership, setRequiresMembership] = React.useState(false);
 
-  // Admin Quick Evaluation Modal State
+  // Admin Full Editor Modal State
   const [isEvalModalOpen, setIsEvalModalOpen] = React.useState(false);
+  const [editTab, setEditTab] = React.useState<"ratings" | "account" | "profile">("ratings");
   const [isSavingEval, setIsSavingEval] = React.useState(false);
+  const [saveSuccess, setSaveSuccess] = React.useState(false);
 
-  // Eval Form State
-  const [evalAdminNotes, setEvalAdminNotes] = React.useState("");
-  const [evalSpeed, setEvalSpeed] = React.useState<number>(0);
-  const [evalExplosiveness, setEvalExplosiveness] = React.useState<number>(0);
-  const [evalAgility, setEvalAgility] = React.useState<number>(0);
-  const [evalStrength, setEvalStrength] = React.useState<number>(0);
-  const [evalToughness, setEvalToughness] = React.useState<number>(0);
-  const [evalProduction, setEvalProduction] = React.useState<number>(0);
-  const [evalTechnique, setEvalTechnique] = React.useState<number>(0);
+  // Form State for User Edit
+  const [formFirstName, setFormFirstName] = React.useState("");
+  const [formLastName, setFormLastName] = React.useState("");
+  const [formEmail, setFormEmail] = React.useState("");
+  const [formRole, setFormRole] = React.useState<"ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN">("ATHLETE");
+  const [formStatus, setFormStatus] = React.useState<"ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT">("ACTIVE");
+
+  // Profile Form State
+  const [formSport, setFormSport] = React.useState("");
+  const [formPosition, setFormPosition] = React.useState("");
+  const [formSchoolClub, setFormSchoolClub] = React.useState("");
+  const [formGraduationYear, setFormGraduationYear] = React.useState("");
+  const [formLocation, setFormLocation] = React.useState("");
+  const [formBio, setFormBio] = React.useState("");
+  const [formPhoto, setFormPhoto] = React.useState("");
+  const [formFortyTime, setFormFortyTime] = React.useState("");
+  const [formVertical, setFormVertical] = React.useState("");
+  const [formBenchPress, setFormBenchPress] = React.useState("");
+  const [formSquat, setFormSquat] = React.useState("");
+  const [formPowerClean, setFormPowerClean] = React.useState("");
+  const [formShuttleTime, setFormShuttleTime] = React.useState("");
+  const [formBroadJump, setFormBroadJump] = React.useState("");
+  const [formGpa, setFormGpa] = React.useState("");
+  const [formHighlightVideoUrl, setFormHighlightVideoUrl] = React.useState("");
+
+  // Staff Scouting Evaluation & 1-5 Ratings State
+  const [formAdminNotes, setFormAdminNotes] = React.useState("");
+  const [formPotentialDivision, setFormPotentialDivision] = React.useState("");
+  const [formRatingSpeed, setFormRatingSpeed] = React.useState<number>(0);
+  const [formRatingExplosiveness, setFormRatingExplosiveness] = React.useState<number>(0);
+  const [formRatingAgility, setFormRatingAgility] = React.useState<number>(0);
+  const [formRatingStrength, setFormRatingStrength] = React.useState<number>(0);
+  const [formRatingToughness, setFormRatingToughness] = React.useState<number>(0);
+  const [formRatingProduction, setFormRatingProduction] = React.useState<number>(0);
+  const [formRatingTechnique, setFormRatingTechnique] = React.useState<number>(0);
+
+  // Admin Password Reset State
+  const [adminNewPassword, setAdminNewPassword] = React.useState("");
+  const [adminResettingPassword, setAdminResettingPassword] = React.useState(false);
+  const [adminPasswordResetSuccess, setAdminPasswordResetSuccess] = React.useState<string | null>(null);
+  const [adminPasswordResetError, setAdminPasswordResetError] = React.useState<string | null>(null);
+
+  // Admin Profile Photo Upload State
+  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const fetchProfile = React.useCallback(() => {
     if (!slug) return;
@@ -129,51 +170,264 @@ export default function PublicAthleteProfilePage() {
 
   const handleOpenEvalModal = () => {
     if (!athlete) return;
-    setEvalAdminNotes(athlete.adminNotes || "");
-    setEvalSpeed(athlete.ratingSpeed || 0);
-    setEvalExplosiveness(athlete.ratingExplosiveness || 0);
-    setEvalAgility(athlete.ratingAgility || 0);
-    setEvalStrength(athlete.ratingStrength || 0);
-    setEvalToughness(athlete.ratingToughness || 0);
-    setEvalProduction(athlete.ratingProduction || 0);
-    setEvalTechnique(athlete.ratingTechnique || 0);
+    setEditTab("ratings");
+    setSaveSuccess(false);
+
+    setAdminNewPassword("");
+    setAdminResettingPassword(false);
+    setAdminPasswordResetSuccess(null);
+    setAdminPasswordResetError(null);
+
+    setFormFirstName(athlete.user.firstName || "");
+    setFormLastName(athlete.user.lastName || "");
+    setFormEmail(athlete.user.email || "");
+    setFormRole((athlete.user.role as any) || "ATHLETE");
+    setFormStatus((athlete.user.status as any) || "ACTIVE");
+
+    setFormSport(athlete.sport || "");
+    setFormPosition(athlete.position || "");
+    setFormSchoolClub(athlete.schoolClub || "");
+    setFormGraduationYear(athlete.graduationYear ? String(athlete.graduationYear) : "");
+    setFormLocation(athlete.location || "");
+    setFormBio(athlete.bio || "");
+    setFormPhoto(athlete.profilePhoto || athlete.user.image || "");
+    setFormFortyTime(athlete.fortyTime || "");
+    setFormVertical(athlete.vertical || "");
+    setFormBenchPress(athlete.benchPress || "");
+    setFormSquat(athlete.squat || "");
+    setFormPowerClean(athlete.powerClean || "");
+    setFormShuttleTime(athlete.shuttleTime || "");
+    setFormBroadJump(athlete.broadJump || "");
+    setFormGpa(athlete.gpa || "");
+    setFormHighlightVideoUrl(athlete.highlightVideoUrl || "");
+
+    setFormAdminNotes(athlete.adminNotes || "");
+    setFormPotentialDivision(athlete.potentialDivision || "");
+    setFormRatingSpeed(athlete.ratingSpeed || 0);
+    setFormRatingExplosiveness(athlete.ratingExplosiveness || 0);
+    setFormRatingAgility(athlete.ratingAgility || 0);
+    setFormRatingStrength(athlete.ratingStrength || 0);
+    setFormRatingToughness(athlete.ratingToughness || 0);
+    setFormRatingProduction(athlete.ratingProduction || 0);
+    setFormRatingTechnique(athlete.ratingTechnique || 0);
+
     setIsEvalModalOpen(true);
+  };
+
+  const handleAdminPhotoUpload = async (file: File) => {
+    if (!file || !athlete) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("targetUserId", athlete.userId);
+
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to upload profile photo");
+        return;
+      }
+
+      if (data.url) {
+        setFormPhoto(data.url);
+      }
+    } catch {
+      alert("Error uploading image");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleAdminResetPassword = async () => {
+    if (!athlete || !adminNewPassword) return;
+    setAdminResettingPassword(true);
+    setAdminPasswordResetSuccess(null);
+    setAdminPasswordResetError(null);
+
+    try {
+      const res = await fetch("/api/admin/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: athlete.userId,
+          newPassword: adminNewPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setAdminPasswordResetError(data.error || "Failed to reset password");
+      } else {
+        setAdminPasswordResetSuccess("Password successfully updated!");
+        setAdminNewPassword("");
+      }
+    } catch {
+      setAdminPasswordResetError("Network error resetting password");
+    } finally {
+      setAdminResettingPassword(false);
+    }
   };
 
   const handleSaveEval = async () => {
     if (!athlete) return;
     setIsSavingEval(true);
+    setSaveSuccess(false);
 
     try {
-      const res = await fetch("/api/admin/athletes/eval", {
+      const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          athleteProfileId: athlete.id,
-          adminNotes: evalAdminNotes || null,
-          ratingSpeed: evalSpeed > 0 ? evalSpeed : null,
-          ratingExplosiveness: evalExplosiveness > 0 ? evalExplosiveness : null,
-          ratingAgility: evalAgility > 0 ? evalAgility : null,
-          ratingStrength: evalStrength > 0 ? evalStrength : null,
-          ratingToughness: evalToughness > 0 ? evalToughness : null,
-          ratingProduction: evalProduction > 0 ? evalProduction : null,
-          ratingTechnique: evalTechnique > 0 ? evalTechnique : null,
+          userId: athlete.userId,
+          email: formEmail,
+          firstName: formFirstName,
+          lastName: formLastName,
+          role: formRole,
+          status: formStatus,
+          profile: {
+            sport: formSport || null,
+            position: formPosition || null,
+            schoolClub: formSchoolClub || null,
+            graduationYear: formGraduationYear ? parseInt(formGraduationYear) : null,
+            location: formLocation || null,
+            bio: formBio || null,
+            profilePhoto: formPhoto || null,
+            benchPress: formBenchPress || null,
+            squat: formSquat || null,
+            powerClean: formPowerClean || null,
+            fortyTime: formFortyTime || null,
+            vertical: formVertical || null,
+            shuttleTime: formShuttleTime || null,
+            broadJump: formBroadJump || null,
+            gpa: formGpa || null,
+            highlightVideoUrl: formHighlightVideoUrl || null,
+            adminNotes: formAdminNotes || null,
+            potentialDivision: formPotentialDivision || null,
+            ratingSpeed: formRatingSpeed > 0 ? formRatingSpeed : null,
+            ratingExplosiveness: formRatingExplosiveness > 0 ? formRatingExplosiveness : null,
+            ratingAgility: formRatingAgility > 0 ? formRatingAgility : null,
+            ratingStrength: formRatingStrength > 0 ? formRatingStrength : null,
+            ratingToughness: formRatingToughness > 0 ? formRatingToughness : null,
+            ratingProduction: formRatingProduction > 0 ? formRatingProduction : null,
+            ratingTechnique: formRatingTechnique > 0 ? formRatingTechnique : null,
+          },
         }),
       });
 
       if (res.ok) {
-        setIsEvalModalOpen(false);
-        fetchProfile();
+        setSaveSuccess(true);
+        setTimeout(() => {
+          setIsEvalModalOpen(false);
+          fetchProfile();
+        }, 600);
       } else {
         const d = await res.json();
-        alert(d.error || "Failed to update evaluation");
+        alert(d.error || "Failed to update user details");
       }
     } catch {
-      alert("Failed to update staff evaluation");
+      alert("Failed to update user details");
     } finally {
       setIsSavingEval(false);
     }
   };
+
+  const renderPhotoUploadSection = () => (
+    <div>
+      <label className="font-bold text-[#A3A3A3] block mb-2 flex items-center gap-1.5">
+        <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile Photo / Avatar
+      </label>
+      <div className="flex items-center gap-4 p-3 rounded-xl bg-[#171717] border border-white/10">
+        <div className="w-14 h-14 rounded-full bg-neutral-800 border border-white/20 overflow-hidden flex items-center justify-center shrink-0">
+          {formPhoto ? (
+            <img src={formPhoto} alt="Profile" className="w-full h-full object-cover" />
+          ) : (
+            <Camera className="w-6 h-6 text-neutral-500" />
+          )}
+        </div>
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleAdminPhotoUpload(f);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isUploadingPhoto}
+              onClick={() => fileInputRef.current?.click()}
+              className="h-8 text-xs font-semibold gap-1.5 border-[#F21717]/40 text-white hover:bg-[#F21717]/20"
+            >
+              {isUploadingPhoto ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-3.5 h-3.5 text-[#F21717]" /> Upload Photo
+                </>
+              )}
+            </Button>
+            {formPhoto && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setFormPhoto("")}
+                className="h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30 px-2"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
+          <p className="text-[10px] text-[#A3A3A3]">Upload a PNG, JPG, or WEBP (Max 5MB). Photo updates dynamically.</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStarRatingPicker = (
+    label: string,
+    value: number,
+    onChange: (val: number) => void
+  ) => (
+    <div className="p-3 rounded-xl bg-[#171717] border border-white/10 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-xs text-white uppercase tracking-wider">{label}</span>
+        <span className={`text-[11px] font-bold ${value > 0 ? "text-amber-400" : "text-[#737373]"}`}>
+          {value > 0 ? `${value}.0 / 5.0` : "Unrated"}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(value === star ? 0 : star)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+              star <= value
+                ? "bg-[#F21717] text-white shadow-[0_0_10px_rgba(242,23,23,0.5)] scale-105"
+                : "bg-white/5 text-[#737373] hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            {star}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const isAdminUser = currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN";
 
@@ -652,18 +906,24 @@ export default function PublicAthleteProfilePage() {
         )}
       </main>
 
-      {/* QUICK INLINE EVALUATION MODAL FOR ADMINS */}
+      {/* FULL USER & EVALUATION EDIT MODAL FOR ADMINS */}
       {isEvalModalOpen && athlete && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#111111] border border-white/20 rounded-2xl w-full max-w-xl flex flex-col shadow-[0_0_50px_rgba(242,23,23,0.3)] my-8">
+          <div className="bg-[#111111] border border-white/20 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(242,23,23,0.3)] my-8">
+            {/* Modal Header */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#171717] rounded-t-2xl">
               <div>
-                <span className="text-[10px] font-bold text-[#F21717] uppercase tracking-widest px-2 py-0.5 rounded bg-[#F21717]/20 border border-[#F21717]/30">
-                  Admin Evaluation Editor
-                </span>
-                <h3 className="font-display uppercase text-xl font-black text-white mt-1">
-                  Staff Report: {athlete.user.name || `${athlete.user.firstName} ${athlete.user.lastName}`}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-[#F21717] uppercase tracking-widest px-2 py-0.5 rounded bg-[#F21717]/20 border border-[#F21717]/30">
+                    Admin Full Editor
+                  </span>
+                  <span className="text-xs text-[#A3A3A3] font-semibold">
+                    ID: {athlete.userId}
+                  </span>
+                </div>
+                <h2 className="font-display uppercase text-2xl font-black text-white mt-1">
+                  Edit Details: {athlete.user.name || `${athlete.user.firstName || ""} ${athlete.user.lastName || ""}`.trim() || "Athlete User"}
+                </h2>
               </div>
               <button
                 onClick={() => setIsEvalModalOpen(false)}
@@ -673,34 +933,312 @@ export default function PublicAthleteProfilePage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
-              <div>
-                <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5">
-                  Staff Scouting Notes
-                </label>
-                <textarea
-                  value={evalAdminNotes}
-                  onChange={(e) => setEvalAdminNotes(e.target.value)}
-                  placeholder="Enter scouting commentary..."
-                  rows={4}
-                  className="w-full bg-[#171717] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-bold text-white uppercase tracking-wider">Rate Attributes (1 to 5)</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {renderRatingSelector("Speed", evalSpeed, setEvalSpeed)}
-                  {renderRatingSelector("Explosiveness", evalExplosiveness, setEvalExplosiveness)}
-                  {renderRatingSelector("Agility", evalAgility, setEvalAgility)}
-                  {renderRatingSelector("Strength", evalStrength, setEvalStrength)}
-                  {renderRatingSelector("Toughness", evalToughness, setEvalToughness)}
-                  {renderRatingSelector("Production", evalProduction, setEvalProduction)}
-                  {renderRatingSelector("Technique", evalTechnique, setEvalTechnique)}
-                </div>
-              </div>
+            {/* Modal Sub-navigation */}
+            <div className="flex items-center gap-2 px-6 pt-4 border-b border-white/10 bg-[#141414]">
+              <button
+                onClick={() => setEditTab("ratings")}
+                className={`px-4 py-2.5 rounded-t-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors ${
+                  editTab === "ratings"
+                    ? "bg-[#F21717] text-white shadow-[0_0_15px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Star className="w-3.5 h-3.5" /> Staff Ratings & Notes (1-5)
+              </button>
+              <button
+                onClick={() => setEditTab("account")}
+                className={`px-4 py-2.5 rounded-t-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors ${
+                  editTab === "account"
+                    ? "bg-[#F21717] text-white shadow-[0_0_15px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" /> Account & Role
+              </button>
+              <button
+                onClick={() => setEditTab("profile")}
+                className={`px-4 py-2.5 rounded-t-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors ${
+                  editTab === "profile"
+                    ? "bg-[#F21717] text-white shadow-[0_0_15px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" /> Athlete Stats & Film
+              </button>
             </div>
 
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+              {saveSuccess && (
+                <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="font-semibold">User details and scouting ratings updated successfully!</span>
+                </div>
+              )}
+
+              {/* TAB 1: STAFF RATINGS & NOTES */}
+              {editTab === "ratings" && (
+                <div className="space-y-6">
+                  <div className="p-4 rounded-xl bg-[#F21717]/10 border border-[#F21717]/30 space-y-2">
+                    <h4 className="font-display uppercase text-sm font-bold text-white flex items-center gap-1.5">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Staff Scouting Evaluation
+                    </h4>
+                    <p className="text-[11px] text-[#D4D4D4]">
+                      Enter overall staff evaluation notes and rate the athlete on a scale of 1 to 5 for each attribute. These ratings will be visible on their verified public profile for scouts and recruiters.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                      <span>Evaluated Potential Division / Level</span>
+                      <span className="text-[10px] text-[#F21717] font-bold">Mapped to Recruiter Search</span>
+                    </label>
+                    <Select
+                      value={formPotentialDivision}
+                      onChange={(e) => setFormPotentialDivision(e.target.value)}
+                      options={[
+                        { value: "", label: "Not Evaluated / Unranked" },
+                        { value: "power_4", label: "Power 4 (FBS Power Conference)" },
+                        { value: "division_1", label: "Division 1 (NCAA D1 / FBS / FCS)" },
+                        { value: "division_2", label: "Division 2 (NCAA D2)" },
+                        { value: "division_3", label: "Division 3 (NCAA D3)" },
+                        { value: "juco", label: "JUCO (NJCAA Junior College)" },
+                        { value: "hbcu", label: "HBCU (Historically Black Colleges)" },
+                        { value: "naia", label: "NAIA (Collegiate Athletics)" },
+                      ]}
+                      className="w-full bg-[#171717]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5">
+                      Staff Scouting Notes & Assessment
+                    </label>
+                    <textarea
+                      value={formAdminNotes}
+                      onChange={(e) => setFormAdminNotes(e.target.value)}
+                      placeholder="Write evaluation commentary about the athlete's work ethic, potential, game film, leadership, or recruiting readiness..."
+                      rows={4}
+                      className="w-full bg-[#171717] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-display uppercase text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                      <Award className="w-4 h-4 text-[#F21717]" /> 1 to 5 Attribute Ratings
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {renderStarRatingPicker("Speed", formRatingSpeed, setFormRatingSpeed)}
+                      {renderStarRatingPicker("Explosiveness", formRatingExplosiveness, setFormRatingExplosiveness)}
+                      {renderStarRatingPicker("Agility", formRatingAgility, setFormRatingAgility)}
+                      {renderStarRatingPicker("Strength", formRatingStrength, setFormRatingStrength)}
+                      {renderStarRatingPicker("Toughness", formRatingToughness, setFormRatingToughness)}
+                      {renderStarRatingPicker("Production", formRatingProduction, setFormRatingProduction)}
+                      {renderStarRatingPicker("Technique", formRatingTechnique, setFormRatingTechnique)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: ACCOUNT DETAILS */}
+              {editTab === "account" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">First Name</label>
+                      <Input value={formFirstName} onChange={(e) => setFormFirstName(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Last Name</label>
+                      <Input value={formLastName} onChange={(e) => setFormLastName(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Email Address</label>
+                    <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
+                  </div>
+
+                  {renderPhotoUploadSection()}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">User Permission Role</label>
+                      <Select
+                        value={formRole}
+                        onChange={(e) => setFormRole(e.target.value as any)}
+                        options={[
+                          { value: "ATHLETE", label: "Athlete" },
+                          { value: "RECRUITER", label: "Recruiter" },
+                          { value: "ADMIN", label: "Admin" },
+                          { value: "SUPER_ADMIN", label: "Super Admin" },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Account Status</label>
+                      <Select
+                        value={formStatus}
+                        onChange={(e) => setFormStatus(e.target.value as any)}
+                        options={[
+                          { value: "ACTIVE", label: "Active" },
+                          { value: "SUSPENDED", label: "Suspended" },
+                          { value: "PENDING_PAYMENT", label: "Pending Payment" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Admin Reset User Password Section */}
+                  <div className="pt-4 border-t border-white/10 space-y-3">
+                    <h4 className="font-display uppercase text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-[#F21717]" /> Reset User Password
+                    </h4>
+                    <p className="text-[11px] text-[#A3A3A3]">
+                      Directly set a new password for this user account.
+                    </p>
+
+                    {adminPasswordResetSuccess && (
+                      <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{adminPasswordResetSuccess}</span>
+                      </div>
+                    )}
+
+                    {adminPasswordResetError && (
+                      <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span>{adminPasswordResetError}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="password"
+                        placeholder="Enter new password (min 6 chars)"
+                        value={adminNewPassword}
+                        onChange={(e) => setAdminNewPassword(e.target.value)}
+                        disabled={adminResettingPassword}
+                        className="bg-[#171717]"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAdminResetPassword}
+                        disabled={adminResettingPassword || !adminNewPassword}
+                        className="shrink-0 font-bold border-[#F21717]/50 text-[#F21717] hover:bg-[#F21717]/10"
+                      >
+                        {adminResettingPassword ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Resetting...
+                          </>
+                        ) : (
+                          "Reset Password"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ATHLETE PROFILE & STATS */}
+              {editTab === "profile" && (
+                <div className="space-y-4">
+                  {renderPhotoUploadSection()}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Primary Sport</label>
+                      <Input value={formSport} onChange={(e) => setFormSport(e.target.value)} placeholder="Basketball, Football..." />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Position</label>
+                      <Input value={formPosition} onChange={(e) => setFormPosition(e.target.value)} placeholder="Quarterback, Guard..." />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">School / Club Team</label>
+                      <Input value={formSchoolClub} onChange={(e) => setFormSchoolClub(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Graduation Year</label>
+                      <Input value={formGraduationYear} onChange={(e) => setFormGraduationYear(e.target.value)} placeholder="2026" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Location / State</label>
+                      <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Sydney, NSW" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Bio / Scouting Overview</label>
+                    <textarea
+                      value={formBio}
+                      onChange={(e) => setFormBio(e.target.value)}
+                      rows={3}
+                      className="w-full bg-[#171717] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                      placeholder="Scouting bio, key athletic honors..."
+                    />
+                  </div>
+
+                  <div className="pt-3 border-t border-white/10 space-y-3">
+                    <h4 className="font-display uppercase text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#F21717]" /> Athletic Testing & Combines
+                    </h4>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">40-Yard Dash</label>
+                        <Input value={formFortyTime} onChange={(e) => setFormFortyTime(e.target.value)} placeholder="4.45s" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Vertical Jump</label>
+                        <Input value={formVertical} onChange={(e) => setFormVertical(e.target.value)} placeholder="36 in" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Bench Press</label>
+                        <Input value={formBenchPress} onChange={(e) => setFormBenchPress(e.target.value)} placeholder="275 lbs" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Squat</label>
+                        <Input value={formSquat} onChange={(e) => setFormSquat(e.target.value)} placeholder="405 lbs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Power Clean</label>
+                        <Input value={formPowerClean} onChange={(e) => setFormPowerClean(e.target.value)} placeholder="285 lbs" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Shuttle Time</label>
+                        <Input value={formShuttleTime} onChange={(e) => setFormShuttleTime(e.target.value)} placeholder="4.12s" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Broad Jump</label>
+                        <Input value={formBroadJump} onChange={(e) => setFormBroadJump(e.target.value)} placeholder="10 ft 2 in" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">GPA</label>
+                        <Input value={formGpa} onChange={(e) => setFormGpa(e.target.value)} placeholder="3.8" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Highlight Video Link (HUDL / YouTube)</label>
+                    <Input value={formHighlightVideoUrl} onChange={(e) => setFormHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/v/..." />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
             <div className="p-6 border-t border-white/10 bg-[#171717] flex items-center justify-between rounded-b-2xl">
               <Button variant="outline" size="sm" onClick={() => setIsEvalModalOpen(false)}>
                 Cancel
@@ -710,15 +1248,15 @@ export default function PublicAthleteProfilePage() {
                 size="sm"
                 onClick={handleSaveEval}
                 disabled={isSavingEval}
-                className="bg-[#F21717] hover:bg-[#D90F0F] gap-2 font-bold"
+                className="bg-[#F21717] hover:bg-[#D90F0F] gap-2 font-bold px-6"
               >
                 {isSavingEval ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Saving Evaluation...
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving Changes...
                   </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4" /> Save Ratings & Notes
+                    <Check className="w-4 h-4" /> Save User Details & Evaluation
                   </>
                 )}
               </Button>
