@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Badge } from "@/components/ui";
-import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera, Upload, Trash2, Plus, Shield, Lock } from "lucide-react";
+import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera, Upload, Trash2, Plus, Shield, Lock, UserPlus } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -123,6 +123,26 @@ export default function AdminDashboardPage() {
     { key: "view_recruiting", label: "View Recruiter Search" },
     { key: "manage_roles", label: "Manage Roles & Permissions" },
   ];
+
+  // User Creation Modal State
+  const [isCreatingUser, setIsCreatingUser] = React.useState(false);
+  const [createEmail, setCreateEmail] = React.useState("");
+  const [createPassword, setCreatePassword] = React.useState("");
+  const [createFirstName, setCreateFirstName] = React.useState("");
+  const [createLastName, setCreateLastName] = React.useState("");
+  const [createRole, setCreateRole] = React.useState<"ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN">("ATHLETE");
+  const [createCustomRoleId, setCreateCustomRoleId] = React.useState("");
+  const [createStatus, setCreateStatus] = React.useState<"ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT">("ACTIVE");
+  const [createGrantMembership, setCreateGrantMembership] = React.useState(true);
+  const [createSport, setCreateSport] = React.useState("");
+  const [createPosition, setCreatePosition] = React.useState("");
+  const [createSchoolClub, setCreateSchoolClub] = React.useState("");
+  const [createGraduationYear, setCreateGraduationYear] = React.useState("");
+  const [createLocation, setCreateLocation] = React.useState("");
+  const [createBio, setCreateBio] = React.useState("");
+  const [createUserLoading, setCreateUserLoading] = React.useState(false);
+  const [createUserSuccess, setCreateUserSuccess] = React.useState<string | null>(null);
+  const [createUserError, setCreateUserError] = React.useState<string | null>(null);
 
   // User Edit Modal State
   const [editingUser, setEditingUser] = React.useState<AdminUserItem | null>(null);
@@ -335,6 +355,80 @@ export default function AdminDashboardPage() {
       mounted = false;
     };
   }, [searchQuery]);
+
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createEmail.trim() || !createPassword.trim()) return;
+
+    if (createPassword.length < 6) {
+      setCreateUserError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setCreateUserLoading(true);
+    setCreateUserSuccess(null);
+    setCreateUserError(null);
+
+    try {
+      const res = await fetch("/api/admin/users/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: createEmail,
+          password: createPassword,
+          firstName: createFirstName,
+          lastName: createLastName,
+          role: createRole,
+          customRoleId: createCustomRoleId || null,
+          status: createStatus,
+          grantMembership: createGrantMembership,
+          profile: {
+            sport: createSport || null,
+            position: createPosition || null,
+            schoolClub: createSchoolClub || null,
+            graduationYear: createGraduationYear ? parseInt(createGraduationYear) : null,
+            location: createLocation || null,
+            bio: createBio || null,
+          },
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCreateUserError(data.error || "Failed to create user.");
+      } else {
+        setCreateUserSuccess(data.message || `User created successfully!`);
+        if (data.user) {
+          setUsers((prev) => [data.user, ...prev]);
+          setStats((prev) => ({
+            ...prev,
+            totalUsers: prev.totalUsers + 1,
+            activeMemberships: createGrantMembership ? prev.activeMemberships + 1 : prev.activeMemberships,
+          }));
+        }
+
+        setTimeout(() => {
+          setIsCreatingUser(false);
+          setCreateUserSuccess(null);
+          setCreateEmail("");
+          setCreatePassword("");
+          setCreateFirstName("");
+          setCreateLastName("");
+          setCreateSport("");
+          setCreatePosition("");
+          setCreateSchoolClub("");
+          setCreateGraduationYear("");
+          setCreateLocation("");
+          setCreateBio("");
+        }, 1500);
+      }
+    } catch {
+      setCreateUserError("Network error creating user.");
+    } finally {
+      setCreateUserLoading(false);
+    }
+  };
 
   const handleCreateRole = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -764,14 +858,24 @@ export default function AdminDashboardPage() {
                 <CardTitle isDisplay>Platform User Roster</CardTitle>
                 <CardDescription>Full editing power for any user details, scouting notes, and 1-5 skill evaluations.</CardDescription>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-[#737373] absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Filter users by email or name..."
-                  className="pl-9"
-                />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                <Button
+                  onClick={() => setIsCreatingUser(true)}
+                  variant="athletic"
+                  size="sm"
+                  className="bg-[#F21717] gap-2 font-bold shrink-0 shadow-[0_0_15px_rgba(242,23,23,0.3)]"
+                >
+                  <UserPlus className="w-4 h-4" /> Add User / Admin
+                </Button>
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 text-[#737373] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Filter users by email or name..."
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </CardHeader>
 
@@ -1499,6 +1603,279 @@ export default function AdminDashboardPage() {
                 )}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW USER / ADMIN CREATION MODAL */}
+      {isCreatingUser && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#111111] border border-white/20 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(242,23,23,0.3)] my-8">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#171717] rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center text-[#F21717]">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-display uppercase text-xl font-black text-white">
+                    Register New User / Admin
+                  </h2>
+                  <p className="text-xs text-[#A3A3A3]">
+                    Create a new user or admin account. Admin handles payment & membership privileges.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsCreatingUser(false);
+                  setCreateUserError(null);
+                  setCreateUserSuccess(null);
+                }}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-[#A3A3A3] hover:text-white flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form Content */}
+            <form onSubmit={handleCreateUserSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              {createUserSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-300 flex items-center gap-2 font-semibold">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{createUserSuccess}</span>
+                </div>
+              )}
+
+              {createUserError && (
+                <div className="p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-300 flex items-center gap-2 font-semibold">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{createUserError}</span>
+                </div>
+              )}
+
+              {/* 1. Account Credentials */}
+              <div className="space-y-3">
+                <h3 className="font-display uppercase text-xs font-bold text-[#F21717] tracking-wider flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" /> 1. Account Credentials
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">First Name</label>
+                    <Input
+                      value={createFirstName}
+                      onChange={(e) => setCreateFirstName(e.target.value)}
+                      placeholder="John"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Last Name</label>
+                    <Input
+                      value={createLastName}
+                      onChange={(e) => setCreateLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">
+                      Email Address <span className="text-[#F21717]">*</span>
+                    </label>
+                    <Input
+                      type="email"
+                      required
+                      value={createEmail}
+                      onChange={(e) => setCreateEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">
+                      Initial Password <span className="text-[#F21717]">*</span>
+                    </label>
+                    <Input
+                      type="password"
+                      required
+                      value={createPassword}
+                      onChange={(e) => setCreatePassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Role & System Status */}
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                <h3 className="font-display uppercase text-xs font-bold text-[#F21717] tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> 2. Role & System Permissions
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">System Role</label>
+                    <Select
+                      value={createRole}
+                      onChange={(e) => setCreateRole(e.target.value as any)}
+                      options={[
+                        { value: "ATHLETE", label: "Athlete" },
+                        { value: "RECRUITER", label: "Recruiter" },
+                        { value: "ADMIN", label: "Admin" },
+                        { value: "SUPER_ADMIN", label: "Super Admin" },
+                      ]}
+                      className="bg-[#171717]"
+                    />
+                  </div>
+
+                  {roles.length > 0 && (
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Custom Database Role</label>
+                      <Select
+                        value={createCustomRoleId}
+                        onChange={(e) => setCreateCustomRoleId(e.target.value)}
+                        options={[
+                          { value: "", label: "None (Standard Role)" },
+                          ...roles.map((r) => ({ value: r.id, label: r.displayName })),
+                        ]}
+                        className="bg-[#171717]"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Account Status</label>
+                    <Select
+                      value={createStatus}
+                      onChange={(e) => setCreateStatus(e.target.value as any)}
+                      options={[
+                        { value: "ACTIVE", label: "Active" },
+                        { value: "SUSPENDED", label: "Suspended" },
+                        { value: "PENDING_PAYMENT", label: "Pending Payment" },
+                      ]}
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Payment & Membership Exemption (Admin Handled) */}
+              <div className="pt-2 border-t border-white/10">
+                <label className="p-4 rounded-xl bg-gradient-to-r from-[#F21717]/15 to-emerald-500/10 border border-[#F21717]/30 flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={createGrantMembership}
+                    onChange={(e) => setCreateGrantMembership(e.target.checked)}
+                    className="accent-[#F21717] w-5 h-5 rounded mt-0.5 shrink-0"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-display uppercase font-bold text-white text-sm">
+                        ⚡ Grant Full Active Membership Access (No Payment Required)
+                      </span>
+                      <Badge variant="success" className="bg-emerald-500/20 text-emerald-300 text-[10px]">
+                        Admin Exempt
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-[#D4D4D4]">
+                      Check this box so the user has immediate access to all courses, academy tools, and features without paying via Stripe. Payment is handled offline by admin.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* 4. Roster Profile Info */}
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                <h3 className="font-display uppercase text-xs font-bold text-[#F21717] tracking-wider flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5" /> 4. Athlete Profile Details (Optional)
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Sport</label>
+                    <Input
+                      value={createSport}
+                      onChange={(e) => setCreateSport(e.target.value)}
+                      placeholder="e.g. Football, Basketball"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Position</label>
+                    <Input
+                      value={createPosition}
+                      onChange={(e) => setCreatePosition(e.target.value)}
+                      placeholder="e.g. Quarterback"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">School / Club</label>
+                    <Input
+                      value={createSchoolClub}
+                      onChange={(e) => setCreateSchoolClub(e.target.value)}
+                      placeholder="e.g. Westlake High"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Graduation Year</label>
+                    <Input
+                      value={createGraduationYear}
+                      onChange={(e) => setCreateGraduationYear(e.target.value)}
+                      placeholder="2027"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Location</label>
+                    <Input
+                      value={createLocation}
+                      onChange={(e) => setCreateLocation(e.target.value)}
+                      placeholder="Dallas, TX"
+                      className="bg-[#171717]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreatingUser(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createUserLoading}
+                  variant="athletic"
+                  size="sm"
+                  className="bg-[#F21717] hover:bg-[#D90F0F] gap-2 font-bold"
+                >
+                  {createUserLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Registering Account...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" /> Register User / Admin
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
