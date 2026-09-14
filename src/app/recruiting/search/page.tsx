@@ -17,6 +17,7 @@ interface SearchAthlete {
   bio: string | null;
   profilePhoto: string | null;
   profileCompleteness: number;
+  potentialDivision?: string | null;
   user: {
     id: string;
     firstName: string | null;
@@ -36,6 +37,7 @@ export default function RecruitSearchPage() {
   const [sport, setSport] = React.useState("");
   const [gradYear, setGradYear] = React.useState("");
   const [location, setLocation] = React.useState("");
+  const [level, setLevel] = React.useState("");
 
   const [athletes, setAthletes] = React.useState<SearchAthlete[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -50,6 +52,7 @@ export default function RecruitSearchPage() {
     if (sport) params.set("sport", sport);
     if (gradYear) params.set("graduationYear", gradYear);
     if (location) params.set("location", location);
+    if (level) params.set("level", level);
     params.set("page", String(page));
 
     try {
@@ -67,7 +70,7 @@ export default function RecruitSearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, sport, gradYear, location, page]);
+  }, [query, sport, gradYear, location, level, page]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,7 +84,7 @@ export default function RecruitSearchPage() {
       <PageHeader
         eyebrow="Recruiting Database"
         title="Athlete Recruiter Search"
-        description="Filter and evaluate verified high school and college athletes by sport, position, graduation year, and location."
+        description="Filter and evaluate verified high school and college athletes by sport, position, program level, graduation year, and location."
       />
 
       <div className="space-y-6 pb-16">
@@ -102,7 +105,26 @@ export default function RecruitSearchPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+                <Select
+                  value={level}
+                  onChange={(e) => {
+                    setLevel(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: "", label: "All Program Levels" },
+                    { value: "power_4", label: "Power 4" },
+                    { value: "division_1", label: "Division 1 (D1)" },
+                    { value: "division_2", label: "Division 2 (D2)" },
+                    { value: "division_3", label: "Division 3 (D3)" },
+                    { value: "juco", label: "JUCO (NJCAA)" },
+                    { value: "hbcu", label: "HBCU" },
+                    { value: "naia", label: "NAIA" },
+                  ]}
+                  className="w-full sm:w-44"
+                />
+
                 <Select
                   value={sport}
                   onChange={(e) => {
@@ -149,13 +171,14 @@ export default function RecruitSearchPage() {
                 <Filter className="w-3.5 h-3.5 text-[#F21717]" /> {total} Verified Prospects Found
               </span>
 
-              {(query || sport || gradYear || location) && (
+              {(query || sport || gradYear || location || level) && (
                 <button
                   onClick={() => {
                     setQuery("");
                     setSport("");
                     setGradYear("");
                     setLocation("");
+                    setLevel("");
                     setPage(1);
                   }}
                   className="text-[#F21717] hover:underline cursor-pointer font-semibold"
@@ -199,6 +222,11 @@ export default function RecruitSearchPage() {
                       <h4 className="font-display uppercase text-lg font-bold text-white leading-tight">
                         {a.user.name || `${a.user.firstName} ${a.user.lastName}`}
                       </h4>
+                      {a.potentialDivision && (
+                        <div className="inline-block mt-1 px-2 py-0.5 rounded bg-[#F21717]/10 text-[#F21717] border border-[#F21717]/20 text-[10px] font-bold uppercase tracking-wider">
+                          {a.potentialDivision.replace(/_/g, " ")} Prospect
+                        </div>
+                      )}
                       {a.user.badges && a.user.badges.length > 0 && (
                         <div className="flex items-center gap-1 mt-1">
                           <Shield className="w-3 h-3 text-emerald-400" />

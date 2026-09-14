@@ -34,7 +34,7 @@ const COURSES_CONFIG: CourseDefinition[] = [
     slug: "australia-to-america",
     file: "rep1Australia-curriculum.md",
     title: "Australia to America Pathway",
-    description: "Complete roadmap for Australian student-athletes transitioning to US collegiate programs: recruiting, eligibility, visas, travel, NIL, and US life setup.",
+    description: "This course provides information vital to athletes transitioning from Australia to America to make the transition as smooth as possible.",
     category: "Recruiting Pathway",
     order: 2,
     isRequiredForAcademy: true,

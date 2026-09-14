@@ -33,6 +33,7 @@ const updateUserSchema = z.object({
 
       // Staff Evaluation & Ratings (1 to 5)
       adminNotes: z.string().nullable().optional(),
+      potentialDivision: z.string().nullable().optional(),
       ratingSpeed: z.number().min(0).max(5).nullable().optional(),
       ratingExplosiveness: z.number().min(0).max(5).nullable().optional(),
       ratingAgility: z.number().min(0).max(5).nullable().optional(),
@@ -74,6 +75,7 @@ export async function GET(req: Request) {
       lastName: true,
       role: true,
       status: true,
+      image: true,
       createdAt: true,
       athleteProfile: true,
       subscriptions: {
@@ -135,6 +137,7 @@ export async function PATCH(req: Request) {
             : undefined,
         role: role ?? undefined,
         status: status ?? undefined,
+        image: profile?.profilePhoto !== undefined ? profile.profilePhoto : undefined,
       },
     });
 

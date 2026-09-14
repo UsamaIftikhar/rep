@@ -106,6 +106,7 @@ model AthleteProfile {
   
   // Admin & Staff Scouting Evaluations
   adminNotes          String?  @db.Text
+  potentialDivision   String?
   ratingSpeed         Float?
   ratingExplosiveness Float?
   ratingAgility       Float?

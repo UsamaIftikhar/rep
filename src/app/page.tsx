@@ -213,6 +213,100 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
+        {/* FROM THE BLOG / LATEST INSIGHTS SECTION (Placed above Upcoming Events) */}
+        <div className="space-y-6 pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
+                LATEST INSIGHTS & ARTICLES
+              </span>
+              <h2 className="font-display uppercase text-2xl md:text-3xl font-black text-white">
+                From the REP 1 Blog
+              </h2>
+            </div>
+            <Link href="/blog" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F21717] hover:underline">
+              View All Articles <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Blog Post 1 */}
+            <Card hoverEffect className="bg-[#111111] border-white/10 flex flex-col justify-between overflow-hidden">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#F21717]/15 border border-[#F21717]/30 text-[9px] font-bold text-[#F21717] uppercase tracking-wider">
+                    NIL & MARKETING
+                  </span>
+                  <span className="text-[10px] text-[#737373]">5 min read</span>
+                </div>
+                <div>
+                  <h3 className="font-display uppercase text-base font-bold text-white leading-tight mb-2 hover:text-[#F21717] transition-colors">
+                    <Link href="/blog">The 2026 NIL Playbook: Navigating Student-Athlete Monetization</Link>
+                  </h3>
+                  <p className="text-xs text-[#A3A3A3] line-clamp-3 leading-relaxed">
+                    Essential guidelines for high school and collegiate athletes navigating 1099 contracts, sponsor deliverables, and brand compliance without compromising eligibility.
+                  </p>
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6 pt-0">
+                <Link href="/blog" className="inline-flex items-center gap-1 text-xs font-semibold text-white hover:text-[#F21717]">
+                  Read Full Guide <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </Card>
+
+            {/* Blog Post 2 */}
+            <Card hoverEffect className="bg-[#111111] border-white/10 flex flex-col justify-between overflow-hidden">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[9px] font-bold text-amber-400 uppercase tracking-wider">
+                    INTERNATIONAL RECRUITING
+                  </span>
+                  <span className="text-[10px] text-[#737373]">7 min read</span>
+                </div>
+                <div>
+                  <h3 className="font-display uppercase text-base font-bold text-white leading-tight mb-2 hover:text-amber-400 transition-colors">
+                    <Link href="/blog">Australia to America: Crossing the Pacific for US College Football</Link>
+                  </h3>
+                  <p className="text-xs text-[#A3A3A3] line-clamp-3 leading-relaxed">
+                    A comprehensive breakdown of NCAA eligibility certification, SEVIS visa processing, and adapting to American collegiate sports culture for international prospects.
+                  </p>
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6 pt-0">
+                <Link href="/blog" className="inline-flex items-center gap-1 text-xs font-semibold text-white hover:text-amber-400">
+                  Read Full Guide <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </Card>
+
+            {/* Blog Post 3 */}
+            <Card hoverEffect className="bg-[#111111] border-white/10 flex flex-col justify-between overflow-hidden">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#00D1B2]/15 border border-[#00D1B2]/30 text-[9px] font-bold text-[#00D1B2] uppercase tracking-wider">
+                    RECRUITER PREP
+                  </span>
+                  <span className="text-[10px] text-[#737373]">4 min read</span>
+                </div>
+                <div>
+                  <h3 className="font-display uppercase text-base font-bold text-white leading-tight mb-2 hover:text-[#00D1B2] transition-colors">
+                    <Link href="/blog">Mastering High-Stakes Recruiter Interviews with AI Coaching</Link>
+                  </h3>
+                  <p className="text-xs text-[#A3A3A3] line-clamp-3 leading-relaxed">
+                    How elite prospects use practice scenario drills to refine vocal poise, body language, and executive confidence during official college visits and calls.
+                  </p>
+                </div>
+              </CardContent>
+              <div className="px-6 pb-6 pt-0">
+                <Link href="/blog" className="inline-flex items-center gap-1 text-xs font-semibold text-white hover:text-[#00D1B2]">
+                  Read Full Guide <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </Card>
+          </div>
+        </div>
+
         {/* Bottom 2-Col: Upcoming Events & Rep 1 Top Performers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-[#111111] border-white/10 p-6">

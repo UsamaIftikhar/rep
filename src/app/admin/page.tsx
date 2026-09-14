@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Badge } from "@/components/ui";
-import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle } from "lucide-react";
+import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, ExternalLink, Check, Award, Activity, KeyRound, AlertCircle, Camera } from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -37,6 +37,7 @@ interface FullAthleteProfile {
 
   // Staff Evaluations
   adminNotes?: string | null;
+  potentialDivision?: string | null;
   ratingSpeed?: number | null;
   ratingExplosiveness?: number | null;
   ratingAgility?: number | null;
@@ -55,6 +56,7 @@ interface AdminUserItem {
   role: "ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN";
   status: "ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT";
   createdAt: string;
+  image?: string | null;
   athleteProfile?: FullAthleteProfile | null;
   subscriptions?: { id: string; stripePriceId: string; status: string }[];
   entitlements?: { type: string }[];
@@ -119,6 +121,7 @@ export default function AdminDashboardPage() {
 
   // Staff Scouting Evaluation & 1-5 Ratings State
   const [formAdminNotes, setFormAdminNotes] = React.useState("");
+  const [formPotentialDivision, setFormPotentialDivision] = React.useState("");
   const [formRatingSpeed, setFormRatingSpeed] = React.useState<number>(0);
   const [formRatingExplosiveness, setFormRatingExplosiveness] = React.useState<number>(0);
   const [formRatingAgility, setFormRatingAgility] = React.useState<number>(0);
@@ -181,7 +184,7 @@ export default function AdminDashboardPage() {
     setFormGraduationYear(prof.graduationYear ? String(prof.graduationYear) : "");
     setFormLocation(prof.location || "");
     setFormBio(prof.bio || "");
-    setFormPhoto(prof.profilePhoto || "");
+    setFormPhoto(prof.profilePhoto || u.image || "");
     setFormFortyTime(prof.fortyTime || "");
     setFormVertical(prof.vertical || "");
     setFormBenchPress(prof.benchPress || "");
@@ -194,6 +197,7 @@ export default function AdminDashboardPage() {
 
     // Evaluation Ratings & Notes
     setFormAdminNotes(prof.adminNotes || "");
+    setFormPotentialDivision(prof.potentialDivision || "");
     setFormRatingSpeed(prof.ratingSpeed || 0);
     setFormRatingExplosiveness(prof.ratingExplosiveness || 0);
     setFormRatingAgility(prof.ratingAgility || 0);
@@ -267,6 +271,7 @@ export default function AdminDashboardPage() {
           gpa: formGpa || null,
           highlightVideoUrl: formHighlightVideoUrl || null,
           adminNotes: formAdminNotes || null,
+          potentialDivision: formPotentialDivision || null,
           ratingSpeed: formRatingSpeed > 0 ? formRatingSpeed : null,
           ratingExplosiveness: formRatingExplosiveness > 0 ? formRatingExplosiveness : null,
           ratingAgility: formRatingAgility > 0 ? formRatingAgility : null,
@@ -744,6 +749,28 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div>
+                    <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                      <span>Evaluated Potential Division / Level</span>
+                      <span className="text-[10px] text-[#F21717] font-bold">Mapped to Recruiter Search</span>
+                    </label>
+                    <Select
+                      value={formPotentialDivision}
+                      onChange={(e) => setFormPotentialDivision(e.target.value)}
+                      options={[
+                        { value: "", label: "Not Evaluated / Unranked" },
+                        { value: "power_4", label: "Power 4 (FBS Power Conference)" },
+                        { value: "division_1", label: "Division 1 (NCAA D1 / FBS / FCS)" },
+                        { value: "division_2", label: "Division 2 (NCAA D2)" },
+                        { value: "division_3", label: "Division 3 (NCAA D3)" },
+                        { value: "juco", label: "JUCO (NJCAA Junior College)" },
+                        { value: "hbcu", label: "HBCU (Historically Black Colleges)" },
+                        { value: "naia", label: "NAIA (Collegiate Athletics)" },
+                      ]}
+                      className="w-full bg-[#171717]"
+                    />
+                  </div>
+
+                  <div>
                     <label className="font-bold text-[#A3A3A3] uppercase tracking-wider block mb-1.5">
                       Staff Scouting Notes & Assessment
                     </label>
@@ -791,6 +818,35 @@ export default function AdminDashboardPage() {
                   <div>
                     <label className="font-bold text-[#A3A3A3] block mb-1">Email Address</label>
                     <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1 flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile Photo URL / Avatar
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {formPhoto ? (
+                        <img
+                          src={formPhoto}
+                          alt="User Avatar Preview"
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[#F21717]/60 shrink-0 shadow-[0_0_10px_rgba(242,23,23,0.3)]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#222222] border border-white/10 flex items-center justify-center text-xs text-[#737373] font-bold shrink-0">
+                          <Camera className="w-4 h-4 text-[#A3A3A3]" />
+                        </div>
+                      )}
+                      <Input
+                        type="url"
+                        value={formPhoto}
+                        onChange={(e) => setFormPhoto(e.target.value)}
+                        placeholder="https://images.unsplash.com/... or image link"
+                        className="flex-1"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -878,6 +934,35 @@ export default function AdminDashboardPage() {
               {/* TAB 3: ATHLETE PROFILE & STATS */}
               {editTab === "profile" && (
                 <div className="space-y-4">
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1 flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-[#F21717]" /> Profile / Athlete Photo URL
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {formPhoto ? (
+                        <img
+                          src={formPhoto}
+                          alt="Athlete Profile Photo"
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[#F21717]/60 shrink-0 shadow-[0_0_10px_rgba(242,23,23,0.3)]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#222222] border border-white/10 flex items-center justify-center text-xs text-[#737373] font-bold shrink-0">
+                          <Camera className="w-4 h-4 text-[#A3A3A3]" />
+                        </div>
+                      )}
+                      <Input
+                        type="url"
+                        value={formPhoto}
+                        onChange={(e) => setFormPhoto(e.target.value)}
+                        placeholder="https://images.unsplash.com/... or profile image link"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="font-bold text-[#A3A3A3] block mb-1">Primary Sport</label>

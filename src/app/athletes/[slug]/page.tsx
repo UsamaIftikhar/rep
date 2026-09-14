@@ -29,6 +29,7 @@ interface PublicAthlete {
   broadJump: string | null;
   gpa: string | null;
   highlightVideoUrl: string | null;
+  potentialDivision?: string | null;
   profileCompleteness: number;
 
   // Staff Evaluation & Ratings
@@ -356,6 +357,11 @@ export default function PublicAthleteProfilePage() {
                     <UIBadge variant="success" className="text-[10px] uppercase font-bold">
                       Verified Recruit
                     </UIBadge>
+                    {athlete.potentialDivision && (
+                      <UIBadge variant="outline" className="text-[10px] uppercase font-bold border-[#F21717]/40 text-[#F21717] bg-[#F21717]/10">
+                        {athlete.potentialDivision.replace(/_/g, " ")} Level Prospect
+                      </UIBadge>
+                    )}
                   </div>
 
                   <h1 className="font-display uppercase text-3xl md:text-4xl font-black text-white">

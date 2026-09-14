@@ -1,38 +1,38 @@
-# rep1aus — Rep1 Australian Student-Athlete Academy: Curriculum Content
+# Rep1 Australian Student-Athlete Academy: Curriculum Content
 
-**Source:** Lovable project `rep1aus` ("The Rep1 Australian Player's Roadmap"), extracted verbatim from `src/data/academyModules.ts`. Hierarchy: Academy → Batch → Module → Handbook Section. Per the file's own header comment: "There are no quizzes, tests, scores, or gates anywhere in this flow."
+This course provides information vital to athletes transitioning from Australia to America to make the transition as smooth as possible.
 
 ---
 
-## Batches
+## Curriculum Sections
 
-**Batch 1 — Explore, Choose a Pathway, and Prepare for Recruiting** (available)
+**Section 1 — Explore, Choose a Pathway, and Prepare for Recruiting** (available)
 
 Work out whether the U.S. football pathway fits you, understand how the American system works, and get your recruiting profile and coach communication right from the start.
 
-**Batch 2 — Academics, Eligibility, Offers, and Enrollment** (available)
+**Section 2 — Academics, Eligibility, Offers, and Enrollment** (available)
 
 Australian schooling against U.S. eligibility rules, testing, the offer process, and what it takes to actually enrol.
 
-**Batch 3 — Visa, Departure, Travel, and Arrival** (available)
+**Section 3 — Visa, Departure, Travel, and Arrival** (available)
 
 Student visas, documents, packing, flights, and the first few weeks on the ground in the United States.
 
-**Batch 4 — Arrive, Check In, and Set Up Your Life in the United States** (available)
+**Section 4 — Arrive, Check In, and Set Up Your Life in the United States** (available)
 
 Complete your school and SEVIS check-in, move into housing, set up health coverage and athletic medical clearance, and get banking, phone, and everyday logistics sorted in your first weeks in the United States.
 
-**Batch 5 — Succeed at School, Football, and Life** (available)
+**Section 5 — Succeed at School, Football, and Life** (available)
 
 Managing study load, team culture, homesickness, injury, and building a life beyond the depth chart.
 
-**Batch 6 — NIL, Taxes, Transfers, Graduation, and Returning Home** (available)
+**Section 6 — NIL, Taxes, Transfers, Graduation, and Returning Home** (available)
 
 Name, image and likeness, U.S. tax obligations, the transfer portal, finishing your degree, and what comes next.
 
 ---
 
-## Batch 1: Explore, Choose a Pathway, and Prepare for Recruiting
+## Section 1: Explore, Choose a Pathway, and Prepare for Recruiting
 
 ### Module 1 — Decide Whether the U.S. Football Pathway Fits You
 
@@ -143,7 +143,7 @@ Write down what you would do if the U.S. pathway does not eventuate. Having that
 
 Interest is not the same as readiness. Wanting this (watching American football, imagining a scholarship, picturing yourself on a U.S. campus) is a completely normal starting point, and it doesn't mean you're ready to start actively recruiting yet. Readiness is built, not felt. It has five parts: academic, athletic, financial, emotional, and family. You can be genuinely excited about this pathway and still be twelve months away from being ready to pursue it seriously. That's useful information, not a setback.
 
-Two parts of readiness are easy to underestimate because they have nothing to do with football or grades. The first is independence: living away from home means managing your own routine, your own study schedule, your own laundry, your own decisions about what to eat, with no parent down the hall to catch you if you slip. The second is cultural adjustment: American school, football, and social culture run on different norms than Australian ones: more direct in some ways, more formal in others, different expectations around independence and self-advocacy, and a real chance of culture shock in the first few months no matter how prepared you feel. Adjustment takes time, and needing time to adjust is not a sign you made the wrong choice. This academy covers cultural adjustment and mental health in full in a later batch. This is just the first flag that it's coming.
+Two parts of readiness are easy to underestimate because they have nothing to do with football or grades. The first is independence: living away from home means managing your own routine, your own study schedule, your own laundry, your own decisions about what to eat, with no parent down the hall to catch you if you slip. The second is cultural adjustment: American school, football, and social culture run on different norms than Australian ones: more direct in some ways, more formal in others, different expectations around independence and self-advocacy, and a real chance of culture shock in the first few months no matter how prepared you feel. Adjustment takes time, and needing time to adjust is not a sign you made the wrong choice. This academy covers cultural adjustment and mental health in full in a later section. This is just the first flag that it's coming.
 
 Answer the questions below in writing. Vague answers are the warning sign, not a failing grade.
 
@@ -1152,7 +1152,7 @@ List every service you are considering and check each one against the red-flag l
 
 ---
 
-## Batch 2: Academics, Eligibility, Offers, and Enrollment
+## Section 2: Academics, Eligibility, Offers, and Enrollment
 
 ### Module 6 — Plan Your Academic Path From Australia
 
@@ -1248,7 +1248,7 @@ Ask these directly, in writing, and keep the answers:
 6. How will my results be interpreted if my school doesn't issue an ATAR?
 7. Is there a difference between what admissions requires and what athletics or the eligibility center requires?
 
-Ask the admissions office and the athletics program these questions separately. Their answers don't always match, and knowing that early avoids the conflicting-instructions problem covered later in this batch.
+Ask the admissions office and the athletics program these questions separately. Their answers don't always match, and knowing that early avoids the conflicting-instructions problem covered later in this section.
 
 **Your Academic Document Checklist**
 
@@ -1595,7 +1595,7 @@ Getting from a good conversation with a coach to actually being cleared to pract
 7. Deposit payment: money paid to secure your spot, deadline-driven and often non-refundable.
 8. Housing: a separate application and deadline, sometimes due before you've even been admitted.
 9. Course registration: happens once you're enrolled, usually coordinated around an orientation date.
-10. International-student processing: your school's international student office confirms your documentation separately from admissions, athletics, and eligibility. Your visa itself is covered in a later batch.
+10. International-student processing: your school's international student office confirms your documentation separately from admissions, athletics, and eligibility. Your visa itself is covered in a later section.
 11. Final permission to begin participation: the athletic department's own confirmation, once every one of the above is actually complete, that you're cleared to practise and compete.
 
 On the athletic agreement specifically: for decades, Division I and II athletes signed a National Letter of Intent (NLI) to make their commitment official. In October 2024, the NCAA Division I Council eliminated the NLI for Division I. It has been replaced by a written offer of athletic aid, a binding financial aid agreement signed directly between the athlete and the institution, tied to the same non-contact protections the NLI used to provide: once you sign it, other schools are prohibited from recruiting communications with you. Division II continues to use the traditional NLI. NAIA and NJCAA each run their own separate commitment and signing documents, unrelated to the NCAA's process.
@@ -1663,7 +1663,7 @@ What this typically covers:
 • Health insurance requirements specific to international students, which are sometimes stricter than the general student requirement
 • Check-in requirements once you arrive on campus
 
-The visa process itself (F-1 or J-1 documentation, the SEVIS fee, and your embassy interview) is a separate, larger topic covered in full in a later batch. This section is only about the international student office's role once you're already admitted and enrolling. Don't conflate international-student office sign-off with visa approval; they're related but not the same process.
+The visa process itself (F-1 or J-1 documentation, the SEVIS fee, and your embassy interview) is a separate, larger topic covered in full in a later section. This section is only about the international student office's role once you're already admitted and enrolling. Don't conflate international-student office sign-off with visa approval; they're related but not the same process.
 
 **When Admissions and Athletics Don't Agree**
 
@@ -1691,7 +1691,7 @@ Review it weekly from the point you accept an offer through to departure. A miss
 
 **Your Pre-Visa Enrollment Checklist**
 
-Everything below should be complete before you move into the visa process covered in the next batch.
+Everything below should be complete before you move into the visa process covered in the next section.
 
 Commitment and application
 □ Written athletic-aid offer (or NLI, if Division II) received and reviewed with a parent or guardian
@@ -1717,7 +1717,7 @@ International student office
 Coordination
 □ Any conflicting instructions between offices identified and resolved in writing
 
-Once every box here is checked, you're ready to move into visa and departure preparation, covered in the next batch.
+Once every box here is checked, you're ready to move into visa and departure preparation, covered in the next section.
 
 **Key Takeaways**
 
@@ -1729,7 +1729,7 @@ Confirm which document your target school actually uses now for a binding commit
 
 ---
 
-## Batch 3: Visa, Departure, Travel, and Arrival
+## Section 3: Visa, Departure, Travel, and Arrival
 
 ### Module 10 — Understand the U.S. Student Visa Process
 
@@ -1737,7 +1737,7 @@ Being admitted to a school does not mean you have permission to enter the United
 
 **Admission Is Not Visa Eligibility**
 
-Being admitted to a school, even with a scholarship and full eligibility certification, does not give you permission to enter the United States. That permission runs through an entirely separate government process, decided by different authorities than the ones covered in Batch 2.
+Being admitted to a school, even with a scholarship and full eligibility certification, does not give you permission to enter the United States. That permission runs through an entirely separate government process, decided by different authorities than the ones covered in Section 2.
 
 The full sequence, once you're admitted:
 1. Your school issues a Form I-20, tied to your academic program
@@ -1747,7 +1747,7 @@ The full sequence, once you're admitted:
 5. You travel to a U.S. port of entry and request admission from U.S. Customs and Border Protection
 6. CBP decides, that day, whether and for how long to admit you
 
-Every one of these six steps is a separate decision by a separate authority. A scholarship offer has no bearing on any of them. Treat each one as its own approval, the same way Batch 2 taught you to treat recruiting, admission, and eligibility as separate approvals.
+Every one of these six steps is a separate decision by a separate authority. A scholarship offer has no bearing on any of them. Treat each one as its own approval, the same way Section 2 taught you to treat recruiting, admission, and eligibility as separate approvals.
 
 **Your Immigration Timeline at a Glance** *(timeline)*
 
@@ -1772,13 +1772,13 @@ Steps:
 
 **The Role of Your International Student Office and DSO**
 
-Your school's international student office, and specifically your Designated School Official (DSO), is your primary point of contact for everything in this batch. Not admissions, not athletics.
+Your school's international student office, and specifically your Designated School Official (DSO), is your primary point of contact for everything in this section. Not admissions, not athletics.
 
 A DSO is a school official specifically authorised by the U.S. government to issue and manage your immigration records. Larger schools have a Principal DSO (PDSO) overseeing several DSOs. Your DSO:
 • Issues and updates your Form I-20
 • Manages your record in SEVIS, the government's student tracking system
 • Advises you on maintaining your status once you arrive
-• Is who you contact first for almost any visa or status question, including anything covered later in this batch
+• Is who you contact first for almost any visa or status question, including anything covered later in this section
 
 Get your DSO's name and direct contact details as soon as you're admitted, separately from whatever contact you have with admissions or the athletic department. This relationship matters more, for longer, than either of those.
 
@@ -2069,7 +2069,7 @@ If anything is wrong, go back to your DSO for a correction before you apply for 
 
 **Proving You Can Afford It**
 
-A consular officer needs to see that the gap between your scholarship and your full cost of attendance, covered in Batch 2, is actually covered by someone.
+A consular officer needs to see that the gap between your scholarship and your full cost of attendance, covered in Section 2, is actually covered by someone.
 
 What to bring:
 • Your signed athletic-aid or scholarship award letter
@@ -2174,7 +2174,7 @@ Refused: generally because the officer wasn't satisfied you demonstrated the tem
 
 **Planning When Your Program May Run Longer Than Your Initial Admission**
 
-Your visa interview does not set the length of time you'll actually be admitted for. That decision belongs to CBP, at the border, covered in Module 12, and it now follows the fixed-admission-period rule covered throughout this batch.
+Your visa interview does not set the length of time you'll actually be admitted for. That decision belongs to CBP, at the border, covered in Module 12, and it now follows the fixed-admission-period rule covered throughout this section.
 
 What this means if your program might run longer than a standard timeline, for example if a redshirt year or an academic change extends things: don't assume your visa's validity period (how long you can use it to request entry) is the same thing as your admission period (how long you're actually allowed to stay once admitted). These are different concepts, decided by different agencies. If your program is likely to run past your initial admission period, start that conversation with your DSO well in advance; Module 13 covers the Extension of Stay process you may need.
 
@@ -2324,7 +2324,7 @@ When in doubt about any item, declare it. Declaring something that turns out to 
 
 Arrive with a plan for both, not an assumption that you'll sort it out once you land.
 
-Money: bring a mix of a small amount of U.S. cash and a card that works internationally without excessive fees; check your bank's foreign transaction fee policy before you leave. Setting up a U.S. bank account is covered in a later batch, so budget for a few weeks of using Australian-linked access first.
+Money: bring a mix of a small amount of U.S. cash and a card that works internationally without excessive fees; check your bank's foreign transaction fee policy before you leave. Setting up a U.S. bank account is covered in a later section, so budget for a few weeks of using Australian-linked access first.
 
 Phone: arrange either an international roaming plan for your first days or a plan to get a U.S. SIM or eSIM immediately on arrival. Your school and your family both need a working number for you as soon as possible, not after a few days of being unreachable.
 
@@ -2332,7 +2332,7 @@ Phone: arrange either an international roaming plan for your first days or a pla
 
 You need coverage that starts on your travel date, not on your first day of class.
 
-Travel insurance covers the trip itself: lost luggage, flight disruption, and medical issues during travel. Health insurance, covered in full in Batch 2, needs to be active before you arrive, since an injury or illness in your first days on U.S. soil is not covered by a policy that only starts at orientation. Confirm your specific start date for both with your provider and your school before you fly, not after something's already gone wrong.
+Travel insurance covers the trip itself: lost luggage, flight disruption, and medical issues during travel. Health insurance, covered in full in Section 2, needs to be active before you arrive, since an injury or illness in your first days on U.S. soil is not covered by a policy that only starts at orientation. Confirm your specific start date for both with your provider and your school before you fly, not after something's already gone wrong.
 
 **What Happens at the Port of Entry**
 
@@ -2346,7 +2346,7 @@ Most inspections are routine and brief. Some travellers are referred to secondar
 
 U.S. Customs and Border Protection is a completely separate agency from the U.S. Department of State, which issued your visa, and from your school, which issued your I-20.
 
-CBP's role is narrow but final: at the actual moment you arrive, a CBP officer decides whether to admit you, and for how long, under the fixed-admission-period rule covered throughout this batch. Holding a valid visa means you may request admission. It does not bind CBP's decision. This is the same distinction covered in Module 10, now playing out in person, at the border.
+CBP's role is narrow but final: at the actual moment you arrive, a CBP officer decides whether to admit you, and for how long, under the fixed-admission-period rule covered throughout this section. Holding a valid visa means you may request admission. It does not bind CBP's decision. This is the same distinction covered in Module 10, now playing out in person, at the border.
 
 **Checking Your Form I-94 After Entry**
 
@@ -2361,7 +2361,7 @@ What to check, in detail:
 • Your class of admission, which should read F-1
 • Your admit-until date
 
-Do not assume it says 'D/S.' Under the rule covered throughout this batch, your I-94 now carries a specific fixed date rather than the old open-ended duration of status, and that date, not a general sense of 'as long as I'm a student,' is your actual legal permission to remain. It should relate to your I-20 program end date, but confirm the two actually match; they are not automatically identical, as covered in Module 10.
+Do not assume it says 'D/S.' Under the rule covered throughout this section, your I-94 now carries a specific fixed date rather than the old open-ended duration of status, and that date, not a general sense of 'as long as I'm a student,' is your actual legal permission to remain. It should relate to your I-20 program end date, but confirm the two actually match; they are not automatically identical, as covered in Module 10.
 
 If anything is wrong: contact your DSO immediately, the same day if possible. Depending on the error, correction may go through your DSO, direct contact with CBP, or in some cases a formal CBP correction process. Don't wait to see if it 'sorts itself out.'
 
@@ -2603,7 +2603,7 @@ If you have a pending Extension of Stay or any unresolved status issue, do not t
 
 **OPT, STEM OPT, and This Rule**
 
-This is an introduction, not a complete guide. Full post-graduation career and work-authorisation content belongs in a later batch.
+This is an introduction, not a complete guide. Full post-graduation career and work-authorisation content belongs in a later section.
 
 What's worth knowing now: Optional Practical Training (OPT) and STEM OPT have their own separate eligibility rules and application processes, distinct from everything else in this module. Your employment-authorisation dates, if you eventually have them, are their own separate dates, distinct from your visa, your Form I-20, and your Form I-94.
 
@@ -2742,7 +2742,7 @@ Write down, right now, your current Form I-94 admit-until date and your Form I-2
 
 ---
 
-## Batch 4: Arrive, Check In, and Set Up Your Life in the United States
+## Section 4: Arrive, Check In, and Set Up Your Life in the United States
 
 ### Module 14 — Complete Your Required Arrival and Check-In Steps
 
@@ -2767,7 +2767,7 @@ Ongoing from day one:
 • Keep your passport, visa, Form I-20, and any arrival paperwork somewhere secure and easy to find
 • If your plans change (a delay, a different arrival date, a housing issue) tell your school as early as possible rather than waiting
 
-This checklist only covers arrival and check-in. Housing and campus life, health and medical clearance, emergency contacts, and banking and everyday setup each get their own module later in this batch.
+This checklist only covers arrival and check-in. Housing and campus life, health and medical clearance, emergency contacts, and banking and everyday setup each get their own module later in this section.
 
 Steps:
 1. Reach Your Housing or Accommodation Safely
@@ -2825,7 +2825,7 @@ Your DSO, or Designated School Official, is the staff member at your school auth
 
 Your school sets its own student-facing check-in process, and that process is what you actually need to follow. It exists so your DSO has the information and documents required to complete your registration, and your school's own deadline for it can fall well before any federal timeframe. Complete it as soon as your school allows rather than treating any later date as safe to wait for.
 
-In short: you follow your school's check-in instructions and deadline; your DSO then uses what you provide to meet their own separate SEVIS registration obligation. Confirm your specific school's process directly, since the exact steps vary by institution. This is separate from the broader immigration timeline covered in Batch 3, which explains how your status is maintained over the rest of your time in the United States.
+In short: you follow your school's check-in instructions and deadline; your DSO then uses what you provide to meet their own separate SEVIS registration obligation. Confirm your specific school's process directly, since the exact steps vary by institution. This is separate from the broader immigration timeline covered in Section 3, which explains how your status is maintained over the rest of your time in the United States.
 
 Separately, federal regulation also sets a reporting deadline that applies to you directly, not just to your DSO: initial F-1 and M-1 students should report to their DSO as soon as possible after being admitted to the United States, and no later than the Initial Session Start Date listed in SEVIS (8 CFR 214.3(g)(iii)(C)). If a DSO cannot confirm that you reported, SEVIS can automatically terminate your record as a no-show. Your school's own check-in deadline may fall earlier than this federal baseline, but it cannot fall later, so follow whichever deadline comes first.
 
@@ -2885,7 +2885,7 @@ If this happens to you:
 • If your DSO advises that your status may be affected, or if you're unsure, contact a qualified U.S. immigration attorney
 • Keep every document and message related to what happened
 
-This handbook cannot tell you what a missed check-in means for your specific situation, and no one, including your DSO, a coach, a teammate, or Rep1, can promise a particular outcome or that a missed check-in will be resolved a certain way. Your DSO is the right first contact, and qualified immigration counsel is the right source for anything touching your legal status. For how your status is maintained more broadly after check-in, see Batch 3's coverage of your immigration timeline.
+This handbook cannot tell you what a missed check-in means for your specific situation, and no one, including your DSO, a coach, a teammate, or Rep1, can promise a particular outcome or that a missed check-in will be resolved a certain way. Your DSO is the right first contact, and qualified immigration counsel is the right source for anything touching your legal status. For how your status is maintained more broadly after check-in, see Section 3's coverage of your immigration timeline.
 
 **Common Mistakes**
 
@@ -2902,7 +2902,7 @@ Watch for these, they account for most of the avoidable problems Australian stud
 • Giving your parents an incomplete or outdated set of contact details
 • Acting on informal advice instead of your school's official written instructions
 
-The common thread: treat your school's official instructions as the source of truth, and contact the right office early whenever something doesn't go to plan. If something about a school contact or situation feels wrong beyond a simple compliance question, the trusted-adult approach from Batch 1 still applies here, in a new country.
+The common thread: treat your school's official instructions as the source of truth, and contact the right office early whenever something doesn't go to plan. If something about a school contact or situation feels wrong beyond a simple compliance question, the trusted-adult approach from Section 1 still applies here, in a new country.
 
 **Key Takeaways**
 
@@ -3015,7 +3015,7 @@ A simple early conversation checklist:
 • Who's responsible for what when it comes to cleaning?
 • Is there anything from home you'd like me to know about?
 
-If something isn't working and a direct conversation hasn't resolved it, your resident assistant or housing office has a process for this. Use it before a small issue becomes a serious one. The trusted-adult approach from Batch 1 still applies here: if something feels more serious than an ordinary roommate disagreement, you don't have to sort it out alone.
+If something isn't working and a direct conversation hasn't resolved it, your resident assistant or housing office has a process for this. Use it before a small issue becomes a serious one. The trusted-adult approach from Section 1 still applies here: if something feels more serious than an ordinary roommate disagreement, you don't have to sort it out alone.
 
 **Meeting Your Advisor and DSO**
 
@@ -3315,7 +3315,7 @@ Where support is typically available:
 • Athletics mental-health or sports psychology support, where your school offers it
 • The 988 Suicide & Crisis Lifeline, available 24 hours a day by call, text, or chat at 988lifeline.org, for anyone experiencing a mental health, suicide, or substance-use crisis
 • 911, for immediate danger
-• Trusted adults, including the people identified in Batch 1's safeguarding content
+• Trusted adults, including the people identified in Section 1's safeguarding content
 • Your athletic trainer, who can often point you to the right resource even if support isn't their own role
 • Your DSO or resident-life staff, who can also refer you to the right service
 
@@ -3464,7 +3464,7 @@ ATHLETICS AND HEALTH
 
 SAFETY AND REPORTING
 • Immediate safety concern: call 911, or contact campus safety, depending on how urgent it is. If in doubt, call 911.
-• A concern involving a coach, teammate, another adult, or a school employee: go to a trusted adult or the reporting channel described in Batch 1's safeguarding content first. This may escalate to Title IX, athletics compliance, student affairs, campus safety, or law enforcement, depending on what's involved.
+• A concern involving a coach, teammate, another adult, or a school employee: go to a trusted adult or the reporting channel described in Section 1's safeguarding content first. This may escalate to Title IX, athletics compliance, student affairs, campus safety, or law enforcement, depending on what's involved.
 • A campus emergency alert: follow the official instructions in the alert itself. Contact campus safety if you have questions afterward.
 
 DOCUMENTS AND EVERYDAY PROBLEMS
@@ -3736,7 +3736,7 @@ Before sending or receiving a transfer:
 • Use a regulated, established transfer provider or bank
 • Keep the receipt and any disclosure documents
 • For a first transfer or a new provider, consider testing with a smaller amount first
-• Never send money in response to pressure, urgency, or an unexpected request, even one that appears to come from you, your family, or someone official. That pattern is a common scam tactic, covered further in Batch 1
+• Never send money in response to pressure, urgency, or an unexpected request, even one that appears to come from you, your family, or someone official. That pattern is a common scam tactic, covered further in Section 1
 
 U.S. remittance transfers are subject to federal consumer protections requiring providers to disclose the exchange rate, fees, and the amount expected to arrive, along with rights to cancel or resolve errors within set timeframes. This handbook doesn't recommend a specific transfer provider. Compare a few before choosing one, every time, since rates and fees change.
 
@@ -3827,7 +3827,7 @@ Confirm and write down: your U.S. phone plan, your school email and MFA setup, y
 
 ---
 
-## Batch 5: Succeed at School, Football, and Life
+## Section 5: Succeed at School, Football, and Life
 
 ### Module 19 — Manage Your Academic Workload as a Student-Athlete
 
@@ -4684,7 +4684,7 @@ Build a one-page Life Beyond Football Map this week. Include: three interests or
 
 ---
 
-## Batch 6: NIL, Taxes, Transfers, Graduation, and Returning Home
+## Section 6: NIL, Taxes, Transfers, Graduation, and Returning Home
 
 ### Module 24 — Understand Name, Image, and Likeness (NIL) as an International Student-Athlete
 
