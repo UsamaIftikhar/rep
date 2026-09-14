@@ -62,6 +62,10 @@ export async function GET(req: Request) {
             { name: { contains: q, mode: "insensitive" } },
             { firstName: { contains: q, mode: "insensitive" } },
             { lastName: { contains: q, mode: "insensitive" } },
+            { athleteProfile: { is: { sport: { contains: q, mode: "insensitive" } } } },
+            { athleteProfile: { is: { schoolClub: { contains: q, mode: "insensitive" } } } },
+            { athleteProfile: { is: { position: { contains: q, mode: "insensitive" } } } },
+            { athleteProfile: { is: { location: { contains: q, mode: "insensitive" } } } },
           ],
         }
       : undefined,

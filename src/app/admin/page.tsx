@@ -298,6 +298,32 @@ export default function AdminDashboardPage() {
     };
   }, [searchQuery]);
 
+  const filteredUsers = React.useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase().trim();
+    return users.filter((u) => {
+      const name = (u.name || `${u.firstName || ""} ${u.lastName || ""}`).toLowerCase();
+      const email = (u.email || "").toLowerCase();
+      const role = (u.role || "").toLowerCase();
+      const status = (u.status || "").toLowerCase();
+      const sport = (u.athleteProfile?.sport || "").toLowerCase();
+      const school = (u.athleteProfile?.schoolClub || "").toLowerCase();
+      const position = (u.athleteProfile?.position || "").toLowerCase();
+      const location = (u.athleteProfile?.location || "").toLowerCase();
+
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        role.includes(q) ||
+        status.includes(q) ||
+        sport.includes(q) ||
+        school.includes(q) ||
+        position.includes(q) ||
+        location.includes(q)
+      );
+    });
+  }, [users, searchQuery]);
+
   const handleOpenEditModal = (u: AdminUserItem) => {
     setEditingUser(u);
     setEditTab("ratings");
@@ -662,100 +688,108 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {users.map((u) => {
-                        const isPaidMember = (u.subscriptions && u.subscriptions.length > 0) || (u.entitlements && u.entitlements.some((e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"));
-                        const isCourseOwner = !isPaidMember && u.purchases && u.purchases.length > 0;
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-[#737373] text-sm">
+                            No users found matching &quot;{searchQuery}&quot;
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((u) => {
+                          const isPaidMember = (u.subscriptions && u.subscriptions.length > 0) || (u.entitlements && u.entitlements.some((e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"));
+                          const isCourseOwner = !isPaidMember && u.purchases && u.purchases.length > 0;
 
-                        const prof = u.athleteProfile;
-                        const ratings = [
-                          prof?.ratingSpeed,
-                          prof?.ratingExplosiveness,
-                          prof?.ratingAgility,
-                          prof?.ratingStrength,
-                          prof?.ratingToughness,
-                          prof?.ratingProduction,
-                          prof?.ratingTechnique,
-                        ].filter((r): r is number => r != null && r > 0);
+                          const prof = u.athleteProfile;
+                          const ratings = [
+                            prof?.ratingSpeed,
+                            prof?.ratingExplosiveness,
+                            prof?.ratingAgility,
+                            prof?.ratingStrength,
+                            prof?.ratingToughness,
+                            prof?.ratingProduction,
+                            prof?.ratingTechnique,
+                          ].filter((r): r is number => r != null && r > 0);
 
-                        const avgRating = ratings.length > 0
-                          ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
-                          : null;
+                          const avgRating = ratings.length > 0
+                            ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+                            : null;
 
-                        return (
-                          <tr key={u.id} className="hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-3">
-                              <p className="font-bold text-white">{u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Athlete User"}</p>
-                              <p className="text-[#A3A3A3] text-[11px]">{u.email}</p>
-                            </td>
-                            <td className="py-3 px-3 text-[#D4D4D4]">
-                              {prof?.sport ? (
-                                <span>
-                                  {prof.sport} • {prof.schoolClub || "High School"}
-                                </span>
-                              ) : (
-                                <span className="text-[#737373] italic">No profile data</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3">
-                              {avgRating ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px]">
-                                  <Star className="w-3 h-3 fill-current text-amber-400" /> {avgRating} / 5.0
-                                </span>
-                              ) : (
-                                <span className="text-[#737373] text-[11px] italic">Not rated</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3">
-                              {isPaidMember ? (
-                                <Badge variant="success" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                                  ⚡ Paid Member
+                          return (
+                            <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                              <td className="py-3 px-3">
+                                <p className="font-bold text-white">{u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Athlete User"}</p>
+                                <p className="text-[#A3A3A3] text-[11px]">{u.email}</p>
+                              </td>
+                              <td className="py-3 px-3 text-[#D4D4D4]">
+                                {prof?.sport ? (
+                                  <span>
+                                    {prof.sport} • {prof.schoolClub || "High School"}
+                                  </span>
+                                ) : (
+                                  <span className="text-[#737373] italic">No profile data</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                {avgRating ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px]">
+                                    <Star className="w-3 h-3 fill-current text-amber-400" /> {avgRating} / 5.0
+                                  </span>
+                                ) : (
+                                  <span className="text-[#737373] text-[11px] italic">Not rated</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                {isPaidMember ? (
+                                  <Badge variant="success" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                                    ⚡ Paid Member
+                                  </Badge>
+                                ) : isCourseOwner ? (
+                                  <Badge variant="neutral" className="bg-blue-500/15 text-blue-400 border-blue-500/30">
+                                    📚 Single Course
+                                  </Badge>
+                                ) : (
+                                  <span className="text-[#737373] text-[11px] font-medium">Free User</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className="font-semibold text-white text-[11px]">{u.role}</span>
+                              </td>
+                              <td className="py-3 px-3">
+                                <Badge variant={u.status === "ACTIVE" ? "success" : "danger"}>
+                                  {u.status}
                                 </Badge>
-                              ) : isCourseOwner ? (
-                                <Badge variant="neutral" className="bg-blue-500/15 text-blue-400 border-blue-500/30">
-                                  📚 Single Course
-                                </Badge>
-                              ) : (
-                                <span className="text-[#737373] text-[11px] font-medium">Free User</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="font-semibold text-white text-[11px]">{u.role}</span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <Badge variant={u.status === "ACTIVE" ? "success" : "danger"}>
-                                {u.status}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-3 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  onClick={() => handleOpenEditModal(u)}
-                                  variant="secondary"
-                                  size="sm"
-                                  className="h-8 text-[11px] gap-1 bg-[#F21717]/20 border-[#F21717]/40 text-white hover:bg-[#F21717] font-semibold"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" /> Edit Details & Ratings
-                                </Button>
-                                <Button
-                                  onClick={() => handleUserStatusToggle(u.id, u.status)}
-                                  disabled={updatingUserId === u.id}
-                                  variant={u.status === "ACTIVE" ? "outline" : "primary"}
-                                  size="sm"
-                                  className="h-8 text-[11px]"
-                                >
-                                  {updatingUserId === u.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : u.status === "ACTIVE" ? (
-                                    "Suspend"
-                                  ) : (
-                                    "Activate"
-                                  )}
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    onClick={() => handleOpenEditModal(u)}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="h-8 text-[11px] gap-1 bg-[#F21717]/20 border-[#F21717]/40 text-white hover:bg-[#F21717] font-semibold"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" /> Edit Details & Ratings
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleUserStatusToggle(u.id, u.status)}
+                                    disabled={updatingUserId === u.id}
+                                    variant={u.status === "ACTIVE" ? "outline" : "primary"}
+                                    size="sm"
+                                    className="h-8 text-[11px]"
+                                  >
+                                    {updatingUserId === u.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : u.status === "ACTIVE" ? (
+                                      "Suspend"
+                                    ) : (
+                                      "Activate"
+                                    )}
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
