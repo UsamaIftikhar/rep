@@ -196,6 +196,11 @@ async function main() {
 
     console.log(`Course [${course.title}]: Seeding ${parsedLessons.length} full-fidelity lessons...`);
 
+    // Clean up all existing/stale lessons for this course before seeding fresh lessons
+    await prisma.lesson.deleteMany({
+      where: { courseId: course.id },
+    });
+
     for (const pLesson of parsedLessons) {
       await prisma.lesson.upsert({
         where: {

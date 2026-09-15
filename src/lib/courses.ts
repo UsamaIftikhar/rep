@@ -188,14 +188,14 @@ export async function markLessonComplete(
     update: {
       progressPercent,
       status: isCompleted ? "COMPLETED" : "IN_PROGRESS",
-      completedAt: isCompleted ? new Date() : undefined,
+      ...(isCompleted ? { completedAt: new Date() } : {}),
     },
     create: {
       userId,
       courseId: lesson.courseId,
       progressPercent,
       status: isCompleted ? "COMPLETED" : "IN_PROGRESS",
-      completedAt: isCompleted ? new Date() : undefined,
+      ...(isCompleted ? { completedAt: new Date() } : {}),
     },
   });
 

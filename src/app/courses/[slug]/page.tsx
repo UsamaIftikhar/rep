@@ -185,14 +185,20 @@ function parseQuizSection(content: string): {
         const qText = m[2].replace(/\s+/g, " ").trim();
         if (!qText) return;
 
-        const isTrueFalse = /^True or False:/i.test(qText);
+        const isTrueFalse = /\bTrue or False\b/i.test(qText);
         let options: string[] = [];
         let correctOptionIndex = 0;
 
         if (isTrueFalse) {
           options = ["True", "False"];
-          const isFalseAnswer = /never|giving up|automatic|always|guarantee|must not/i.test(qText);
+          const isFalseAnswer = /never|giving up|automatic|always|guarantee|must not|only for adults|gambling|same over time|failed|reduce needs/i.test(qText);
           correctOptionIndex = isFalseAnswer ? 1 : 0;
+        } else {
+          const choiceMatch = qText.match(/(?:which|choose|select)\s+.*?:?\s*([^:]+?)\s+or\s+(.+?)(?:\.|\?|$)/i);
+          if (choiceMatch) {
+            options = [choiceMatch[1].trim(), choiceMatch[2].trim()];
+            correctOptionIndex = 0;
+          }
         }
 
         parsedInlineQs.push({
@@ -331,14 +337,6 @@ function QuizWidget({
                 <div className="text-lg font-black">{score}%</div>
               </div>
             </div>
-            <Button
-              onClick={handleRetake}
-              variant="outline"
-              size="sm"
-              className="border-white/20 text-white hover:bg-white/10 text-xs gap-1"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Retake
-            </Button>
           </div>
         )}
       </div>
@@ -887,6 +885,8 @@ export default function CoursePlayerPage() {
               {course.lessons.map((lesson, idx) => {
                 const isActive = idx === activeLessonIndex;
                 const isCompleted = completedLessonIds.includes(lesson.id);
+                const progressItem = course.lessonProgressMap?.[lesson.id];
+                const hasScore = progressItem?.quizScore !== undefined && progressItem?.quizScore !== null;
 
                 return (
                   <button
@@ -905,9 +905,20 @@ export default function CoursePlayerPage() {
                       <span className="text-[10px] opacity-70 flex-shrink-0">{idx + 1}.</span>
                       <span className="truncate">{lesson.title.replace(/\*/g, "")}</span>
                     </div>
-                    {isCompleted && (
-                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-emerald-400"}`} />
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {hasScore && (
+                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        }`}>
+                          {progressItem.quizScore}%
+                        </span>
+                      )}
+                      {isCompleted && (
+                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-emerald-400"}`} />
+                      )}
+                    </div>
                   </button>
                 );
               })}
