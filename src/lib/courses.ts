@@ -2,11 +2,96 @@ import { db } from "./db";
 import { EnrollmentStatus, EnrollmentSource } from "@prisma/client";
 
 export async function getCoursesWithUserProgress(userId?: string | null) {
-  const courses = await db.course.findMany({
-    where: {
-      isPublished: true,
-      slug: { notIn: ["diagnostic-report", "system-audit"] },
+  if (!userId) {
+    const courses = await db.course.findMany({
+      where: {
+        isPublished: true,
+        slug: { notIn: ["diagnostic-report", "system-audit"] },
+      },
+      orderBy: { order: "asc" },
+      include: {
+        lessons: {
+          where: { isPublished: true },
+          orderBy: { order: "asc" },
+          select: { id: true, title: true, slug: true, estimatedMinutes: true, order: true },
+        },
+      },
+    });
+
+    return courses.map((c) => ({
+      ...c,
+      status: "NOT_STARTED" as EnrollmentStatus,
+      progressPercent: 0,
+      completedLessonsCount: 0,
+      totalLessonsCount: c.lessons.length,
+    }));
+  }
+
+  // Fetch user role, active subscriptions, purchases, and entitlements
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      subscriptions: {
+        where: { status: "active" },
+        take: 1,
+      },
+      purchases: {
+        where: { status: "completed", courseId: { not: null } },
+        select: { courseId: true },
+      },
+      entitlements: {
+        where: {
+          revokedAt: null,
+          OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+        },
+        select: { type: true, referenceId: true },
+      },
+      enrollments: {
+        select: { courseId: true, source: true },
+      },
     },
+  });
+
+  if (!user) return [];
+
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const hasActiveSub = user.subscriptions.length > 0;
+  const hasFullMembership = user.entitlements.some(
+    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC"
+  );
+
+  const hasFullAccess = isAdmin || hasActiveSub || hasFullMembership;
+
+  // Determine purchased or granted course IDs for individual classroom buyers
+  const accessibleCourseIds = new Set<string>();
+  user.purchases.forEach((p) => {
+    if (p.courseId) accessibleCourseIds.add(p.courseId);
+  });
+  user.entitlements.forEach((e) => {
+    if (e.type === "COURSE" && e.referenceId) accessibleCourseIds.add(e.referenceId);
+  });
+  user.enrollments.forEach((en) => {
+    if (en.source === "PURCHASE" || en.source === "ADMIN_GRANT") {
+      accessibleCourseIds.add(en.courseId);
+    }
+  });
+
+  const isIndividualClassroomBuyer = !hasFullAccess && accessibleCourseIds.size > 0;
+
+  const whereCondition: any = {
+    isPublished: true,
+    slug: { notIn: ["diagnostic-report", "system-audit"] },
+  };
+
+  // For individual classroom purchasers (without full membership), ONLY show their purchased courses!
+  if (isIndividualClassroomBuyer) {
+    whereCondition.id = { in: Array.from(accessibleCourseIds) };
+  }
+
+  const courses = await db.course.findMany({
+    where: whereCondition,
     orderBy: { order: "asc" },
     include: {
       lessons: {
@@ -16,16 +101,6 @@ export async function getCoursesWithUserProgress(userId?: string | null) {
       },
     },
   });
-
-  if (!userId) {
-    return courses.map((c) => ({
-      ...c,
-      status: "NOT_STARTED" as EnrollmentStatus,
-      progressPercent: 0,
-      completedLessonsCount: 0,
-      totalLessonsCount: c.lessons.length,
-    }));
-  }
 
   const enrollments = await db.enrollment.findMany({
     where: { userId },
@@ -92,11 +167,26 @@ export async function getCourseBySlug(slug: string, userId?: string | null) {
     where: {
       userId,
       lessonId: { in: course.lessons.map((l) => l.id) },
-      completed: true,
     },
   });
 
-  const completedLessonIds = lessonProgresses.map((lp) => lp.lessonId);
+  const lessonProgressMap: Record<
+    string,
+    { completed: boolean; quizScore?: number | null; quizAnswers?: any }
+  > = {};
+  const completedLessonIds: string[] = [];
+
+  lessonProgresses.forEach((lp) => {
+    if (lp.completed) {
+      completedLessonIds.push(lp.lessonId);
+    }
+    lessonProgressMap[lp.lessonId] = {
+      completed: lp.completed,
+      quizScore: lp.quizScore,
+      quizAnswers: lp.quizAnswers,
+    };
+  });
+
   const total = course.lessons.length;
   const progressPercent = total > 0 ? Math.round((completedLessonIds.length / total) * 100) : 0;
 
@@ -104,6 +194,7 @@ export async function getCourseBySlug(slug: string, userId?: string | null) {
     ...course,
     userEnrollment: enrollment,
     completedLessonIds,
+    lessonProgressMap,
     progressPercent,
   };
 }

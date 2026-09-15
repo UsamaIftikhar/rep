@@ -490,10 +490,33 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const [userTypeFilter, setUserTypeFilter] = React.useState<"ALL" | "CLASSROOM_ONLY" | "RECRUITING_ATHLETES" | "RECRUITERS" | "ADMINS">("ALL");
+
   const filteredUsers = React.useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    const q = searchQuery.toLowerCase().trim();
     return users.filter((u) => {
+      const isPaidMember =
+        (u.subscriptions && u.subscriptions.length > 0) ||
+        (u.entitlements &&
+          u.entitlements.some(
+            (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"
+          ));
+      const isCourseOwner =
+        !isPaidMember &&
+        ((u.purchases && u.purchases.length > 0) ||
+          (u.entitlements && u.entitlements.some((e) => e.type === "COURSE")));
+
+      if (userTypeFilter === "CLASSROOM_ONLY" && !isCourseOwner) return false;
+      if (
+        userTypeFilter === "RECRUITING_ATHLETES" &&
+        (!isPaidMember || u.role !== "ATHLETE")
+      )
+        return false;
+      if (userTypeFilter === "RECRUITERS" && u.role !== "RECRUITER") return false;
+      if (userTypeFilter === "ADMINS" && u.role !== "ADMIN" && u.role !== "SUPER_ADMIN")
+        return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
       const name = (u.name || `${u.firstName || ""} ${u.lastName || ""}`).toLowerCase();
       const email = (u.email || "").toLowerCase();
       const role = (u.role || "").toLowerCase();
@@ -511,10 +534,11 @@ export default function AdminDashboardPage() {
         sport.includes(q) ||
         school.includes(q) ||
         position.includes(q) ||
-        location.includes(q)
+        location.includes(q) ||
+        (isCourseOwner && ("classroom".includes(q) || "student".includes(q)))
       );
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, userTypeFilter]);
 
   const handleOpenEditModal = (u: AdminUserItem) => {
     setEditingUser(u);
@@ -880,6 +904,90 @@ export default function AdminDashboardPage() {
             </CardHeader>
 
             <CardContent>
+              {/* Account Category Filter Buttons */}
+              <div className="flex flex-wrap items-center gap-2 mb-6 pb-4 border-b border-white/10">
+                <button
+                  onClick={() => setUserTypeFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    userTypeFilter === "ALL"
+                      ? "bg-white/20 text-white border border-white/30"
+                      : "bg-white/5 text-[#A3A3A3] hover:text-white border border-white/5"
+                  }`}
+                >
+                  All Users ({users.length})
+                </button>
+                <button
+                  onClick={() => setUserTypeFilter("CLASSROOM_ONLY")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    userTypeFilter === "CLASSROOM_ONLY"
+                      ? "bg-purple-500/30 text-purple-300 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]"
+                      : "bg-purple-500/10 text-purple-400/80 hover:text-purple-300 border border-purple-500/20"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Classroom Students (
+                  {
+                    users.filter((u) => {
+                      const isPaidMember =
+                        (u.subscriptions && u.subscriptions.length > 0) ||
+                        (u.entitlements &&
+                          u.entitlements.some(
+                            (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"
+                          ));
+                      return (
+                        !isPaidMember &&
+                        ((u.purchases && u.purchases.length > 0) ||
+                          (u.entitlements && u.entitlements.some((e) => e.type === "COURSE")))
+                      );
+                    }).length
+                  }
+                  )
+                </button>
+                <button
+                  onClick={() => setUserTypeFilter("RECRUITING_ATHLETES")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    userTypeFilter === "RECRUITING_ATHLETES"
+                      ? "bg-emerald-500/30 text-emerald-300 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                      : "bg-emerald-500/10 text-emerald-400/80 hover:text-emerald-300 border border-emerald-500/20"
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Recruiting Athletes (
+                  {
+                    users.filter((u) => {
+                      const isPaid =
+                        (u.subscriptions && u.subscriptions.length > 0) ||
+                        (u.entitlements &&
+                          u.entitlements.some(
+                            (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"
+                          ));
+                      return isPaid && u.role === "ATHLETE";
+                    }).length
+                  }
+                  )
+                </button>
+                <button
+                  onClick={() => setUserTypeFilter("RECRUITERS")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    userTypeFilter === "RECRUITERS"
+                      ? "bg-amber-500/30 text-amber-300 border border-amber-500/50"
+                      : "bg-white/5 text-[#A3A3A3] hover:text-white border border-white/5"
+                  }`}
+                >
+                  Recruiters ({users.filter((u) => u.role === "RECRUITER").length})
+                </button>
+                <button
+                  onClick={() => setUserTypeFilter("ADMINS")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    userTypeFilter === "ADMINS"
+                      ? "bg-[#F21717]/30 text-[#F21717] border border-[#F21717]/50"
+                      : "bg-white/5 text-[#A3A3A3] hover:text-white border border-white/5"
+                  }`}
+                >
+                  Admins ({users.filter((u) => u.role === "ADMIN" || u.role === "SUPER_ADMIN").length})
+                </button>
+              </div>
+
               {loading ? (
                 <div className="py-12 text-center text-[#A3A3A3]">
                   <Loader2 className="w-6 h-6 animate-spin text-[#F21717] mx-auto mb-2" />
@@ -893,7 +1001,7 @@ export default function AdminDashboardPage() {
                         <th className="py-3 px-3">User</th>
                         <th className="py-3 px-3">Sport / School</th>
                         <th className="py-3 px-3">Staff Rating</th>
-                        <th className="py-3 px-3">Membership</th>
+                        <th className="py-3 px-3">Membership Tier</th>
                         <th className="py-3 px-3">Role</th>
                         <th className="py-3 px-3">Status</th>
                         <th className="py-3 px-3 text-right">Actions</th>
@@ -903,13 +1011,13 @@ export default function AdminDashboardPage() {
                       {filteredUsers.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="py-8 text-center text-[#737373] text-sm">
-                            No users found matching &quot;{searchQuery}&quot;
+                            No users found matching current filters.
                           </td>
                         </tr>
                       ) : (
                         filteredUsers.map((u) => {
                           const isPaidMember = (u.subscriptions && u.subscriptions.length > 0) || (u.entitlements && u.entitlements.some((e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "US_ATHLETE"));
-                          const isCourseOwner = !isPaidMember && u.purchases && u.purchases.length > 0;
+                          const isCourseOwner = !isPaidMember && ((u.purchases && u.purchases.length > 0) || (u.entitlements && u.entitlements.some((e) => e.type === "COURSE")));
 
                           const prof = u.athleteProfile;
                           const ratings = [
@@ -953,11 +1061,11 @@ export default function AdminDashboardPage() {
                               <td className="py-3 px-3">
                                 {isPaidMember ? (
                                   <Badge variant="success" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-                                    ⚡ Paid Member
+                                    ⚡ Recruiting Athlete
                                   </Badge>
                                 ) : isCourseOwner ? (
-                                  <Badge variant="neutral" className="bg-blue-500/15 text-blue-400 border-blue-500/30">
-                                    📚 Single Course
+                                  <Badge variant="neutral" className="bg-purple-500/20 text-purple-300 border-purple-500/40">
+                                    📚 Classroom Only
                                   </Badge>
                                 ) : (
                                   <span className="text-[#737373] text-[11px] font-medium">Free User</span>

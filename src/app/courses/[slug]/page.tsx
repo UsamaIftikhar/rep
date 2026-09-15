@@ -233,6 +233,7 @@ interface QuizWidgetProps {
   lessonId: string;
   initialScore?: number | null;
   initialAnswers?: Record<number, number> | null;
+  isCompleted?: boolean;
   onQuizSubmit: (lessonId: string, score: number, answers: Record<number, number>) => Promise<void>;
 }
 
@@ -241,22 +242,30 @@ function QuizWidget({
   lessonId,
   initialScore,
   initialAnswers,
+  isCompleted,
   onQuizSubmit,
 }: QuizWidgetProps) {
+  const isAlreadyDone =
+    (initialScore !== undefined && initialScore !== null) ||
+    Boolean(isCompleted) ||
+    (initialAnswers && Object.keys(initialAnswers).length > 0);
+
   const [selectedAnswers, setSelectedAnswers] = React.useState<Record<number, number>>(
     initialAnswers || {}
   );
-  const [submitted, setSubmitted] = React.useState<boolean>(
-    initialScore !== undefined && initialScore !== null
-  );
+  const [submitted, setSubmitted] = React.useState<boolean>(Boolean(isAlreadyDone));
   const [score, setScore] = React.useState<number | null>(initialScore ?? null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
+    const done =
+      (initialScore !== undefined && initialScore !== null) ||
+      Boolean(isCompleted) ||
+      (initialAnswers && Object.keys(initialAnswers).length > 0);
     setSelectedAnswers(initialAnswers || {});
-    setSubmitted(initialScore !== undefined && initialScore !== null);
+    setSubmitted(Boolean(done));
     setScore(initialScore ?? null);
-  }, [lessonId, initialScore, initialAnswers]);
+  }, [lessonId, initialScore, initialAnswers, isCompleted]);
 
   const handleSelectOption = (qIdx: number, oIdx: number) => {
     if (submitted) return;
@@ -965,6 +974,7 @@ export default function CoursePlayerPage() {
                         lessonId={currentLesson.id}
                         initialScore={currentProgress?.quizScore}
                         initialAnswers={currentProgress?.quizAnswers}
+                        isCompleted={isCurrentCompleted}
                         onQuizSubmit={handleQuizSubmit}
                       />
 

@@ -16,6 +16,20 @@ export async function GET(req: Request) {
 
   const where: Prisma.AthleteProfileWhereInput = {
     profileVisibility: true,
+    user: {
+      NOT: {
+        AND: [
+          {
+            OR: [
+              { purchases: { some: {} } },
+              { entitlements: { some: { type: "COURSE" } } },
+            ],
+          },
+          { subscriptions: { none: { status: "active" } } },
+          { entitlements: { none: { type: { in: ["ACADEMY", "ELITE_PACIFIC"] } } } },
+        ],
+      },
+    },
   };
 
   if (q.trim()) {
