@@ -27,6 +27,57 @@ interface CourseData {
   progressPercent: number;
 }
 
+function parseInlineText(text: string): React.ReactNode {
+  if (!text) return null;
+
+  const tokens: React.ReactNode[] = [];
+  const regex = /(\*\*|__)(.*?)\1|(\*|_)(.*?)\3|(`)(.*?)\5/g;
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      tokens.push(text.substring(lastIndex, match.index));
+    }
+
+    if (match[1]) {
+      // Bold text **...**
+      tokens.push(
+        <strong key={match.index} className="font-bold text-white">
+          {match[2]}
+        </strong>
+      );
+    } else if (match[3]) {
+      // Italic text *...*
+      tokens.push(
+        <em key={match.index} className="italic text-[#E5E5E5]">
+          {match[4]}
+        </em>
+      );
+    } else if (match[5]) {
+      // Code `...`
+      tokens.push(
+        <code key={match.index} className="px-1.5 py-0.5 rounded bg-white/10 text-amber-300 font-mono text-xs">
+          {match[6]}
+        </code>
+      );
+    }
+
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    tokens.push(text.substring(lastIndex));
+  }
+
+  if (tokens.length === 0) {
+    return text.replace(/\*/g, "");
+  }
+
+  return <>{tokens}</>;
+}
+
 export default function CoursePlayerPage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -286,7 +337,7 @@ export default function CoursePlayerPage() {
                   >
                     <div className="flex items-center gap-2.5 overflow-hidden pr-2">
                       <span className="text-[10px] opacity-70 flex-shrink-0">{idx + 1}.</span>
-                      <span className="truncate">{lesson.title}</span>
+                      <span className="truncate">{lesson.title.replace(/\*/g, "")}</span>
                     </div>
                     {isCompleted && (
                       <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-emerald-400"}`} />
@@ -300,7 +351,7 @@ export default function CoursePlayerPage() {
               <div className="mt-6 p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/40 text-center space-y-2">
                 <Award className="w-6 h-6 text-emerald-400 mx-auto" />
                 <p className="text-xs font-bold text-emerald-200 uppercase">Course Completed!</p>
-                <p className="text-[11px] text-emerald-400/80">You earned progress towards your Academy Badge.</p>
+                <p className="text-[11px] text-emerald-400/80">You earned progress towards your Academy completion.</p>
               </div>
             )}
           </div>
@@ -315,7 +366,7 @@ export default function CoursePlayerPage() {
                       LESSON {activeLessonIndex + 1}
                     </span>
                     <h2 className="font-display uppercase text-2xl font-black text-white mt-1">
-                      {currentLesson.title}
+                      {currentLesson.title.replace(/\*/g, "").replace(/^ros[a-z]+\s*—\s*/i, "")}
                     </h2>
                   </div>
                   {currentLesson.estimatedMinutes && (
@@ -332,6 +383,16 @@ export default function CoursePlayerPage() {
                     const trimmed = paragraph.trim();
                     if (!trimmed) return null;
 
+                    // Filter out any source / origin metadata lines
+                    const lower = trimmed.toLowerCase();
+                    if (
+                      lower.includes("source:") ||
+                      lower.includes("lovable project") ||
+                      lower.startsWith("extracted verbatim")
+                    ) {
+                      return null;
+                    }
+
                     // Divider ---
                     if (trimmed === "---") {
                       return <hr key={pIdx} className="border-white/10 my-6" />;
@@ -339,10 +400,14 @@ export default function CoursePlayerPage() {
 
                     // Main Header #
                     if (trimmed.startsWith("# ")) {
+                      const titleText = trimmed
+                        .replace(/^#\s+/, "")
+                        .replace(/^ros[a-z]+\s*—\s*/i, "")
+                        .replace(/\*/g, "");
                       return (
                         <h1 key={pIdx} className="font-display uppercase text-2xl md:text-3xl font-black text-white pt-2 pb-2 border-b border-white/10 flex items-center gap-2">
                           <span className="w-2.5 h-6 bg-[#F21717] rounded-sm inline-block" />
-                          {trimmed.replace(/^#\s+/, "")}
+                          {parseInlineText(titleText)}
                         </h1>
                       );
                     }
@@ -351,7 +416,7 @@ export default function CoursePlayerPage() {
                     if (trimmed.startsWith("## ")) {
                       return (
                         <h2 key={pIdx} className="font-display uppercase text-xl font-bold text-white pt-4 pb-1 border-b border-white/5 text-[#F5F5F5]">
-                          {trimmed.replace(/^##\s+/, "")}
+                          {parseInlineText(trimmed.replace(/^##\s+/, ""))}
                         </h2>
                       );
                     }
@@ -359,9 +424,21 @@ export default function CoursePlayerPage() {
                     // Subsection Header ###
                     if (trimmed.startsWith("### ")) {
                       return (
-                        <h3 key={pIdx} className="font-display uppercase text-base font-bold text-[#F21717] pt-2">
-                          {trimmed.replace(/^###\s+/, "")}
+                        <h3 key={pIdx} className="font-display uppercase text-base font-bold text-amber-400 pt-3 pb-1">
+                          {parseInlineText(trimmed.replace(/^###\s+/, ""))}
                         </h3>
+                      );
+                    }
+
+                    // Standalone bold heading (e.g. **Objective**)
+                    if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
+                      const cleanHeading = trimmed.replace(/\*\*/g, "");
+                      return (
+                        <div key={pIdx} className="pt-3 pb-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#F21717] bg-[#F21717]/15 px-3 py-1 rounded-md border border-[#F21717]/30 inline-block shadow-sm">
+                            {cleanHeading}
+                          </span>
+                        </div>
                       );
                     }
 
@@ -371,7 +448,7 @@ export default function CoursePlayerPage() {
                         <div key={pIdx} className="p-4 my-4 rounded-xl bg-[#171717] border-l-4 border-[#F21717] shadow-lg space-y-1">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717]">Key Takeaway & Rule</span>
                           <p className="text-sm font-medium text-white italic">
-                            {trimmed.replace(/^>\s+/, "").replace(/"/g, "")}
+                            {parseInlineText(trimmed.replace(/^>\s+/, "").replace(/"/g, ""))}
                           </p>
                         </div>
                       );
@@ -381,17 +458,27 @@ export default function CoursePlayerPage() {
                     if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || /^\d+\.\s/.test(trimmed)) {
                       const items = trimmed.split("\n").filter(Boolean);
                       return (
-                        <div key={pIdx} className="bg-[#141414] p-4 rounded-xl border border-white/10 space-y-2.5 my-3">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#737373]">Action Items & Points</span>
+                        <div key={pIdx} className="bg-[#141414] p-4 rounded-xl border border-white/10 space-y-3 my-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-[#F21717]" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">Action Checklist & Key Points</span>
+                          </div>
                           <ul className="space-y-2">
                             {items.map((rawItem, itemIdx) => {
-                              const cleanItem = rawItem.replace(/^[-*]|\d+\.\s*/, "").trim();
+                              const isChecked = rawItem.includes("[✓]") || rawItem.includes("[x]");
+                              const isCheckbox = isChecked || rawItem.includes("[ ]");
+                              const cleanItem = rawItem.replace(/^[-*]|\d+\.\s*|\[[ x✓]\]/g, "").trim();
+
                               return (
-                                <li key={itemIdx} className="flex items-start gap-2.5 text-xs text-[#E5E5E5] group">
-                                  <div className="w-4 h-4 rounded bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center text-[#F21717] flex-shrink-0 mt-0.5 group-hover:bg-[#F21717] group-hover:text-white transition-colors">
-                                    <span className="text-[10px] font-bold">{itemIdx + 1}</span>
+                                <li key={itemIdx} className="flex items-start gap-3 text-xs text-[#E5E5E5] bg-[#1a1a1a] p-3 rounded-lg border border-white/5 hover:border-[#F21717]/30 transition-colors">
+                                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5 font-bold text-[10px] ${
+                                    isChecked ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-[#F21717]/20 text-[#F21717] border border-[#F21717]/40"
+                                  }`}>
+                                    {isChecked ? "✓" : isCheckbox ? "○" : itemIdx + 1}
                                   </div>
-                                  <span className="flex-1 font-medium leading-relaxed">{cleanItem}</span>
+                                  <span className="flex-1 font-medium leading-relaxed">
+                                    {parseInlineText(cleanItem)}
+                                  </span>
                                 </li>
                               );
                             })}
@@ -401,11 +488,15 @@ export default function CoursePlayerPage() {
                     }
 
                     // Bold metadata lines (e.g. **Phase:** Foundation)
-                    if (trimmed.startsWith("**") && trimmed.includes(":**")) {
+                    if (trimmed.startsWith("**") && (trimmed.includes(":**") || trimmed.includes("Phase:") || trimmed.includes("Primary skill:"))) {
+                      const lines = trimmed.split("\n").filter(Boolean);
                       return (
-                        <div key={pIdx} className="bg-[#171717] p-3 rounded-lg border border-white/5 text-xs text-[#E5E5E5] leading-relaxed">
-                          {trimmed.split("\n").map((line, lIdx) => (
-                            <p key={lIdx} className="my-0.5">{line}</p>
+                        <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-[#141414] rounded-xl border border-white/10 my-3">
+                          {lines.map((line, lIdx) => (
+                            <div key={lIdx} className="text-xs text-[#E5E5E5] flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#F21717]" />
+                              <span>{parseInlineText(line)}</span>
+                            </div>
                           ))}
                         </div>
                       );
@@ -414,7 +505,7 @@ export default function CoursePlayerPage() {
                     // Standard Paragraph
                     return (
                       <p key={pIdx} className="text-sm text-[#D4D4D4] leading-relaxed whitespace-pre-line">
-                        {trimmed}
+                        {parseInlineText(trimmed)}
                       </p>
                     );
                   })}
