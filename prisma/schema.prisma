@@ -199,6 +199,8 @@ model LessonProgress {
   lessonId     String
   lesson       Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   completed    Boolean   @default(false)
+  quizScore    Int?
+  quizAnswers  Json?
   completedAt  DateTime?
   lastViewedAt DateTime  @default(now())
 

@@ -131,7 +131,12 @@ export async function enrollInCourse(
   });
 }
 
-export async function markLessonComplete(userId: string, lessonId: string) {
+export async function markLessonComplete(
+  userId: string,
+  lessonId: string,
+  quizScore?: number | null,
+  quizAnswers?: any
+) {
   const lesson = await db.lesson.findUnique({
     where: { id: lessonId },
     include: { course: { include: { lessons: true } } },
@@ -146,6 +151,8 @@ export async function markLessonComplete(userId: string, lessonId: string) {
     },
     update: {
       completed: true,
+      ...(quizScore !== undefined ? { quizScore } : {}),
+      ...(quizAnswers !== undefined ? { quizAnswers } : {}),
       completedAt: new Date(),
       lastViewedAt: new Date(),
     },
@@ -153,6 +160,8 @@ export async function markLessonComplete(userId: string, lessonId: string) {
       userId,
       lessonId,
       completed: true,
+      quizScore: quizScore ?? null,
+      quizAnswers: quizAnswers ?? null,
       completedAt: new Date(),
       lastViewedAt: new Date(),
     },

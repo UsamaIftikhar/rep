@@ -5,7 +5,23 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout";
 import { Button, Card, CardContent } from "@/components/ui";
-import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, BookOpen, Clock, Loader2, Award, Menu, X, Lock } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft,
+  BookOpen,
+  Clock,
+  Loader2,
+  Award,
+  Menu,
+  X,
+  Lock,
+  RotateCcw,
+  HelpCircle,
+  XCircle,
+  Sparkles,
+} from "lucide-react";
 
 interface LessonData {
   id: string;
@@ -16,6 +32,12 @@ interface LessonData {
   estimatedMinutes?: number | null;
 }
 
+interface LessonProgressData {
+  completed: boolean;
+  quizScore?: number | null;
+  quizAnswers?: Record<number, number> | null;
+}
+
 interface CourseData {
   id: string;
   title: string;
@@ -24,7 +46,15 @@ interface CourseData {
   category: string;
   lessons: LessonData[];
   completedLessonIds: string[];
+  lessonProgressMap?: Record<string, LessonProgressData>;
   progressPercent: number;
+}
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
 }
 
 function parseInlineText(text: string): React.ReactNode {
@@ -78,6 +108,489 @@ function parseInlineText(text: string): React.ReactNode {
   return <>{tokens}</>;
 }
 
+function parseQuizSection(content: string): {
+  questions: QuizQuestion[];
+  preQuizContent: string;
+  postQuizContent: string;
+} | null {
+  if (!content) return null;
+
+  const quizMarkerMatch = content.match(/(?:^|\n)\s*(\*\*|##|#)?\s*(Quiz|Daily Post-Check|Daily Pre-Check|Post-Check|Pre-Check):?\s*(\*\*|##|#)?.*?\n/i);
+  if (!quizMarkerMatch || quizMarkerMatch.index === undefined) {
+    return null;
+  }
+
+  const quizStartIndex = quizMarkerMatch.index;
+  const preQuizContent = content.substring(0, quizStartIndex).trim();
+
+  const remainingContent = content.substring(quizStartIndex + quizMarkerMatch[0].length);
+  const endMarkerMatch = remainingContent.match(/\n\s*(\*\*|##|#)?\s*(Reflection|Student Action|Module|Common Misconceptions|Continuity Bridge|---)\b/i);
+
+  let quizText = remainingContent;
+  let postQuizContent = "";
+
+  if (endMarkerMatch && endMarkerMatch.index !== undefined) {
+    quizText = remainingContent.substring(0, endMarkerMatch.index).trim();
+    postQuizContent = remainingContent.substring(endMarkerMatch.index).trim();
+  }
+
+  const questions: QuizQuestion[] = [];
+  const lines = quizText.split("\n");
+  let currentQ: QuizQuestion | null = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const qMatch = line.match(/^(\d+)[\.\)]\s+(.+)$/);
+    if (qMatch) {
+      if (currentQ && (currentQ.options.length > 0 || currentQ.question)) {
+        questions.push(currentQ);
+      }
+      currentQ = {
+        id: parseInt(qMatch[1], 10),
+        question: qMatch[2].replace(/\*\*/g, "").trim(),
+        options: [],
+        correctOptionIndex: 0,
+      };
+      continue;
+    }
+
+    const optMatch = line.match(/^[-*]\s*\[([ x✓XvV✔])\]\s*(.+)$/);
+    if (optMatch && currentQ) {
+      const isCorrect =
+        optMatch[1] === "✓" ||
+        optMatch[1] === "✔" ||
+        optMatch[1].toLowerCase() === "x" ||
+        optMatch[1].toLowerCase() === "v";
+      const optionText = optMatch[2].replace(/\*\*/g, "").trim();
+      currentQ.options.push(optionText);
+      if (isCorrect) {
+        currentQ.correctOptionIndex = currentQ.options.length - 1;
+      }
+    }
+  }
+
+  if (currentQ && (currentQ.options.length > 0 || currentQ.question)) {
+    questions.push(currentQ);
+  }
+
+  // Format B: Inline post-check questions (1) (2) (3)
+  if (questions.length === 0 || questions.every((q) => q.options.length === 0)) {
+    const inlineMatches = Array.from(quizText.matchAll(/\((\d+)\)\s*([\s\S]*?)(?=\s*\(\d+\)|$)/g));
+    if (inlineMatches.length > 0) {
+      const parsedInlineQs: QuizQuestion[] = [];
+      inlineMatches.forEach((m) => {
+        const qId = parseInt(m[1], 10);
+        const qText = m[2].replace(/\s+/g, " ").trim();
+        if (!qText) return;
+
+        const isTrueFalse = /^True or False:/i.test(qText);
+        let options: string[] = [];
+        let correctOptionIndex = 0;
+
+        if (isTrueFalse) {
+          options = ["True", "False"];
+          const isFalseAnswer = /never|giving up|automatic|always|guarantee|must not/i.test(qText);
+          correctOptionIndex = isFalseAnswer ? 1 : 0;
+        }
+
+        parsedInlineQs.push({
+          id: qId,
+          question: qText,
+          options,
+          correctOptionIndex,
+        });
+      });
+
+      if (parsedInlineQs.length > 0) {
+        return {
+          questions: parsedInlineQs,
+          preQuizContent,
+          postQuizContent,
+        };
+      }
+    }
+  }
+
+  if (questions.length === 0) return null;
+
+  return {
+    questions,
+    preQuizContent,
+    postQuizContent,
+  };
+}
+
+interface QuizWidgetProps {
+  questions: QuizQuestion[];
+  lessonId: string;
+  initialScore?: number | null;
+  initialAnswers?: Record<number, number> | null;
+  onQuizSubmit: (lessonId: string, score: number, answers: Record<number, number>) => Promise<void>;
+}
+
+function QuizWidget({
+  questions,
+  lessonId,
+  initialScore,
+  initialAnswers,
+  onQuizSubmit,
+}: QuizWidgetProps) {
+  const [selectedAnswers, setSelectedAnswers] = React.useState<Record<number, number>>(
+    initialAnswers || {}
+  );
+  const [submitted, setSubmitted] = React.useState<boolean>(
+    initialScore !== undefined && initialScore !== null
+  );
+  const [score, setScore] = React.useState<number | null>(initialScore ?? null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    setSelectedAnswers(initialAnswers || {});
+    setSubmitted(initialScore !== undefined && initialScore !== null);
+    setScore(initialScore ?? null);
+  }, [lessonId, initialScore, initialAnswers]);
+
+  const handleSelectOption = (qIdx: number, oIdx: number) => {
+    if (submitted) return;
+    setSelectedAnswers((prev) => ({ ...prev, [qIdx]: oIdx }));
+  };
+
+  const handleSubmit = async () => {
+    let correctCount = 0;
+    questions.forEach((q, qIdx) => {
+      if (q.options.length === 0) {
+        if (selectedAnswers[qIdx] !== undefined && String(selectedAnswers[qIdx]).trim().length > 0) {
+          correctCount++;
+        }
+      } else if (selectedAnswers[qIdx] === q.correctOptionIndex) {
+        correctCount++;
+      }
+    });
+
+    const calculatedScore = Math.round((correctCount / questions.length) * 100);
+    setScore(calculatedScore);
+    setSubmitted(true);
+    setIsSubmitting(true);
+
+    try {
+      await onQuizSubmit(lessonId, calculatedScore, selectedAnswers);
+    } catch {
+      // Ignore
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRetake = () => {
+    setSubmitted(false);
+    setSelectedAnswers({});
+    setScore(null);
+  };
+
+  const allAnswered = questions.every((q, qIdx) => {
+    const val = selectedAnswers[qIdx];
+    if (q.options.length === 0) {
+      return val !== undefined && String(val).trim().length > 0;
+    }
+    return val !== undefined;
+  });
+  const optionLetters = ["A", "B", "C", "D", "E", "F"];
+
+  return (
+    <div className="bg-[#141414] border border-amber-500/30 rounded-2xl p-6 md:p-8 space-y-6 my-8 shadow-2xl relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+              Interactive Evaluation
+            </span>
+            <span className="text-xs text-[#A3A3A3]">
+              {questions.length} Question{questions.length > 1 ? "s" : ""}
+            </span>
+          </div>
+          <h3 className="font-display uppercase text-xl font-black text-white flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-amber-400 inline" />
+            Knowledge Check & Evaluation
+          </h3>
+        </div>
+
+        {submitted && score !== null && (
+          <div className="flex items-center gap-3">
+            <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${
+              score >= 70
+                ? "bg-emerald-950/80 border-emerald-500/60 text-emerald-300"
+                : "bg-amber-950/80 border-amber-500/60 text-amber-300"
+            }`}>
+              <Award className="w-5 h-5 flex-shrink-0" />
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider">Score Recorded</div>
+                <div className="text-lg font-black">{score}%</div>
+              </div>
+            </div>
+            <Button
+              onClick={handleRetake}
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white hover:bg-white/10 text-xs gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Retake
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-6">
+        {questions.map((q, qIdx) => {
+          const userAnswer = selectedAnswers[qIdx];
+
+          return (
+            <div key={qIdx} className="space-y-3 bg-[#181818] p-4 sm:p-5 rounded-xl border border-white/5">
+              <div className="flex items-start gap-3">
+                <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  {qIdx + 1}
+                </span>
+                <h4 className="text-sm font-bold text-white leading-relaxed">
+                  {parseInlineText(q.question)}
+                </h4>
+              </div>
+
+              {q.options.length === 0 ? (
+                <div className="pt-1 sm:pl-9">
+                  <textarea
+                    disabled={submitted}
+                    value={typeof userAnswer === "string" ? userAnswer : ""}
+                    onChange={(e) => {
+                      const textVal = e.target.value;
+                      setSelectedAnswers((prev) => ({ ...prev, [qIdx]: textVal as any }));
+                    }}
+                    placeholder="Type your response here..."
+                    rows={3}
+                    className="w-full bg-[#1e1e1e] border border-white/10 rounded-lg p-3 text-xs text-white focus:border-amber-400 focus:outline-none transition-colors"
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 pt-1 sm:pl-9">
+                  {q.options.map((optionText, oIdx) => {
+                    const isSelected = userAnswer === oIdx;
+                    const isAnswerCorrect = oIdx === q.correctOptionIndex;
+
+                    let optionStyle = "bg-[#222222] border-white/10 text-[#D4D4D4] hover:border-amber-400/50 hover:bg-amber-400/5";
+
+                    if (submitted) {
+                      if (isAnswerCorrect) {
+                        optionStyle = "bg-emerald-950/90 border-emerald-500 text-emerald-200 font-bold shadow-[0_0_10px_rgba(16,185,129,0.2)]";
+                      } else if (isSelected && !isAnswerCorrect) {
+                        optionStyle = "bg-red-950/90 border-red-500 text-red-200 font-medium";
+                      } else {
+                        optionStyle = "bg-[#1a1a1a] border-white/5 text-[#737373] opacity-60";
+                      }
+                    } else if (isSelected) {
+                      optionStyle = "bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow-[0_0_12px_rgba(245,158,11,0.25)]";
+                    }
+
+                    return (
+                      <button
+                        key={oIdx}
+                        disabled={submitted}
+                        onClick={() => handleSelectOption(qIdx, oIdx)}
+                        className={`w-full text-left p-3 rounded-lg text-xs flex items-center justify-between transition-all cursor-pointer border ${optionStyle}`}
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden pr-2">
+                          <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                            isSelected || (submitted && isAnswerCorrect)
+                              ? "bg-amber-400 text-black"
+                              : "bg-white/10 text-white"
+                          }`}>
+                            {optionLetters[oIdx] || oIdx + 1}
+                          </span>
+                          <span className="leading-relaxed">{parseInlineText(optionText)}</span>
+                        </div>
+
+                        {submitted && (
+                          <div>
+                            {isAnswerCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                            {isSelected && !isAnswerCorrect && <XCircle className="w-4 h-4 text-red-400 shrink-0" />}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {!submitted ? (
+        <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-[#A3A3A3]">
+            {allAnswered
+              ? "All questions answered. Click below to submit your quiz for evaluation."
+              : `Answer all questions to submit (${Object.keys(selectedAnswers).length}/${questions.length} answered).`}
+          </p>
+
+          <Button
+            disabled={!allAnswered || isSubmitting}
+            onClick={handleSubmit}
+            variant="athletic"
+            size="md"
+            className="w-full sm:w-auto font-bold bg-amber-500 hover:bg-amber-600 text-black border-amber-400 px-6 gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Submitting & Grading...
+              </>
+            ) : (
+              <>
+                Submit & Grade Quiz <CheckCircle2 className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-center space-y-1">
+          <p className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
+            Quiz Answers & Results Saved
+          </p>
+          <p className="text-[11px] text-emerald-400/80">
+            Your evaluation has been recorded in the system. You can review your answers above or retake any time.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderParsedMarkdownBlocks(blockText: string) {
+  if (!blockText) return null;
+
+  return blockText.split("\n\n").map((paragraph, pIdx) => {
+    const trimmed = paragraph.trim();
+    if (!trimmed) return null;
+
+    const lower = trimmed.toLowerCase();
+    if (
+      lower.includes("source:") ||
+      lower.includes("lovable project") ||
+      lower.startsWith("extracted verbatim")
+    ) {
+      return null;
+    }
+
+    if (trimmed === "---") {
+      return <hr key={pIdx} className="border-white/10 my-6" />;
+    }
+
+    if (trimmed.startsWith("# ")) {
+      const titleText = trimmed
+        .replace(/^#\s+/, "")
+        .replace(/^ros[a-z]+\s*—\s*/i, "")
+        .replace(/\*/g, "");
+      return (
+        <h1 key={pIdx} className="font-display uppercase text-2xl md:text-3xl font-black text-white pt-2 pb-2 border-b border-white/10 flex items-center gap-2">
+          <span className="w-2.5 h-6 bg-[#F21717] rounded-sm inline-block" />
+          {parseInlineText(titleText)}
+        </h1>
+      );
+    }
+
+    if (trimmed.startsWith("## ")) {
+      return (
+        <h2 key={pIdx} className="font-display uppercase text-xl font-bold text-white pt-4 pb-1 border-b border-white/5 text-[#F5F5F5]">
+          {parseInlineText(trimmed.replace(/^##\s+/, ""))}
+        </h2>
+      );
+    }
+
+    if (trimmed.startsWith("### ")) {
+      return (
+        <h3 key={pIdx} className="font-display uppercase text-base font-bold text-amber-400 pt-3 pb-1">
+          {parseInlineText(trimmed.replace(/^###\s+/, ""))}
+        </h3>
+      );
+    }
+
+    if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
+      const cleanHeading = trimmed.replace(/\*\*/g, "");
+      return (
+        <div key={pIdx} className="pt-3 pb-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#F21717] bg-[#F21717]/15 px-3 py-1 rounded-md border border-[#F21717]/30 inline-block shadow-sm">
+            {cleanHeading}
+          </span>
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith("> ")) {
+      return (
+        <div key={pIdx} className="p-4 my-4 rounded-xl bg-[#171717] border-l-4 border-[#F21717] shadow-lg space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717]">Key Takeaway & Rule</span>
+          <p className="text-sm font-medium text-white italic">
+            {parseInlineText(trimmed.replace(/^>\s+/, "").replace(/"/g, ""))}
+          </p>
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || /^\d+\.\s/.test(trimmed)) {
+      const items = trimmed.split("\n").filter(Boolean);
+      return (
+        <div key={pIdx} className="bg-[#141414] p-4 rounded-xl border border-white/10 space-y-3 my-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[#F21717]" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">Action Checklist & Key Points</span>
+          </div>
+          <ul className="space-y-2">
+            {items.map((rawItem, itemIdx) => {
+              const isChecked = rawItem.includes("[✓]") || rawItem.includes("[x]");
+              const isCheckbox = isChecked || rawItem.includes("[ ]");
+              const cleanItem = rawItem.replace(/^[-*]|\d+\.\s*|\[[ x✓]\]/g, "").trim();
+
+              return (
+                <li key={itemIdx} className="flex items-start gap-3 text-xs text-[#E5E5E5] bg-[#1a1a1a] p-3 rounded-lg border border-white/5 hover:border-[#F21717]/30 transition-colors">
+                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5 font-bold text-[10px] ${
+                    isChecked ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-[#F21717]/20 text-[#F21717] border border-[#F21717]/40"
+                  }`}>
+                    {isChecked ? "✓" : isCheckbox ? "○" : itemIdx + 1}
+                  </div>
+                  <span className="flex-1 font-medium leading-relaxed">
+                    {parseInlineText(cleanItem)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith("**") && (trimmed.includes(":**") || trimmed.includes("Phase:") || trimmed.includes("Primary skill:"))) {
+      const lines = trimmed.split("\n").filter(Boolean);
+      return (
+        <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-[#141414] rounded-xl border border-white/10 my-3">
+          {lines.map((line, lIdx) => (
+            <div key={lIdx} className="text-xs text-[#E5E5E5] flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#F21717]" />
+              <span>{parseInlineText(line)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <p key={pIdx} className="text-sm text-[#D4D4D4] leading-relaxed whitespace-pre-line">
+        {parseInlineText(trimmed)}
+      </p>
+    );
+  });
+}
+
 export default function CoursePlayerPage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -111,7 +624,6 @@ export default function CoursePlayerPage() {
           setCompletedLessonIds(data.course.completedLessonIds || []);
           setProgressPercent(data.course.progressPercent || 0);
 
-          // Find first uncompleted lesson index or default to 0
           const firstUncompleted = data.course.lessons?.findIndex(
             (l: LessonData) => !data.course.completedLessonIds?.includes(l.id)
           );
@@ -149,94 +661,9 @@ export default function CoursePlayerPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <AppShell>
-        <div className="py-24 flex flex-col items-center justify-center text-[#A3A3A3]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#F21717] mb-2" />
-          <p className="text-xs uppercase tracking-widest font-semibold">Loading Course Curriculum...</p>
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (isLocked && course) {
-    return (
-      <AppShell>
-        <div className="max-w-3xl mx-auto py-12 space-y-8">
-          <Link href="/classroom" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#A3A3A3] hover:text-white">
-            <ArrowLeft className="w-4 h-4" /> Back to Classroom
-          </Link>
-
-          <div className="p-8 rounded-2xl bg-gradient-to-r from-[#111111] via-[#161616] to-[#111111] border border-[#F21717]/40 shadow-[0_0_30px_rgba(242,23,23,0.2)] text-center space-y-6 relative overflow-hidden">
-            <div className="w-16 h-16 rounded-2xl bg-[#F21717]/15 border border-[#F21717]/30 flex items-center justify-center text-[#F21717] mx-auto shadow-[0_0_20px_rgba(242,23,23,0.3)]">
-              <Lock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold tracking-widest text-[#F21717] uppercase block">
-                PREMIUM CURRICULUM • PAYMENT REQUIRED
-              </span>
-              <h2 className="font-display uppercase text-3xl font-black text-white">
-                {course.title} is Locked
-              </h2>
-              <p className="text-xs md:text-sm text-[#A3A3A3] max-w-xl mx-auto leading-relaxed">
-                {course.description}
-              </p>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                onClick={() => handlePurchase("COURSE")}
-                disabled={isPurchasing}
-                variant="athletic"
-                size="lg"
-                className="w-full sm:w-auto bg-[#F21717] hover:bg-[#D90F0F] font-bold gap-2 text-xs"
-              >
-                {isPurchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-                Unlock This Course ($9.99)
-              </Button>
-
-              <Button
-                onClick={() => handlePurchase("SUBSCRIPTION")}
-                disabled={isPurchasing}
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 font-bold gap-2 text-xs"
-              >
-                Get Full Access Pass ($29.99)
-              </Button>
-            </div>
-
-            <p className="text-[11px] text-[#737373]">
-              Full Access members unlock all Student Academy courses, unlimited AI Mock Interviews, and verified profile features.
-            </p>
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (error || !course) {
-    return (
-      <AppShell>
-        <div className="max-w-2xl mx-auto py-16 text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-red-950/50 border border-red-800/50 flex items-center justify-center text-[#F21717] mx-auto">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <h2 className="font-display uppercase text-3xl font-black text-white">Course Unavailable</h2>
-          <p className="text-xs text-[#A3A3A3]">{error || "Unable to load requested course lessons."}</p>
-          <Link href="/academy">
-            <Button variant="athletic" size="md">Return to Student Academy</Button>
-          </Link>
-        </div>
-      </AppShell>
-    );
-  }
-
-  const currentLesson = course.lessons[activeLessonIndex] || course.lessons[0];
-  const isCurrentCompleted = completedLessonIds.includes(currentLesson.id);
-  const isLastLesson = activeLessonIndex === course.lessons.length - 1;
+  const currentLesson = course?.lessons[activeLessonIndex] || course?.lessons[0];
+  const isCurrentCompleted = currentLesson ? completedLessonIds.includes(currentLesson.id) : false;
+  const isLastLesson = course ? activeLessonIndex === course.lessons.length - 1 : false;
   const isCourseFullyCompleted = progressPercent === 100;
 
   const handleMarkComplete = async () => {
@@ -259,17 +686,156 @@ export default function CoursePlayerPage() {
           setProgressPercent(data.progressPercent);
         }
 
-        // Auto-advance to next lesson if available
         if (!isLastLesson) {
           setActiveLessonIndex((prev) => prev + 1);
         }
       }
     } catch {
-      // Ignore network failure
+      // Ignore
     } finally {
       setCompleting(false);
     }
   };
+
+  const handleQuizSubmit = async (lessonId: string, score: number, answers: Record<number, number>) => {
+    try {
+      const res = await fetch(`/api/courses/${slug}/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId, quizScore: score, quizAnswers: answers }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        if (!completedLessonIds.includes(lessonId)) {
+          setCompletedLessonIds((prev) => [...prev, lessonId]);
+        }
+        if (data.progressPercent !== undefined) {
+          setProgressPercent(data.progressPercent);
+        }
+
+        setCourse((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            lessonProgressMap: {
+              ...prev.lessonProgressMap,
+              [lessonId]: {
+                completed: true,
+                quizScore: score,
+                quizAnswers: answers,
+              },
+            },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to submit quiz score:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#F21717]" />
+          <p className="text-xs text-[#A3A3A3] uppercase tracking-wider font-semibold">
+            Loading Course Reader...
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (isLocked && course) {
+    return (
+      <AppShell>
+        <div className="max-w-3xl mx-auto py-12 space-y-8">
+          <Link href="/academy" className="inline-flex items-center gap-1 text-xs text-[#A3A3A3] hover:text-white font-semibold">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Academy
+          </Link>
+
+          <div className="p-8 md:p-12 rounded-3xl bg-[#111111] border border-white/10 text-center space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded bg-[#F21717]/20 text-[#F21717]">
+                {course.category}
+              </span>
+              <h1 className="font-display uppercase text-3xl font-black text-white mt-2">
+                {course.title}
+              </h1>
+              <p className="text-xs text-[#A3A3A3] max-w-lg mx-auto">
+                {course.description}
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#181818] border border-white/5 space-y-4 max-w-md mx-auto text-left">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                Course Syllabus ({course.lessons.length} Lessons)
+              </h3>
+              <div className="space-y-2">
+                {course.lessons.map((lesson, idx) => (
+                  <div key={lesson.id} className="text-xs text-[#A3A3A3] flex items-center gap-2">
+                    <Lock className="w-3.5 h-3.5 text-[#F21717]" />
+                    <span>{idx + 1}. {lesson.title.replace(/\*/g, "")}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                onClick={() => handlePurchase("COURSE")}
+                disabled={isPurchasing}
+                variant="athletic"
+                size="lg"
+                className="w-full sm:w-auto font-bold gap-2"
+              >
+                {isPurchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
+                Unlock Course ($19.99)
+              </Button>
+              <Button
+                onClick={() => handlePurchase("SUBSCRIPTION")}
+                disabled={isPurchasing}
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10 font-bold gap-2 text-xs"
+              >
+                Get Full Access Pass ($29.99)
+              </Button>
+            </div>
+
+            <p className="text-[11px] text-[#737373]">
+              Full Access members unlock all Student Academy courses, unlimited AI Mock Interviews, and verified profile features.
+            </p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (error || !course || !currentLesson) {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto py-16 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-red-950/50 border border-red-800/50 flex items-center justify-center text-[#F21717] mx-auto">
+            <BookOpen className="w-8 h-8" />
+          </div>
+          <h2 className="font-display uppercase text-3xl font-black text-white">Course Unavailable</h2>
+          <p className="text-xs text-[#A3A3A3]">{error || "Unable to load requested course lessons."}</p>
+          <Link href="/academy">
+            <Button variant="athletic" size="md">Return to Student Academy</Button>
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const parsedQuiz = parseQuizSection(currentLesson.content);
+  const currentProgress = course.lessonProgressMap?.[currentLesson.id];
 
   return (
     <AppShell>
@@ -377,138 +943,25 @@ export default function CoursePlayerPage() {
                   )}
                 </div>
 
-                {/* Lesson Interactive Documentation Renderer */}
+                {/* Lesson Documentation Renderer */}
                 <div className="prose prose-invert max-w-none text-sm leading-relaxed text-[#D4D4D4] space-y-5">
-                  {currentLesson.content.split("\n\n").map((paragraph, pIdx) => {
-                    const trimmed = paragraph.trim();
-                    if (!trimmed) return null;
+                  {parsedQuiz ? (
+                    <>
+                      {renderParsedMarkdownBlocks(parsedQuiz.preQuizContent)}
 
-                    // Filter out any source / origin metadata lines
-                    const lower = trimmed.toLowerCase();
-                    if (
-                      lower.includes("source:") ||
-                      lower.includes("lovable project") ||
-                      lower.startsWith("extracted verbatim")
-                    ) {
-                      return null;
-                    }
+                      <QuizWidget
+                        questions={parsedQuiz.questions}
+                        lessonId={currentLesson.id}
+                        initialScore={currentProgress?.quizScore}
+                        initialAnswers={currentProgress?.quizAnswers}
+                        onQuizSubmit={handleQuizSubmit}
+                      />
 
-                    // Divider ---
-                    if (trimmed === "---") {
-                      return <hr key={pIdx} className="border-white/10 my-6" />;
-                    }
-
-                    // Main Header #
-                    if (trimmed.startsWith("# ")) {
-                      const titleText = trimmed
-                        .replace(/^#\s+/, "")
-                        .replace(/^ros[a-z]+\s*—\s*/i, "")
-                        .replace(/\*/g, "");
-                      return (
-                        <h1 key={pIdx} className="font-display uppercase text-2xl md:text-3xl font-black text-white pt-2 pb-2 border-b border-white/10 flex items-center gap-2">
-                          <span className="w-2.5 h-6 bg-[#F21717] rounded-sm inline-block" />
-                          {parseInlineText(titleText)}
-                        </h1>
-                      );
-                    }
-
-                    // Section Header ##
-                    if (trimmed.startsWith("## ")) {
-                      return (
-                        <h2 key={pIdx} className="font-display uppercase text-xl font-bold text-white pt-4 pb-1 border-b border-white/5 text-[#F5F5F5]">
-                          {parseInlineText(trimmed.replace(/^##\s+/, ""))}
-                        </h2>
-                      );
-                    }
-
-                    // Subsection Header ###
-                    if (trimmed.startsWith("### ")) {
-                      return (
-                        <h3 key={pIdx} className="font-display uppercase text-base font-bold text-amber-400 pt-3 pb-1">
-                          {parseInlineText(trimmed.replace(/^###\s+/, ""))}
-                        </h3>
-                      );
-                    }
-
-                    // Standalone bold heading (e.g. **Objective**)
-                    if (/^\*\*[^*]+\*\*$/.test(trimmed)) {
-                      const cleanHeading = trimmed.replace(/\*\*/g, "");
-                      return (
-                        <div key={pIdx} className="pt-3 pb-1">
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#F21717] bg-[#F21717]/15 px-3 py-1 rounded-md border border-[#F21717]/30 inline-block shadow-sm">
-                            {cleanHeading}
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    // Quote / Key Takeaway Callout Box >
-                    if (trimmed.startsWith("> ")) {
-                      return (
-                        <div key={pIdx} className="p-4 my-4 rounded-xl bg-[#171717] border-l-4 border-[#F21717] shadow-lg space-y-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717]">Key Takeaway & Rule</span>
-                          <p className="text-sm font-medium text-white italic">
-                            {parseInlineText(trimmed.replace(/^>\s+/, "").replace(/"/g, ""))}
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    // Bulleted Points List (- or * or 1.)
-                    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || /^\d+\.\s/.test(trimmed)) {
-                      const items = trimmed.split("\n").filter(Boolean);
-                      return (
-                        <div key={pIdx} className="bg-[#141414] p-4 rounded-xl border border-white/10 space-y-3 my-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-[#F21717]" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">Action Checklist & Key Points</span>
-                          </div>
-                          <ul className="space-y-2">
-                            {items.map((rawItem, itemIdx) => {
-                              const isChecked = rawItem.includes("[✓]") || rawItem.includes("[x]");
-                              const isCheckbox = isChecked || rawItem.includes("[ ]");
-                              const cleanItem = rawItem.replace(/^[-*]|\d+\.\s*|\[[ x✓]\]/g, "").trim();
-
-                              return (
-                                <li key={itemIdx} className="flex items-start gap-3 text-xs text-[#E5E5E5] bg-[#1a1a1a] p-3 rounded-lg border border-white/5 hover:border-[#F21717]/30 transition-colors">
-                                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5 font-bold text-[10px] ${
-                                    isChecked ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-[#F21717]/20 text-[#F21717] border border-[#F21717]/40"
-                                  }`}>
-                                    {isChecked ? "✓" : isCheckbox ? "○" : itemIdx + 1}
-                                  </div>
-                                  <span className="flex-1 font-medium leading-relaxed">
-                                    {parseInlineText(cleanItem)}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    }
-
-                    // Bold metadata lines (e.g. **Phase:** Foundation)
-                    if (trimmed.startsWith("**") && (trimmed.includes(":**") || trimmed.includes("Phase:") || trimmed.includes("Primary skill:"))) {
-                      const lines = trimmed.split("\n").filter(Boolean);
-                      return (
-                        <div key={pIdx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-[#141414] rounded-xl border border-white/10 my-3">
-                          {lines.map((line, lIdx) => (
-                            <div key={lIdx} className="text-xs text-[#E5E5E5] flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#F21717]" />
-                              <span>{parseInlineText(line)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-
-                    // Standard Paragraph
-                    return (
-                      <p key={pIdx} className="text-sm text-[#D4D4D4] leading-relaxed whitespace-pre-line">
-                        {parseInlineText(trimmed)}
-                      </p>
-                    );
-                  })}
+                      {renderParsedMarkdownBlocks(parsedQuiz.postQuizContent)}
+                    </>
+                  ) : (
+                    renderParsedMarkdownBlocks(currentLesson.content)
+                  )}
                 </div>
 
                 {/* Controls Bar */}

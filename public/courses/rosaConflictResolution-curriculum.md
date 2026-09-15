@@ -1,6 +1,5 @@
 # rosacr — Conflict Resolution: Curriculum Content
 
-**Source:** Lovable project `rosacr` ("Conflict Resolution"), extracted verbatim from `src/data/selfDirectedModules.ts`. Self-directed conflict-resolution course for student-athletes.
 
 ---
 

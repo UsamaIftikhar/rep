@@ -1,6 +1,5 @@
 # rosamp — The Marketing Playbook: Curriculum Content
 
-**Source:** Lovable project `rosamp` ("The Marketing Playbook"), extracted verbatim from `src/data/selfDirectedModules.ts`. Self-directed personal-marketing/branding course for student-athletes.
 
 ---
 

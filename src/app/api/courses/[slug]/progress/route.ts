@@ -7,6 +7,8 @@ import { z } from "zod";
 
 const progressSchema = z.object({
   lessonId: z.string().min(1, "Lesson ID is required"),
+  quizScore: z.number().optional().nullable(),
+  quizAnswers: z.any().optional().nullable(),
 });
 
 export async function POST(req: Request) {
@@ -20,10 +22,10 @@ export async function POST(req: Request) {
     const result = progressSchema.safeParse(body);
 
     if (!result.success) {
-      return NextResponse.json({ error: "Invalid lesson ID" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
     }
 
-    const { lessonId } = result.data;
+    const { lessonId, quizScore, quizAnswers } = result.data;
 
     // Verify course entitlement
     const lesson = await db.lesson.findUnique({
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const progressResult = await markLessonComplete(user.id, lessonId);
+    const progressResult = await markLessonComplete(user.id, lessonId, quizScore, quizAnswers);
 
     return NextResponse.json({
       success: true,

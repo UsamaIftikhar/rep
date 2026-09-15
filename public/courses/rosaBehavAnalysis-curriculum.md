@@ -1,6 +1,5 @@
 # rosaba — Behavioral Analytics & Decision-Making Academy: Curriculum Content
 
-**Source:** Lovable project `rosaba` ("Behavioral Analytics & Decision-Making Academy"), extracted verbatim from `src/data/selfDirectedModules.ts`. 7-module self-directed curriculum sourced (per in-file comment) from the official Instructor Guide; core framework CAUSE (Trigger) → ACTION (Behavior) → RESULT (Outcome).
 
 ---
 

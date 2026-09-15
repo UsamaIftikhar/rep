@@ -1,6 +1,5 @@
 # rosaimpact — Athletes for Impact: Curriculum Content
 
-**Source:** Lovable project `rosaimpact` ("Athletes for Impact"), extracted verbatim from `src/data/selfDirectedModules.ts`. Self-directed nonprofit/community-impact course for student-athletes.
 
 ---
 

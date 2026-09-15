@@ -1,6 +1,5 @@
 # rosapb — Personal Branding: Curriculum Content
 
-**Source:** Lovable project `rosapb` ("Personal Branding"), extracted verbatim from `src/data/selfDirectedModules.ts`. 12-module self-directed personal-branding course for student-athletes.
 
 ---
 
