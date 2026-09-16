@@ -171,12 +171,10 @@ export async function createStripeCheckoutSession({
     ];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sessionParams: any = {
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer_email: userEmail,
     line_items: lineItems,
     mode,
-    managed_payments: { enabled: false },
     success_url: `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/settings?checkout_cancelled=true`,
     metadata: {
@@ -186,9 +184,25 @@ export async function createStripeCheckoutSession({
     },
   };
 
-  const session = await stripe.checkout.sessions.create(sessionParams);
-
-  return { url: session.url };
+  try {
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    return { url: session.url };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    if (
+      mode === "subscription" &&
+      (errorMsg.includes("recurring price") || errorMsg.includes("subscription"))
+    ) {
+      console.warn("Stripe Checkout fallback: retrying with mode='payment' for price configuration");
+      const fallbackParams: Stripe.Checkout.SessionCreateParams = {
+        ...sessionParams,
+        mode: "payment",
+      };
+      const fallbackSession = await stripe.checkout.sessions.create(fallbackParams);
+      return { url: fallbackSession.url };
+    }
+    throw err;
+  }
 }
 
 export async function createStripeBillingPortal({ userId, origin }: { userId: string; origin: string }) {
