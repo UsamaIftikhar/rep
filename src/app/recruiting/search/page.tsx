@@ -38,6 +38,7 @@ export default function RecruitSearchPage() {
   const [gradYear, setGradYear] = React.useState("");
   const [location, setLocation] = React.useState("");
   const [level, setLevel] = React.useState("");
+  const [athleteType, setAthleteType] = React.useState("");
 
   const [athletes, setAthletes] = React.useState<SearchAthlete[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -53,6 +54,7 @@ export default function RecruitSearchPage() {
     if (gradYear) params.set("graduationYear", gradYear);
     if (location) params.set("location", location);
     if (level) params.set("level", level);
+    if (athleteType) params.set("athleteType", athleteType);
     params.set("page", String(page));
 
     try {
@@ -70,7 +72,7 @@ export default function RecruitSearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, sport, gradYear, location, level, page]);
+  }, [query, sport, gradYear, location, level, athleteType, page]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -84,7 +86,7 @@ export default function RecruitSearchPage() {
       <PageHeader
         eyebrow="Recruiting Database"
         title="Athlete Recruiter Search"
-        description="Filter and evaluate verified high school and college athletes by sport, position, program level, graduation year, and location."
+        description="Filter and evaluate verified high school and college athletes by region (US vs International), sport, position, program level, graduation year, and location."
       />
 
       <div className="space-y-6 pb-16">
@@ -106,6 +108,20 @@ export default function RecruitSearchPage() {
               </div>
 
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+                <Select
+                  value={athleteType}
+                  onChange={(e) => {
+                    setAthleteType(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: "", label: "All Regions (US & Intl)" },
+                    { value: "us", label: "🇺🇸 US Athletes" },
+                    { value: "international", label: "🌏 International Athletes" },
+                  ]}
+                  className="w-full sm:w-48"
+                />
+
                 <Select
                   value={level}
                   onChange={(e) => {
@@ -171,7 +187,7 @@ export default function RecruitSearchPage() {
                 <Filter className="w-3.5 h-3.5 text-[#F21717]" /> {total} Verified Prospects Found
               </span>
 
-              {(query || sport || gradYear || location || level) && (
+              {(query || sport || gradYear || location || level || athleteType) && (
                 <button
                   onClick={() => {
                     setQuery("");
@@ -179,6 +195,7 @@ export default function RecruitSearchPage() {
                     setGradYear("");
                     setLocation("");
                     setLevel("");
+                    setAthleteType("");
                     setPage(1);
                   }}
                   className="text-[#F21717] hover:underline cursor-pointer font-semibold"

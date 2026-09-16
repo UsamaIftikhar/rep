@@ -17,6 +17,7 @@ export async function GET(req: Request) {
   const where: Prisma.AthleteProfileWhereInput = {
     profileVisibility: true,
     user: {
+      status: "ACTIVE",
       NOT: {
         AND: [
           {
@@ -90,6 +91,41 @@ export async function GET(req: Request) {
     ];
   }
 
+  const athleteType = searchParams.get("athleteType") || searchParams.get("region") || "";
+
+  if (athleteType === "international") {
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : []),
+      {
+        OR: [
+          { user: { entitlements: { some: { type: "ELITE_PACIFIC" } } } },
+          { location: { contains: "Australia", mode: "insensitive" } },
+          { location: { contains: "New Zealand", mode: "insensitive" } },
+          { location: { contains: "Pacific", mode: "insensitive" } },
+          { location: { contains: "International", mode: "insensitive" } },
+          { location: { contains: "Sydney", mode: "insensitive" } },
+          { location: { contains: "Melbourne", mode: "insensitive" } },
+          { location: { contains: "Brisbane", mode: "insensitive" } },
+          { location: { contains: "Auckland", mode: "insensitive" } },
+        ],
+      },
+    ];
+  } else if (athleteType === "us") {
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : []),
+      {
+        NOT: {
+          OR: [
+            { user: { entitlements: { some: { type: "ELITE_PACIFIC" } } } },
+            { location: { contains: "Australia", mode: "insensitive" } },
+            { location: { contains: "New Zealand", mode: "insensitive" } },
+            { location: { contains: "Pacific", mode: "insensitive" } },
+          ],
+        },
+      },
+    ];
+  }
+
   const [athletes, total] = await Promise.all([
     db.athleteProfile.findMany({
       where,
@@ -115,6 +151,11 @@ export async function GET(req: Request) {
             lastName: true,
             name: true,
             image: true,
+            entitlements: {
+              select: {
+                type: true,
+              },
+            },
             badges: {
               select: {
                 badge: {
