@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     profileVisibility: true,
     user: {
       status: "ACTIVE",
+      role: { notIn: ["ADMIN", "SUPER_ADMIN"] },
       NOT: {
         AND: [
           {
