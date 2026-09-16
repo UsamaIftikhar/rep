@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 interface NewUserEmailParams {
   name: string;
@@ -13,7 +14,20 @@ interface NewUserEmailParams {
   location?: string | null;
 }
 
-const NOTIFICATION_RECIPIENT = process.env.NOTIFICATION_EMAIL || "jrmarvinconstant@gmail.com";
+function getNotificationRecipients(): string[] {
+  const envVal = process.env.NOTIFICATION_EMAIL || "jrmarvinconstant@gmail.com, usamaiftikhar59@gmail.com";
+  return envVal
+    .split(/[,;]/)
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
+function getResendClient() {
+  if (process.env.RESEND_API_KEY) {
+    return new Resend(process.env.RESEND_API_KEY);
+  }
+  return null;
+}
 
 function createTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
@@ -169,7 +183,7 @@ export function generateNewUserEmailHtml(data: NewUserEmailParams): string {
             <td style="padding: 24px 32px; background-color: #0D0D0D; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #737373; line-height: 1.5;">
                 This is an automated notification from the <strong>REP 1 Sports Platform</strong>.<br>
-                Recipient: <span style="color: #A3A3A3;">${NOTIFICATION_RECIPIENT}</span>
+                Recipients: <span style="color: #A3A3A3;">${getNotificationRecipients().join(", ")}</span>
               </p>
             </td>
           </tr>
@@ -186,27 +200,44 @@ export async function sendNewUserRegistrationEmail(data: NewUserEmailParams) {
   try {
     const htmlContent = generateNewUserEmailHtml(data);
     const subject = `🚨 New Signup: ${data.name} (${data.role}) - REP 1 Sports`;
+    const from = process.env.RESEND_FROM || process.env.SMTP_FROM || `"REP 1 Sports" <onboarding@resend.dev>`;
+    const recipients = getNotificationRecipients();
+
+    const resend = getResendClient();
+    if (resend) {
+      const { data: resData, error } = await resend.emails.send({
+        from,
+        to: recipients,
+        subject,
+        html: htmlContent,
+      });
+
+      if (error) {
+        console.error("[RESEND EMAIL ERROR]", error);
+      } else {
+        console.log(`[RESEND EMAIL SENT SUCCESS] ID: ${resData?.id} to ${recipients.join(", ")}`);
+        return;
+      }
+    }
 
     const transporter = createTransporter();
 
     if (!transporter) {
-      console.log(`[EMAIL NOTIFICATION LOG] (SMTP credentials missing in .env)`);
-      console.log(`To: ${NOTIFICATION_RECIPIENT}`);
+      console.log(`[EMAIL NOTIFICATION LOG] (SMTP & Resend credentials missing in .env)`);
+      console.log(`To: ${recipients.join(", ")}`);
       console.log(`Subject: ${subject}`);
       console.log(`User Signed Up: ${data.name} (${data.email})`);
       return;
     }
 
-    const from = process.env.SMTP_FROM || `"REP 1 Sports" <noreply@rep1exposure.com>`;
-
     const info = await transporter.sendMail({
       from,
-      to: NOTIFICATION_RECIPIENT,
+      to: recipients.join(", "),
       subject,
       html: htmlContent,
     });
 
-    console.log(`[EMAIL SENT SUCCESS] Message ID: ${info.messageId} to ${NOTIFICATION_RECIPIENT}`);
+    console.log(`[EMAIL SENT SUCCESS] Message ID: ${info.messageId} to ${recipients.join(", ")}`);
   } catch (error) {
     console.error("[EMAIL SENDING ERROR]", error);
   }
@@ -301,17 +332,33 @@ export async function sendPasswordResetEmail(data: { email: string; name: string
   try {
     const htmlContent = generatePasswordResetEmailHtml(data.name, data.resetUrl);
     const subject = `Reset Your Password - REP 1 Sports`;
+    const from = process.env.RESEND_FROM || process.env.SMTP_FROM || `"REP 1 Sports" <onboarding@resend.dev>`;
+
+    const resend = getResendClient();
+    if (resend) {
+      const { data: resData, error } = await resend.emails.send({
+        from,
+        to: [data.email],
+        subject,
+        html: htmlContent,
+      });
+
+      if (error) {
+        console.error("[RESEND PASSWORD RESET ERROR]", error);
+      } else {
+        console.log(`[RESEND PASSWORD RESET SENT SUCCESS] ID: ${resData?.id} to ${data.email}`);
+        return;
+      }
+    }
 
     const transporter = createTransporter();
 
     if (!transporter) {
-      console.log(`[PASSWORD RESET EMAIL LOG] (SMTP credentials missing or fallback active)`);
+      console.log(`[PASSWORD RESET EMAIL LOG] (SMTP/Resend credentials missing in .env)`);
       console.log(`To: ${data.email}`);
       console.log(`Reset URL: ${data.resetUrl}`);
       return;
     }
-
-    const from = process.env.SMTP_FROM || `"REP 1 Sports" <noreply@rep1exposure.com>`;
 
     const info = await transporter.sendMail({
       from,
