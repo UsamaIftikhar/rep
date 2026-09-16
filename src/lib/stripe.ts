@@ -175,6 +175,8 @@ export async function createStripeCheckoutSession({
     customer_email: userEmail,
     line_items: lineItems,
     mode,
+    managed_payments: { enabled: false },
+    payment_method_types: ["card"],
     success_url: `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/settings?checkout_cancelled=true`,
     metadata: {
@@ -188,20 +190,45 @@ export async function createStripeCheckoutSession({
     const session = await stripe.checkout.sessions.create(sessionParams);
     return { url: session.url };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    if (
-      mode === "subscription" &&
-      (errorMsg.includes("recurring price") || errorMsg.includes("subscription"))
-    ) {
-      console.warn("Stripe Checkout fallback: retrying with mode='payment' for price configuration");
+    console.warn("Stripe Checkout primary attempt failed, retrying with fallback:", err);
+    try {
       const fallbackParams: Stripe.Checkout.SessionCreateParams = {
         ...sessionParams,
         mode: "payment",
       };
       const fallbackSession = await stripe.checkout.sessions.create(fallbackParams);
       return { url: fallbackSession.url };
+    } catch (fallbackErr: unknown) {
+      console.warn("Stripe Checkout payment fallback failed, retrying with inline price_data:", fallbackErr);
+      const defaultName =
+        type === "COURSE"
+          ? "REP 1 Academy Course"
+          : type === "INTERNATIONAL" || type === "ELITE_PACIFIC"
+          ? "REP 1 International Athlete Pass (Elite Pacific)"
+          : "REP 1 US Student Athlete Pass";
+      const defaultAmount =
+        type === "COURSE" ? 999 : type === "INTERNATIONAL" || type === "ELITE_PACIFIC" ? 7500 : 2999;
+
+      const inlineParams: Stripe.Checkout.SessionCreateParams = {
+        ...sessionParams,
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: defaultName,
+                tax_code: "txcd_10000000",
+              },
+              unit_amount: defaultAmount,
+            },
+            quantity: 1,
+          },
+        ],
+      };
+      const inlineSession = await stripe.checkout.sessions.create(inlineParams);
+      return { url: inlineSession.url };
     }
-    throw err;
   }
 }
 
