@@ -14,7 +14,13 @@ interface NewUserEmailParams {
   location?: string | null;
 }
 
-const NOTIFICATION_RECIPIENT = process.env.NOTIFICATION_EMAIL || "jrmarvinconstant@gmail.com";
+function getNotificationRecipients(): string[] {
+  const envVal = process.env.NOTIFICATION_EMAIL || "jrmarvinconstant@gmail.com, usamaiftikhar59@gmail.com";
+  return envVal
+    .split(/[,;]/)
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
 
 function getResendClient() {
   if (process.env.RESEND_API_KEY) {
@@ -177,7 +183,7 @@ export function generateNewUserEmailHtml(data: NewUserEmailParams): string {
             <td style="padding: 24px 32px; background-color: #0D0D0D; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #737373; line-height: 1.5;">
                 This is an automated notification from the <strong>REP 1 Sports Platform</strong>.<br>
-                Recipient: <span style="color: #A3A3A3;">${NOTIFICATION_RECIPIENT}</span>
+                Recipients: <span style="color: #A3A3A3;">${getNotificationRecipients().join(", ")}</span>
               </p>
             </td>
           </tr>
@@ -195,12 +201,13 @@ export async function sendNewUserRegistrationEmail(data: NewUserEmailParams) {
     const htmlContent = generateNewUserEmailHtml(data);
     const subject = `🚨 New Signup: ${data.name} (${data.role}) - REP 1 Sports`;
     const from = process.env.RESEND_FROM || process.env.SMTP_FROM || `"REP 1 Sports" <onboarding@resend.dev>`;
+    const recipients = getNotificationRecipients();
 
     const resend = getResendClient();
     if (resend) {
       const { data: resData, error } = await resend.emails.send({
         from,
-        to: [NOTIFICATION_RECIPIENT],
+        to: recipients,
         subject,
         html: htmlContent,
       });
@@ -208,7 +215,7 @@ export async function sendNewUserRegistrationEmail(data: NewUserEmailParams) {
       if (error) {
         console.error("[RESEND EMAIL ERROR]", error);
       } else {
-        console.log(`[RESEND EMAIL SENT SUCCESS] ID: ${resData?.id} to ${NOTIFICATION_RECIPIENT}`);
+        console.log(`[RESEND EMAIL SENT SUCCESS] ID: ${resData?.id} to ${recipients.join(", ")}`);
         return;
       }
     }
@@ -217,7 +224,7 @@ export async function sendNewUserRegistrationEmail(data: NewUserEmailParams) {
 
     if (!transporter) {
       console.log(`[EMAIL NOTIFICATION LOG] (SMTP & Resend credentials missing in .env)`);
-      console.log(`To: ${NOTIFICATION_RECIPIENT}`);
+      console.log(`To: ${recipients.join(", ")}`);
       console.log(`Subject: ${subject}`);
       console.log(`User Signed Up: ${data.name} (${data.email})`);
       return;
@@ -225,12 +232,12 @@ export async function sendNewUserRegistrationEmail(data: NewUserEmailParams) {
 
     const info = await transporter.sendMail({
       from,
-      to: NOTIFICATION_RECIPIENT,
+      to: recipients.join(", "),
       subject,
       html: htmlContent,
     });
 
-    console.log(`[EMAIL SENT SUCCESS] Message ID: ${info.messageId} to ${NOTIFICATION_RECIPIENT}`);
+    console.log(`[EMAIL SENT SUCCESS] Message ID: ${info.messageId} to ${recipients.join(", ")}`);
   } catch (error) {
     console.error("[EMAIL SENDING ERROR]", error);
   }
