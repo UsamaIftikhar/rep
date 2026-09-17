@@ -38,7 +38,7 @@ export default function PricingPage() {
     },
     {
       name: "International Athlete Pass",
-      price: "$75",
+      price: "$29.99",
       period: "One-time fee",
       desc: "Full membership for Australian & International prospects.",
       features: [

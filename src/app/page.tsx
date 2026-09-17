@@ -182,7 +182,7 @@ export default function HomePage() {
                   International Pass
                 </h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display font-black text-3xl text-white">$75.00</span>
+                  <span className="font-display font-black text-3xl text-white">$29.99</span>
                   <span className="text-xs text-[#A3A3A3]">/ one-time</span>
                 </div>
                 <p className="text-xs text-[#A3A3A3] leading-relaxed">
@@ -191,7 +191,7 @@ export default function HomePage() {
               </div>
               <Link href="/signup?plan=international">
                 <Button variant="outline" size="sm" className="w-full text-xs font-bold border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
-                  Register Global Pass ($75)
+                  Register Global Pass ($29.99)
                 </Button>
               </Link>
             </Card>

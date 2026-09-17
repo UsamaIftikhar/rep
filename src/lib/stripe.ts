@@ -144,7 +144,7 @@ export async function createStripeCheckoutSession({
             description: "Full global roster placement, collegiate pathway, and student academy access",
             tax_code: "txcd_10000000",
           },
-          unit_amount: 7500,
+          unit_amount: 2999,
         },
         quantity: 1,
       },
@@ -207,7 +207,7 @@ export async function createStripeCheckoutSession({
           ? "REP 1 International Athlete Pass (Elite Pacific)"
           : "REP 1 US Student Athlete Pass";
       const defaultAmount =
-        type === "COURSE" ? 999 : type === "INTERNATIONAL" || type === "ELITE_PACIFIC" ? 7500 : 2999;
+        type === "COURSE" ? 999 : 2999;
 
       const inlineParams: Stripe.Checkout.SessionCreateParams = {
         ...sessionParams,

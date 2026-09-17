@@ -278,7 +278,7 @@ export default function ElitePacificPage() {
                   </h5>
                   <div className="flex items-baseline justify-center gap-1 my-1">
                     <span className="font-display font-black text-4xl text-[#F21717]">
-                      $75
+                      $29.99
                     </span>
                     <span className="text-xs text-[#737373]">One-time fee</span>
                   </div>

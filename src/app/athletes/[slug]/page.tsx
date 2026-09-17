@@ -573,7 +573,7 @@ export default function PublicAthleteProfilePage() {
               ) : (
                 <Link href="/signup" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto gap-2 bg-[#F21717] hover:bg-[#D01414] font-bold uppercase tracking-wider text-xs">
-                    Get Member Pass ($29.99 / $75)
+                    Get Member Pass ($29.99)
                   </Button>
                 </Link>
               )}

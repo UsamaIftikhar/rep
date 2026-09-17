@@ -47,7 +47,7 @@ function SignupForm() {
     if (region === "international") {
       return {
         title: "International Athlete Pass (Elite Pacific)",
-        amount: "$75.00",
+        amount: "$29.99",
         subtitle: "Full global roster placement, collegiate pathway, and student academy access",
         type: "INTERNATIONAL",
       };
@@ -154,7 +154,7 @@ function SignupForm() {
             <Select
               options={[
                 { value: "us", label: "US / American Athlete ($29.99)" },
-                { value: "international", label: "International Athlete ($75.00)" },
+                { value: "international", label: "International Athlete ($29.99)" },
                 ...(region === "course" || initialPlan === "course"
                   ? [{ value: "course", label: "Single Classroom Course ($9.99)" }]
                   : []),
