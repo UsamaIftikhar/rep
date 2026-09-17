@@ -10,16 +10,21 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
-  if (process.env.STRIPE_WEBHOOK_SECRET && signature) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (webhookSecret && webhookSecret.startsWith("whsec_") && signature) {
     try {
-      event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid webhook signature";
       console.error("Webhook signature verification failed:", msg);
       return NextResponse.json({ error: msg }, { status: 400 });
     }
   } else {
-    // Development fallback parsing if webhook secret is not set
+    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
+      console.warn("STRIPE_WEBHOOK_SECRET is set to a placeholder or non-whsec_ value. Falling back to JSON body parsing.");
+    }
+    // Development fallback parsing if webhook secret is not set or is a placeholder
     try {
       event = JSON.parse(body) as Stripe.Event;
     } catch {
