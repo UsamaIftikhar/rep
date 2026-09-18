@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { UserStatus } from "@prisma/client";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
+import { sendNewUserRegistrationEmail } from "@/lib/email";
 import Stripe from "stripe";
 
 export async function POST(req: Request) {
@@ -42,9 +43,24 @@ export async function POST(req: Request) {
 
         if (userId) {
           // Activate user account upon successful payment
-          await db.user.update({
+          const user = await db.user.update({
             where: { id: userId },
             data: { status: UserStatus.ACTIVE },
+            include: { athleteProfile: true },
+          });
+
+          // Trigger Resend email notification upon successful payment completion
+          sendNewUserRegistrationEmail({
+            name: user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName || undefined,
+            lastName: user.lastName || undefined,
+            sport: user.athleteProfile?.sport || undefined,
+            position: user.athleteProfile?.position || undefined,
+            schoolClub: user.athleteProfile?.schoolClub || undefined,
+            graduationYear: user.athleteProfile?.graduationYear || undefined,
+            location: user.athleteProfile?.location || undefined,
           });
 
           if (type === "COURSE" && courseId) {
@@ -78,33 +94,31 @@ export async function POST(req: Request) {
                 sourceReferenceId: session.id,
               },
             });
-          } else if (type === "SUBSCRIPTION" || type === "ELITE_PACIFIC") {
-            const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
-            const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id || `sub_${session.id}`;
+          } else if (type === "SUBSCRIPTION" || type === "ELITE_PACIFIC" || type === "US_ATHLETE" || type === "INTERNATIONAL" || (!type && !courseId)) {
+            const customerId = (typeof session.customer === "string" ? session.customer : session.customer?.id) || `cust_${session.id}`;
+            const subId = (typeof session.subscription === "string" ? session.subscription : session.subscription?.id) || `sub_${session.id}`;
 
-            if (customerId) {
-              await db.subscription.upsert({
-                where: { stripeSubscriptionId: subId },
-                update: { status: "active", stripeCustomerId: customerId },
-                create: {
-                  userId,
-                  stripeCustomerId: customerId,
-                  stripeSubscriptionId: subId,
-                  stripePriceId: type === "ELITE_PACIFIC" ? "price_elite" : "price_academy",
-                  status: "active",
-                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                },
-              });
+            await db.subscription.upsert({
+              where: { stripeSubscriptionId: subId },
+              update: { status: "active", stripeCustomerId: customerId },
+              create: {
+                userId,
+                stripeCustomerId: customerId,
+                stripeSubscriptionId: subId,
+                stripePriceId: type === "ELITE_PACIFIC" ? "price_elite" : "price_1UGhDP9kvZo5XvSYLi8PsBfY",
+                status: "active",
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              },
+            });
 
-              await db.entitlement.create({
-                data: {
-                  userId,
-                  type: type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
-                  source: "SUBSCRIPTION",
-                  sourceReferenceId: session.id,
-                },
-              });
-            }
+            await db.entitlement.create({
+              data: {
+                userId,
+                type: type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
+                source: "SUBSCRIPTION",
+                sourceReferenceId: session.id,
+              },
+            });
           }
         }
         break;
