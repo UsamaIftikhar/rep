@@ -28,6 +28,7 @@ interface PublicAthlete {
   shuttleTime: string | null;
   broadJump: string | null;
   gpa: string | null;
+  actSat: string | null;
   highlightVideoUrl: string | null;
   potentialDivision?: string | null;
   profileCompleteness: number;
@@ -115,6 +116,7 @@ export default function PublicAthleteProfilePage() {
   const [formShuttleTime, setFormShuttleTime] = React.useState("");
   const [formBroadJump, setFormBroadJump] = React.useState("");
   const [formGpa, setFormGpa] = React.useState("");
+  const [formActSat, setFormActSat] = React.useState("");
   const [formHighlightVideoUrl, setFormHighlightVideoUrl] = React.useState("");
 
   // Staff Scouting Evaluation & 1-5 Ratings State
@@ -199,6 +201,7 @@ export default function PublicAthleteProfilePage() {
     setFormShuttleTime(athlete.shuttleTime || "");
     setFormBroadJump(athlete.broadJump || "");
     setFormGpa(athlete.gpa || "");
+    setFormActSat(athlete.actSat || "");
     setFormHighlightVideoUrl(athlete.highlightVideoUrl || "");
 
     setFormAdminNotes(athlete.adminNotes || "");
@@ -306,6 +309,7 @@ export default function PublicAthleteProfilePage() {
             shuttleTime: formShuttleTime || null,
             broadJump: formBroadJump || null,
             gpa: formGpa || null,
+            actSat: formActSat || null,
             highlightVideoUrl: formHighlightVideoUrl || null,
             adminNotes: formAdminNotes || null,
             potentialDivision: formPotentialDivision || null,
@@ -636,6 +640,11 @@ export default function PublicAthleteProfilePage() {
                     {athlete.gpa && (
                       <span className="flex items-center gap-1.5 font-semibold text-white">
                         <Award className="w-3.5 h-3.5 text-amber-400" /> GPA: {athlete.gpa}
+                      </span>
+                    )}
+                    {athlete.actSat && (
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <Award className="w-3.5 h-3.5 text-amber-400" /> ACT/SAT: {athlete.actSat}
                       </span>
                     )}
                     {athlete.location && (
@@ -1226,6 +1235,10 @@ export default function PublicAthleteProfilePage() {
                       <div>
                         <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">GPA</label>
                         <Input value={formGpa} onChange={(e) => setFormGpa(e.target.value)} placeholder="3.8" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">ACT / SAT Score</label>
+                        <Input value={formActSat} onChange={(e) => setFormActSat(e.target.value)} placeholder="28 / 1350" />
                       </div>
                     </div>
                   </div>

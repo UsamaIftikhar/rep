@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [shuttleTime, setShuttleTime] = React.useState("");
   const [broadJump, setBroadJump] = React.useState("");
   const [gpa, setGpa] = React.useState("");
+  const [actSat, setActSat] = React.useState("");
   const [highlightVideoUrl, setHighlightVideoUrl] = React.useState("");
   const [profileVisibility, setProfileVisibility] = React.useState(true);
   const [profileCompleteness, setProfileCompleteness] = React.useState(0);
@@ -66,6 +67,7 @@ export default function SettingsPage() {
           setShuttleTime(p.shuttleTime || "");
           setBroadJump(p.broadJump || "");
           setGpa(p.gpa || "");
+          setActSat(p.actSat || "");
           setHighlightVideoUrl(p.highlightVideoUrl || "");
           setProfileVisibility(p.profileVisibility ?? true);
           setProfileCompleteness(p.profileCompleteness || 0);
@@ -112,6 +114,7 @@ export default function SettingsPage() {
           shuttleTime,
           broadJump,
           gpa,
+          actSat,
           highlightVideoUrl,
           profileVisibility,
         }),
@@ -348,7 +351,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Position / Event</label>
                     <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="Quarterback / Safety" />
@@ -356,6 +359,10 @@ export default function SettingsPage() {
                   <div>
                     <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Grade Point Average (GPA)</label>
                     <Input value={gpa} onChange={(e) => setGpa(e.target.value)} placeholder="e.g. 3.85" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">ACT / SAT Score</label>
+                    <Input value={actSat} onChange={(e) => setActSat(e.target.value)} placeholder="e.g. 28 / 1350" />
                   </div>
                 </div>
 

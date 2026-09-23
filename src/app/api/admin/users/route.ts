@@ -29,6 +29,7 @@ const updateUserSchema = z.object({
       shuttleTime: z.string().nullable().optional(),
       broadJump: z.string().nullable().optional(),
       gpa: z.string().nullable().optional(),
+      actSat: z.string().nullable().optional(),
       highlightVideoUrl: z.string().nullable().optional(),
 
       // Staff Evaluation & Ratings (1 to 5)

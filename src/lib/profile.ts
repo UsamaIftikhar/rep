@@ -143,6 +143,7 @@ export async function updateAthleteProfile(userId: string, data: ProfileUpdateIn
       shuttleTime: validated.shuttleTime,
       broadJump: validated.broadJump,
       gpa: validated.gpa,
+      actSat: validated.actSat,
       highlightVideoUrl: validated.highlightVideoUrl,
       profileVisibility: validated.profileVisibility ?? existingProfile.profileVisibility,
       profileCompleteness: completeness,

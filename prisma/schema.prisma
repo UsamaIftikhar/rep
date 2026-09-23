@@ -115,6 +115,7 @@ model AthleteProfile {
   shuttleTime         String?
   broadJump           String?
   gpa                 String?
+  actSat              String?
   highlightVideoUrl   String?
   profileVisibility   Boolean  @default(true)
   profileCompleteness Int      @default(0)

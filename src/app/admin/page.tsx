@@ -32,6 +32,7 @@ interface FullAthleteProfile {
   shuttleTime?: string | null;
   broadJump?: string | null;
   gpa?: string | null;
+  actSat?: string | null;
   highlightVideoUrl?: string | null;
   profileCompleteness?: number;
 
@@ -173,6 +174,7 @@ export default function AdminDashboardPage() {
   const [formShuttleTime, setFormShuttleTime] = React.useState("");
   const [formBroadJump, setFormBroadJump] = React.useState("");
   const [formGpa, setFormGpa] = React.useState("");
+  const [formActSat, setFormActSat] = React.useState("");
   const [formHighlightVideoUrl, setFormHighlightVideoUrl] = React.useState("");
 
   // Staff Scouting Evaluation & 1-5 Ratings State
@@ -572,6 +574,7 @@ export default function AdminDashboardPage() {
     setFormShuttleTime(prof.shuttleTime || "");
     setFormBroadJump(prof.broadJump || "");
     setFormGpa(prof.gpa || "");
+    setFormActSat(prof.actSat || "");
     setFormHighlightVideoUrl(prof.highlightVideoUrl || "");
 
     // Evaluation Ratings & Notes
@@ -648,6 +651,7 @@ export default function AdminDashboardPage() {
           shuttleTime: formShuttleTime || null,
           broadJump: formBroadJump || null,
           gpa: formGpa || null,
+          actSat: formActSat || null,
           highlightVideoUrl: formHighlightVideoUrl || null,
           adminNotes: formAdminNotes || null,
           potentialDivision: formPotentialDivision || null,
@@ -1624,7 +1628,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                       <label className="font-bold text-[#A3A3A3] block mb-1">School / Club Team</label>
                       <Input value={formSchoolClub} onChange={(e) => setFormSchoolClub(e.target.value)} />
@@ -1636,6 +1640,10 @@ export default function AdminDashboardPage() {
                     <div>
                       <label className="font-bold text-[#A3A3A3] block mb-1">GPA</label>
                       <Input value={formGpa} onChange={(e) => setFormGpa(e.target.value)} placeholder="3.8" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">ACT / SAT Score</label>
+                      <Input value={formActSat} onChange={(e) => setFormActSat(e.target.value)} placeholder="28 / 1350" />
                     </div>
                   </div>
 

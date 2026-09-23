@@ -46,6 +46,7 @@ export const profileUpdateSchema = z.object({
   shuttleTime: z.string().nullable().optional(),
   broadJump: z.string().nullable().optional(),
   gpa: z.string().nullable().optional(),
+  actSat: z.string().nullable().optional(),
   highlightVideoUrl: z.string().nullable().optional(),
   profileVisibility: z.boolean().optional(),
 });
