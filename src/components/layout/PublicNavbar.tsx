@@ -10,25 +10,26 @@ import { Menu, X, LogIn, UserPlus, LogOut, LayoutDashboard } from "lucide-react"
 
 export function PublicNavbar() {
   const pathname = usePathname();
-  const { isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const unauthLinks = [
+  const isTester =
+    user?.email === "usama@rep1recruiting.com" ||
+    user?.email === "student@rep1recruiting.com";
+
+  const baseLinks = [
     { label: "Home", href: "/" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },
-    { label: "Classroom", href: "/classroom" },
-    { label: "Mock AI Interview", href: "/interview" },
+    { label: "Classroom", href: isAuthenticated ? "/courses" : "/classroom" },
   ];
 
-  const authLinks = [
-    { label: "Home", href: "/" },
-    { label: "Elite Pacific Sports", href: "/elite-pacific" },
-    { label: "Classroom", href: "/courses" },
-    { label: "Student Academy", href: "/academy" },
-    { label: "Mock AI Interview", href: "/interview" },
-  ];
+  if (isTester) {
+    baseLinks.push({ label: "Rep 1 Coaching Academy", href: "/academy" });
+  }
 
-  const links = isAuthenticated ? authLinks : unauthLinks;
+  baseLinks.push({ label: "Mock AI Interview", href: "/interview" });
+
+  const links = baseLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070707]/95 backdrop-blur-md border-b border-white/10">
