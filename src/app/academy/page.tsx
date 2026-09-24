@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppShell, PublicNavbar, PublicFooter } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { MiroBoard } from "@/components/integrations/MiroBoard";
+import { ZoomEmbeddedMeeting } from "@/components/integrations/ZoomEmbeddedMeeting";
 import { useAuth } from "@/lib/auth-context";
 import {
   ArrowRight,
@@ -178,8 +179,12 @@ export default function AcademyPage() {
     }
   }, [isAuthenticated, fetchFiles]);
 
+  // Start Meeting modal state (Admin)
+  const [startMeetingModalOpen, setStartMeetingModalOpen] = React.useState(false);
+  const [customZoomUrlInput, setCustomZoomUrlInput] = React.useState("");
+
   // Handle Admin starting meeting
-  const handleStartMeeting = async () => {
+  const handleStartMeeting = async (customUrl?: string) => {
     try {
       setStartingSession(true);
       const res = await fetch("/api/academy/session", {
@@ -188,10 +193,16 @@ export default function AcademyPage() {
         body: JSON.stringify({
           action: "start",
           topic: "Rep 1 Coaching Academy Live Strategy & Film Session",
+          customJoinUrl: customUrl ? customUrl.trim() : undefined,
         }),
       });
+
       if (res.ok) {
+        setStartMeetingModalOpen(false);
         await fetchSession();
+      } else {
+        const errData = await res.json();
+        alert(errData.error || "Failed to start meeting.");
       }
     } catch (e) {
       console.error("Error starting meeting:", e);
@@ -368,7 +379,7 @@ export default function AcademyPage() {
                   </Button>
                 ) : (
                   <Button
-                    onClick={handleStartMeeting}
+                    onClick={() => setStartMeetingModalOpen(true)}
                     disabled={startingSession}
                     className="gap-2 bg-[#F21717] hover:bg-[#D90F0F] text-white text-xs font-bold shadow-[0_0_20px_rgba(242,23,23,0.4)]"
                   >
@@ -385,79 +396,45 @@ export default function AcademyPage() {
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-            {/* Zoom Meeting Card (Left / Top Column) */}
-            <div className="lg:col-span-4 rounded-xl bg-[#0D0D0D] border border-white/10 p-6 flex flex-col justify-between space-y-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3]">
-                    ZOOM STATUS
-                  </span>
-                  {activeMeeting?.status === "started" ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 animate-pulse">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" /> LIVE NOW
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-full bg-white/5 text-[#737373] border border-white/10">
-                      OFFLINE
-                    </span>
+            {/* Embedded Zoom Video Player (Left Column - 5 cols) */}
+            <div className="lg:col-span-5 rounded-xl bg-[#0D0D0D] border border-white/10 overflow-hidden flex flex-col h-[520px]">
+              {activeMeeting?.status === "started" ? (
+                <ZoomEmbeddedMeeting
+                  meetingId={activeMeeting.zoomMeetingId}
+                  joinUrl={activeMeeting.joinUrl}
+                  userName={user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Academy Member"}
+                  height="520px"
+                />
+              ) : (
+                <div className="p-8 text-center flex flex-col items-center justify-center space-y-4 h-full bg-[#000000]">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#737373]">
+                    <Video className="w-8 h-8 text-[#F21717]" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-display uppercase text-lg font-bold text-white">
+                      Live Zoom Stream Offline
+                    </h3>
+                    <p className="text-xs text-[#A3A3A3] max-w-xs mx-auto leading-relaxed">
+                      No active meeting right now. When an admin starts a session, the Zoom video call will embed here automatically!
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <Button
+                      onClick={() => setStartMeetingModalOpen(true)}
+                      disabled={startingSession}
+                      size="sm"
+                      className="mt-2 text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
+                    >
+                      {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
+                      Start Meeting & Board Now
+                    </Button>
                   )}
                 </div>
-
-                <div>
-                  <h3 className="font-display uppercase text-xl font-bold text-white mb-1">
-                    {activeMeeting?.topic || "Rep 1 Strategy Meeting"}
-                  </h3>
-                  <p className="text-xs text-[#737373]">
-                    Hosted by Rep 1 Coaching Staff
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-1 text-xs">
-                  <div className="flex justify-between text-[#A3A3A3]">
-                    <span>Access Mode:</span>
-                    <span className="font-semibold text-white">Presenters & Students</span>
-                  </div>
-                  <div className="flex justify-between text-[#A3A3A3]">
-                    <span>Board Sync:</span>
-                    <span className="font-semibold text-emerald-400">Active Real-Time</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                {activeMeeting?.status === "started" ? (
-                  <a
-                    href={activeMeeting.joinUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold text-sm shadow-[0_0_20px_rgba(242,23,23,0.4)] transition-all"
-                  >
-                    <Video className="w-4 h-4" />
-                    Join Live Zoom Meeting
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                ) : (
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-xs text-[#A3A3A3]">
-                      No active meeting currently. Admins will start the session when live strategy begins.
-                    </p>
-                    {isAdmin && (
-                      <Button
-                        onClick={handleStartMeeting}
-                        disabled={startingSession}
-                        size="sm"
-                        className="mt-3 text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold"
-                      >
-                        Start Meeting Now
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* Embedded Miro Whiteboard (Right / Main Column) */}
-            <div className="lg:col-span-8 rounded-xl bg-[#0D0D0D] border border-white/10 p-2 overflow-hidden flex flex-col">
+            {/* Embedded Miro Whiteboard (Right Column - 7 cols) */}
+            <div className="lg:col-span-7 rounded-xl bg-[#0D0D0D] border border-white/10 p-2 overflow-hidden flex flex-col h-[520px]">
               <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
                 <div className="flex items-center gap-2">
                   <Presentation className="w-4 h-4 text-amber-400" />
@@ -470,11 +447,11 @@ export default function AcademyPage() {
                 </span>
               </div>
 
-              <div className="w-full min-h-[450px] flex-1 bg-black/40 relative">
+              <div className="w-full flex-1 bg-black/40 relative">
                 {activeBoard ? (
-                  <MiroBoard boardId={activeBoard.id} height="480px" />
+                  <MiroBoard boardId={activeBoard.id} height="460px" />
                 ) : (
-                  <div className="w-full h-[480px] rounded-b-xl flex flex-col items-center justify-center p-8 text-center bg-[#070707]">
+                  <div className="w-full h-[460px] rounded-b-xl flex flex-col items-center justify-center p-8 text-center bg-[#070707]">
                     <Presentation className="w-12 h-12 text-amber-400/40 mb-3" />
                     <h4 className="text-sm font-bold text-white mb-1">
                       Miro Whiteboard Workspace Ready
@@ -889,6 +866,91 @@ export default function AcademyPage() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Start Meeting Modal (Admin) */}
+        {startMeetingModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0D0D0D] border border-white/10 rounded-2xl p-6 max-w-lg w-full space-y-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div>
+                  <h3 className="font-display uppercase text-lg font-bold text-white flex items-center gap-2">
+                    <Video className="w-5 h-5 text-[#F21717]" />
+                    Launch Strategy Session & Whiteboard
+                  </h3>
+                  <p className="text-xs text-[#A3A3A3] mt-0.5">
+                    Starts live embedded video stream and Miro whiteboard side-by-side. 100% inside your website.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStartMeetingModalOpen(false)}
+                  className="text-xs text-[#737373] hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-[#CCCCCC] space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-white">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    Automatic Embedded Room Creation
+                  </div>
+                  <p>
+                    Clicking <strong>Start Live Session</strong> creates a real live Zoom meeting automatically. Neither you nor your athletes need to leave the website or download anything.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-white uppercase flex items-center justify-between">
+                    <span>Custom Zoom Link / Meeting ID (Optional)</span>
+                    <span className="text-[10px] text-[#A3A3A3] font-normal">Leave blank for automatic room</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customZoomUrlInput}
+                    onChange={(e) => setCustomZoomUrlInput(e.target.value)}
+                    placeholder="e.g. https://zoom.us/j/85700805622 (Optional)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-between gap-3">
+                  <a
+                    href="/api/integrations/zoom/connect"
+                    className="text-xs text-[#A3A3A3] hover:text-white underline flex items-center gap-1"
+                  >
+                    Connect Zoom Account
+                  </a>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStartMeetingModalOpen(false)}
+                      className="border-white/20 text-white text-xs"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={startingSession}
+                      onClick={() => handleStartMeeting(customZoomUrlInput)}
+                      size="sm"
+                      className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 text-xs shadow-[0_0_20px_rgba(242,23,23,0.4)] px-5 py-2.5"
+                    >
+                      {startingSession ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4 fill-white" />
+                      )}
+                      Start Live Session
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

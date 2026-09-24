@@ -1,17 +1,26 @@
 import { db } from "../db";
 import { encryptToken, decryptToken } from "../crypto";
 
-const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID || "mock_zoom_client_id";
-const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET || "mock_zoom_client_secret";
-const ZOOM_REDIRECT_URI = process.env.ZOOM_REDIRECT_URI || "http://localhost:3000/api/integrations/zoom/callback";
+function getZoomClientId() {
+  return process.env.ZOOM_CLIENT_ID || "mock_zoom_client_id";
+}
+
+function getZoomClientSecret() {
+  return process.env.ZOOM_CLIENT_SECRET || "mock_zoom_client_secret";
+}
+
+function getZoomRedirectUri() {
+  return process.env.ZOOM_REDIRECT_URI || "https://rep1exposure.com/api/integrations/zoom/callback";
+}
 
 export function getZoomAuthUrl(orgId: string): string {
   const state = Buffer.from(JSON.stringify({ orgId })).toString("base64url");
   const params = new URLSearchParams({
     response_type: "code",
-    client_id: ZOOM_CLIENT_ID,
-    redirect_uri: ZOOM_REDIRECT_URI,
+    client_id: getZoomClientId(),
+    redirect_uri: getZoomRedirectUri(),
     state,
+    scope: "meeting:write:meeting meeting:read:meeting user:read:user",
   });
   return `https://zoom.us/oauth/authorize?${params.toString()}`;
 }
@@ -25,7 +34,7 @@ export async function handleZoomOAuthCallback(code: string, stateStr: string) {
     throw new Error("Invalid state parameter in Zoom callback");
   }
 
-  const basicAuth = Buffer.from(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`).toString("base64");
+  const basicAuth = Buffer.from(`${getZoomClientId()}:${getZoomClientSecret()}`).toString("base64");
 
   const tokenRes = await fetch("https://zoom.us/oauth/token", {
     method: "POST",
@@ -36,14 +45,14 @@ export async function handleZoomOAuthCallback(code: string, stateStr: string) {
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: ZOOM_REDIRECT_URI,
+      redirect_uri: getZoomRedirectUri(),
     }),
   });
 
   if (!tokenRes.ok) {
     const errText = await tokenRes.text();
     console.error("Zoom OAuth token exchange error:", errText);
-    if (ZOOM_CLIENT_ID === "mock_zoom_client_id") {
+    if (getZoomClientId() === "mock_zoom_client_id") {
       const mockAccessToken = `zoom_access_${Date.now()}`;
       const mockRefreshToken = `zoom_refresh_${Date.now()}`;
       const tokenExpiresAt = new Date(Date.now() + 3600 * 1000);
@@ -126,7 +135,7 @@ export async function getValidZoomAccessToken(orgId: string): Promise<string> {
 }
 
 async function refreshZoomToken(orgId: string, refreshTokenStr: string): Promise<string> {
-  const basicAuth = Buffer.from(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`).toString("base64");
+  const basicAuth = Buffer.from(`${getZoomClientId()}:${getZoomClientSecret()}`).toString("base64");
   try {
     const res = await fetch("https://zoom.us/oauth/token", {
       method: "POST",
