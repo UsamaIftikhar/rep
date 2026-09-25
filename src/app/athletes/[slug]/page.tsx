@@ -20,6 +20,8 @@ interface PublicAthlete {
   bio: string | null;
   profilePhoto: string | null;
   xUrl: string | null;
+  height?: string | null;
+  weight?: string | null;
   benchPress: string | null;
   squat: string | null;
   powerClean: string | null;
@@ -108,6 +110,8 @@ export default function PublicAthleteProfilePage() {
   const [formLocation, setFormLocation] = React.useState("");
   const [formBio, setFormBio] = React.useState("");
   const [formPhoto, setFormPhoto] = React.useState("");
+  const [formHeight, setFormHeight] = React.useState("");
+  const [formWeight, setFormWeight] = React.useState("");
   const [formFortyTime, setFormFortyTime] = React.useState("");
   const [formVertical, setFormVertical] = React.useState("");
   const [formBenchPress, setFormBenchPress] = React.useState("");
@@ -193,6 +197,8 @@ export default function PublicAthleteProfilePage() {
     setFormLocation(athlete.location || "");
     setFormBio(athlete.bio || "");
     setFormPhoto(athlete.profilePhoto || athlete.user.image || "");
+    setFormHeight(athlete.height || "");
+    setFormWeight(athlete.weight || "");
     setFormFortyTime(athlete.fortyTime || "");
     setFormVertical(athlete.vertical || "");
     setFormBenchPress(athlete.benchPress || "");
@@ -301,6 +307,8 @@ export default function PublicAthleteProfilePage() {
             location: formLocation || null,
             bio: formBio || null,
             profilePhoto: formPhoto || null,
+            height: formHeight || null,
+            weight: formWeight || null,
             benchPress: formBenchPress || null,
             squat: formSquat || null,
             powerClean: formPowerClean || null,
@@ -637,6 +645,16 @@ export default function PublicAthleteProfilePage() {
                         <Calendar className="w-3.5 h-3.5 text-[#F21717]" /> Class of {athlete.graduationYear}
                       </span>
                     )}
+                    {athlete.height && (
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <Activity className="w-3.5 h-3.5 text-[#F21717]" /> Height: {athlete.height}
+                      </span>
+                    )}
+                    {athlete.weight && (
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <Activity className="w-3.5 h-3.5 text-[#F21717]" /> Weight: {athlete.weight}
+                      </span>
+                    )}
                     {athlete.gpa && (
                       <span className="flex items-center gap-1.5 font-semibold text-white">
                         <Award className="w-3.5 h-3.5 text-amber-400" /> GPA: {athlete.gpa}
@@ -735,7 +753,7 @@ export default function PublicAthleteProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
                 {/* Athletic Combine Performance Metrics */}
-                {(athlete.benchPress || athlete.squat || athlete.powerClean || athlete.fortyTime || athlete.vertical || athlete.shuttleTime || athlete.broadJump) && (
+                {(athlete.height || athlete.weight || athlete.benchPress || athlete.squat || athlete.powerClean || athlete.fortyTime || athlete.vertical || athlete.shuttleTime || athlete.broadJump) && (
                   <Card className="bg-[#111111] border-white/10">
                     <CardContent className="pt-6 space-y-4">
                       <div className="flex items-center justify-between">
@@ -748,6 +766,18 @@ export default function PublicAthleteProfilePage() {
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {athlete.height && (
+                          <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                            <span className="text-[10px] font-bold text-[#A3A3A3] uppercase block">Height</span>
+                            <span className="font-display font-black text-lg text-white">{athlete.height}</span>
+                          </div>
+                        )}
+                        {athlete.weight && (
+                          <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                            <span className="text-[10px] font-bold text-[#A3A3A3] uppercase block">Weight</span>
+                            <span className="font-display font-black text-lg text-white">{athlete.weight}</span>
+                          </div>
+                        )}
                         {athlete.fortyTime && (
                           <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                             <span className="text-[10px] font-bold text-[#A3A3A3] uppercase block">40-Yard Dash</span>
@@ -1199,6 +1229,17 @@ export default function PublicAthleteProfilePage() {
                     <h4 className="font-display uppercase text-xs font-bold text-white tracking-wider flex items-center gap-2">
                       <Activity className="w-4 h-4 text-[#F21717]" /> Athletic Testing & Combines
                     </h4>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Height</label>
+                        <Input value={formHeight} onChange={(e) => setFormHeight(e.target.value)} placeholder='6&#39;2"' />
+                      </div>
+                      <div>
+                        <label className="font-bold text-[#A3A3A3] block mb-1 text-[11px]">Weight</label>
+                        <Input value={formWeight} onChange={(e) => setFormWeight(e.target.value)} placeholder="215 lbs" />
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-4 gap-3">
                       <div>

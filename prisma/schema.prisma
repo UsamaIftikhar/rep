@@ -211,6 +211,8 @@ model AthleteProfile {
   bio                 String?
   profilePhoto        String?
   xUrl                String?
+  height              String?
+  weight              String?
   benchPress          String?
   squat               String?
   powerClean          String?

@@ -38,6 +38,8 @@ export const profileUpdateSchema = z.object({
   bio: z.string().nullable().optional(),
   profilePhoto: z.string().nullable().optional(),
   xUrl: z.string().nullable().optional(),
+  height: z.string().nullable().optional(),
+  weight: z.string().nullable().optional(),
   benchPress: z.string().nullable().optional(),
   squat: z.string().nullable().optional(),
   powerClean: z.string().nullable().optional(),

@@ -135,6 +135,8 @@ export async function updateAthleteProfile(userId: string, data: ProfileUpdateIn
       bio: validated.bio,
       profilePhoto: validated.profilePhoto,
       xUrl: validated.xUrl,
+      height: validated.height,
+      weight: validated.weight,
       benchPress: validated.benchPress,
       squat: validated.squat,
       powerClean: validated.powerClean,

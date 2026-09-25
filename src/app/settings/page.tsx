@@ -28,6 +28,8 @@ export default function SettingsPage() {
   const [bio, setBio] = React.useState("");
   const [profilePhoto, setProfilePhoto] = React.useState("");
   const [xUrl, setXUrl] = React.useState("");
+  const [height, setHeight] = React.useState("");
+  const [weight, setWeight] = React.useState("");
   const [benchPress, setBenchPress] = React.useState("");
   const [squat, setSquat] = React.useState("");
   const [powerClean, setPowerClean] = React.useState("");
@@ -59,6 +61,8 @@ export default function SettingsPage() {
           setBio(p.bio || "");
           setProfilePhoto(p.profilePhoto || "");
           setXUrl(p.xUrl || "");
+          setHeight(p.height || "");
+          setWeight(p.weight || "");
           setBenchPress(p.benchPress || "");
           setSquat(p.squat || "");
           setPowerClean(p.powerClean || "");
@@ -106,6 +110,8 @@ export default function SettingsPage() {
           bio,
           profilePhoto,
           xUrl,
+          height,
+          weight,
           benchPress,
           squat,
           powerClean,
@@ -459,6 +465,17 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <h4 className="font-display uppercase text-sm font-bold text-white">Athletic Combine Metrics</h4>
                     <span className="text-[10px] text-[#F21717] font-bold uppercase tracking-wider">Verified Combine Standards</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Height</label>
+                      <Input value={height} onChange={(e) => setHeight(e.target.value)} placeholder='e.g. 6&#39;2"' />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Weight</label>
+                      <Input value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="e.g. 215 lbs" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

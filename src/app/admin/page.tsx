@@ -27,6 +27,8 @@ interface FullAthleteProfile {
   bio?: string | null;
   profilePhoto?: string | null;
   xUrl?: string | null;
+  height?: string | null;
+  weight?: string | null;
   benchPress?: string | null;
   squat?: string | null;
   powerClean?: string | null;
@@ -169,6 +171,8 @@ export default function AdminDashboardPage() {
   const [formLocation, setFormLocation] = React.useState("");
   const [formBio, setFormBio] = React.useState("");
   const [formPhoto, setFormPhoto] = React.useState("");
+  const [formHeight, setFormHeight] = React.useState("");
+  const [formWeight, setFormWeight] = React.useState("");
   const [formFortyTime, setFormFortyTime] = React.useState("");
   const [formVertical, setFormVertical] = React.useState("");
   const [formBenchPress, setFormBenchPress] = React.useState("");
@@ -569,6 +573,8 @@ export default function AdminDashboardPage() {
     setFormLocation(prof.location || "");
     setFormBio(prof.bio || "");
     setFormPhoto(prof.profilePhoto || u.image || "");
+    setFormHeight(prof.height || "");
+    setFormWeight(prof.weight || "");
     setFormFortyTime(prof.fortyTime || "");
     setFormVertical(prof.vertical || "");
     setFormBenchPress(prof.benchPress || "");
@@ -646,6 +652,8 @@ export default function AdminDashboardPage() {
           location: formLocation || null,
           bio: formBio || null,
           profilePhoto: formPhoto || null,
+          height: formHeight || null,
+          weight: formWeight || null,
           fortyTime: formFortyTime || null,
           vertical: formVertical || null,
           benchPress: formBenchPress || null,
@@ -1737,6 +1745,17 @@ export default function AdminDashboardPage() {
                   <div>
                     <label className="font-bold text-[#A3A3A3] block mb-1">Location</label>
                     <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Los Angeles, CA" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Height</label>
+                      <Input value={formHeight} onChange={(e) => setFormHeight(e.target.value)} placeholder='6&#39;2"' />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Weight</label>
+                      <Input value={formWeight} onChange={(e) => setFormWeight(e.target.value)} placeholder="215 lbs" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
