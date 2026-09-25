@@ -1,4 +1,4 @@
-declare module "@zoom/meetingsdk/embedded" {
+declare module "@zoom/meetingsdk/embedded.js" {
   export interface ZoomEmbeddedClient {
     init(options: {
       zoomAppRoot: HTMLElement;
@@ -32,5 +32,10 @@ declare module "@zoom/meetingsdk/embedded" {
   }
 
   const ZoomMtgEmbedded: ZoomMtgEmbeddedStatic;
+  export default ZoomMtgEmbedded;
+}
+
+declare module "@zoom/meetingsdk/embedded" {
+  import ZoomMtgEmbedded from "@zoom/meetingsdk/embedded.js";
   export default ZoomMtgEmbedded;
 }

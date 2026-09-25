@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoom Strategy Session</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body, #zoom-meeting-root {
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+    #status-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #070707;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      text-align: center;
+      padding: 20px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #F21717;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .status-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .status-sub {
+      font-size: 12px;
+      color: #A3A3A3;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+    .btn-rejoin {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background-color: #F21717;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-rejoin:hover {
+      background-color: #d90f0f;
+    }
+  </style>
+
+  <!-- Zoom Meeting SDK Vendor Dependencies -->
+  <script src="https://source.zoom.us/3.11.0/lib/vendor/react.min.js"></script>
+  <script src="https://source.zoom.us/3.11.0/lib/vendor/react-dom.min.js"></script>
+  <script src="https://source.zoom.us/3.11.0/lib/vendor/redux.min.js"></script>
+  <script src="https://source.zoom.us/3.11.0/lib/vendor/redux-thunk.min.js"></script>
+  <script src="https://source.zoom.us/3.11.0/lib/vendor/lodash.min.js"></script>
+
+  <!-- Zoom Meeting SDK Embedded Component View -->
+  <script src="https://source.zoom.us/zoom-meeting-embedded-3.11.0.min.js"></script>
+</head>
+<body>
+  <div id="status-overlay">
+    <div id="loading-view">
+      <div class="spinner"></div>
+      <div class="status-title">Loading Zoom Strategy Session...</div>
+      <div class="status-sub">Generating secure SDK token & initializing media devices...</div>
+    </div>
+    <div id="error-view" style="display: none;">
+      <div class="status-title" style="color: #f87171;">Connection Error</div>
+      <div id="error-message" class="status-sub">Failed to join session.</div>
+      <button class="btn-rejoin" onclick="joinMeeting()">Rejoin Meeting</button>
+    </div>
+  </div>
+
+  <div id="zoom-meeting-root"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const meetingNumber = urlParams.get('meetingNumber') || '';
+    const role = parseInt(urlParams.get('role') || '0', 10);
+    const password = urlParams.get('passcode') || urlParams.get('password') || '';
+    const userName = urlParams.get('userName') || 'Academy Member';
+    const userEmail = urlParams.get('userEmail') || '';
+
+    let client = null;
+
+    async function joinMeeting() {
+      const statusOverlay = document.getElementById('status-overlay');
+      const loadingView = document.getElementById('loading-view');
+      const errorView = document.getElementById('error-view');
+      const errorMessageEl = document.getElementById('error-message');
+
+      statusOverlay.style.display = 'flex';
+      loadingView.style.display = 'block';
+      errorView.style.display = 'none';
+
+      if (!meetingNumber) {
+        loadingView.style.display = 'none';
+        errorView.style.display = 'block';
+        errorMessageEl.textContent = 'Invalid meeting number provided.';
+        return;
+      }
+
+      try {
+        // 1. Fetch SDK signature from backend
+        const response = await fetch('/api/integrations/zoom/sdk-signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meetingNumber, role })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to fetch Zoom SDK signature');
+        }
+
+        const { signature, sdkKey } = await response.json();
+
+        if (typeof ZoomMtgEmbedded === 'undefined') {
+          throw new Error('Zoom Meeting SDK library failed to load from CDN.');
+        }
+
+        if (!client) {
+          client = ZoomMtgEmbedded.createClient();
+        }
+
+        const zoomAppRoot = document.getElementById('zoom-meeting-root');
+
+        await client.init({
+          zoomAppRoot: zoomAppRoot,
+          language: 'en-US',
+          customize: {
+            meetingInfo: [
+              'topic', 'host', 'mn', 'pwd', 'telPwd', 'invite', 'participant', 'dc', 'enctype'
+            ],
+            toolbar: {
+              buttons: [
+                {
+                  text: 'Leave',
+                  className: 'LeaveBtn',
+                  onClick: () => {
+                    try { if (client) client.leaveMeeting(); } catch(e){}
+                    if (window.parent) {
+                      window.parent.postMessage({ type: 'ZOOM_LEAVE' }, '*');
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        });
+
+        await client.join({
+          sdkKey: sdkKey,
+          signature: signature,
+          meetingNumber: meetingNumber,
+          password: password,
+          userName: userName,
+          userEmail: userEmail
+        });
+
+        statusOverlay.style.display = 'none';
+      } catch (err) {
+        console.error('Zoom embedded SDK error:', err);
+        loadingView.style.display = 'none';
+        errorView.style.display = 'block';
+        errorMessageEl.textContent = err.message || 'Error connecting to Zoom session.';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      joinMeeting();
+    });
+  </script>
+</body>
+</html>

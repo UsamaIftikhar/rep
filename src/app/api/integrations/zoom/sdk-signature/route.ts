@@ -4,6 +4,50 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { getAuthenticatedOrgId } from "@/lib/org";
 import { db } from "@/lib/db";
 
+function generateZoomSDKJWT(
+  sdkKey: string,
+  sdkSecret: string,
+  meetingNumber: string,
+  role: number
+): string {
+  const iat = Math.floor(Date.now() / 1000) - 30;
+  const exp = iat + 60 * 60 * 2; // 2 hours validity
+  const tokenExp = iat + 60 * 60 * 2;
+
+  const header = { alg: "HS256", typ: "JWT" };
+  const payload = {
+    appKey: sdkKey,
+    sdkKey: sdkKey,
+    mn: meetingNumber,
+    role: role,
+    iat: iat,
+    exp: exp,
+    tokenExp: tokenExp,
+  };
+
+  const base64UrlEncode = (data: string | Buffer) => {
+    const buf = typeof data === "string" ? Buffer.from(data) : data;
+    return buf
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+  };
+
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signatureInput = `${encodedHeader}.${encodedPayload}`;
+
+  const rawSignature = crypto
+    .createHmac("sha256", sdkSecret)
+    .update(signatureInput)
+    .digest();
+
+  const encodedSignature = base64UrlEncode(rawSignature);
+
+  return `${signatureInput}.${encodedSignature}`;
+}
+
 export async function POST(req: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -17,7 +61,7 @@ export async function POST(req: Request) {
     });
 
     if (!integration || !integration.isActive) {
-      // Fallback: check if organization has Zoom integration setup or allow authorized admin/tester
+      // Fallback: allow authorized admin or student tester if testing live session
       const isTester =
         user.email === "usama@rep1recruiting.com" ||
         user.email === "student@rep1recruiting.com" ||
@@ -48,24 +92,25 @@ export async function POST(req: Request) {
     const sdkKey =
       process.env.ZOOM_SDK_KEY ||
       process.env.ZOOM_CLIENT_ID ||
-      "mock_zoom_sdk_key";
+      "";
     const sdkSecret =
       process.env.ZOOM_SDK_SECRET ||
       process.env.ZOOM_CLIENT_SECRET ||
-      "mock_zoom_sdk_secret";
+      "";
 
-    // Zoom Meeting SDK Signature generation algorithm (HMAC-SHA256)
-    const timestamp = new Date().getTime() - 30000;
-    const msg = Buffer.from(
-      sdkKey + cleanMeetingNumber + timestamp + roleNumber
-    ).toString("base64");
-    const hash = crypto
-      .createHmac("sha256", sdkSecret)
-      .update(msg)
-      .digest("base64");
-    const signature = Buffer.from(
-      `${sdkKey}.${cleanMeetingNumber}.${timestamp}.${roleNumber}.${hash}`
-    ).toString("base64");
+    if (!sdkKey || !sdkSecret) {
+      return NextResponse.json(
+        { error: "Zoom SDK credentials missing in server environment" },
+        { status: 500 }
+      );
+    }
+
+    const signature = generateZoomSDKJWT(
+      sdkKey,
+      sdkSecret,
+      cleanMeetingNumber,
+      roleNumber
+    );
 
     return NextResponse.json({
       signature,
