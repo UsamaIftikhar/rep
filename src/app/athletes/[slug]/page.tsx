@@ -110,6 +110,7 @@ export default function PublicAthleteProfilePage() {
   const [formLocation, setFormLocation] = React.useState("");
   const [formBio, setFormBio] = React.useState("");
   const [formPhoto, setFormPhoto] = React.useState("");
+  const [formXUrl, setFormXUrl] = React.useState("");
   const [formHeight, setFormHeight] = React.useState("");
   const [formWeight, setFormWeight] = React.useState("");
   const [formFortyTime, setFormFortyTime] = React.useState("");
@@ -197,6 +198,7 @@ export default function PublicAthleteProfilePage() {
     setFormLocation(athlete.location || "");
     setFormBio(athlete.bio || "");
     setFormPhoto(athlete.profilePhoto || athlete.user.image || "");
+    setFormXUrl(athlete.xUrl || "");
     setFormHeight(athlete.height || "");
     setFormWeight(athlete.weight || "");
     setFormFortyTime(athlete.fortyTime || "");
@@ -307,6 +309,7 @@ export default function PublicAthleteProfilePage() {
             location: formLocation || null,
             bio: formBio || null,
             profilePhoto: formPhoto || null,
+            xUrl: formXUrl || null,
             height: formHeight || null,
             weight: formWeight || null,
             benchPress: formBenchPress || null,
@@ -1212,6 +1215,11 @@ export default function PublicAthleteProfilePage() {
                       <label className="font-bold text-[#A3A3A3] block mb-1">Location / State</label>
                       <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Sydney, NSW" />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-[#A3A3A3] block mb-1">X (Twitter) Profile Link</label>
+                    <Input value={formXUrl} onChange={(e) => setFormXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
                   </div>
 
                   <div>
