@@ -579,16 +579,16 @@ export default function PublicAthleteProfilePage() {
                       Sign In to View Roster
                     </Button>
                   </Link>
-                  <Link href="/signup" className="w-full sm:w-auto">
+                  <Link href={`/signup?plan=recruiter&redirect=/athletes/${slug}`} className="w-full sm:w-auto">
                     <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2 font-bold uppercase tracking-wider text-xs border-white/20 hover:border-white">
-                      Join / Become a Member
+                      Join as Recruiter / Coach ($49.99/yr)
                     </Button>
                   </Link>
                 </>
               ) : (
-                <Link href="/signup" className="w-full sm:w-auto">
+                <Link href={`/signup?plan=recruiter&redirect=/athletes/${slug}`} className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto gap-2 bg-[#F21717] hover:bg-[#D01414] font-bold uppercase tracking-wider text-xs">
-                    Get Member Pass ($29.99)
+                    Get Recruiter Pass ($49.99/yr)
                   </Button>
                 </Link>
               )}

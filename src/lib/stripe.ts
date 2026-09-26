@@ -15,7 +15,7 @@ export async function createStripeCheckoutSession({
 }: {
   userId: string;
   userEmail: string;
-  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL";
+  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL" | "RECRUITER";
   courseId?: string;
   origin: string;
 }) {
@@ -58,6 +58,34 @@ export async function createStripeCheckoutSession({
       });
 
       return { url: `${origin}/courses/${courseId}?purchased=true` };
+    }
+
+    if (type === "RECRUITER") {
+      await db.user.update({
+        where: { id: userId },
+        data: { status: UserStatus.ACTIVE, role: "RECRUITER" },
+      });
+
+      await db.subscription.create({
+        data: {
+          userId,
+          stripeCustomerId: `cus_mock_${userId}`,
+          stripeSubscriptionId: `sub_mock_${Date.now().toString(36)}`,
+          stripePriceId: process.env.STRIPE_PRICE_RECRUITER || "price_1UJwRd9kvZo5XvSYcqTWSDnT",
+          status: "active",
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      await db.entitlement.create({
+        data: {
+          userId,
+          type: "ACADEMY",
+          source: "SUBSCRIPTION",
+        },
+      });
+
+      return { url: `${origin}/dashboard?subscribed=true` };
     }
 
     if (type === "INTERNATIONAL" || type === "ELITE_PACIFIC") {
@@ -113,7 +141,7 @@ export async function createStripeCheckoutSession({
   if (type === "COURSE" && courseId) {
     mode = "payment";
     const course = await db.course.findUnique({ where: { id: courseId } });
-    const coursePriceId = process.env.STRIPE_PRICE_COURSE || "price_1UEzLw8HF4AKFR6epQd27CQz";
+    const coursePriceId = process.env.STRIPE_PRICE_COURSE || "price_1UFcTq9kvZo5XvSYon8PPFaF";
     lineItems = coursePriceId ? [
       { price: coursePriceId, quantity: 1 }
     ] : [
@@ -130,8 +158,27 @@ export async function createStripeCheckoutSession({
         quantity: 1,
       },
     ];
+  } else if (type === "RECRUITER") {
+    const recruiterPriceId = process.env.STRIPE_PRICE_RECRUITER || "price_1UJwRd9kvZo5XvSYcqTWSDnT";
+    mode = recruiterPriceId ? "subscription" : "payment";
+    lineItems = recruiterPriceId ? [
+      { price: recruiterPriceId, quantity: 1 }
+    ] : [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "REP 1 College Coach & Recruiter Pass",
+            description: "Annual subscription for full access to prospect search, verified combine metrics, GPA, and recruiting film",
+            tax_code: "txcd_10000000",
+          },
+          unit_amount: 4999,
+        },
+        quantity: 1,
+      },
+    ];
   } else if (type === "INTERNATIONAL" || type === "ELITE_PACIFIC") {
-    const elitePriceId = process.env.STRIPE_PRICE_ELITE_PACIFIC || "price_1UEzKj8HF4AKFR6eZG2wz2zS";
+    const elitePriceId = process.env.STRIPE_PRICE_ELITE_PACIFIC || "price_1UGhDP9kvZo5XvSYLi8PsBfY";
     mode = elitePriceId ? "subscription" : "payment";
     lineItems = elitePriceId ? [
       { price: elitePriceId, quantity: 1 }
@@ -151,7 +198,7 @@ export async function createStripeCheckoutSession({
     ];
   } else {
     // US_ATHLETE or SUBSCRIPTION
-    const athletePriceId = process.env.STRIPE_PRICE_ATHLETE || "price_1UEzKN8HF4AKFR6e5dSDSvGN";
+    const athletePriceId = process.env.STRIPE_PRICE_ATHLETE || "price_1UFcWc9kvZo5XvSYDIsfI2Jd";
     mode = athletePriceId ? "subscription" : "payment";
     lineItems = athletePriceId ? [
       { price: athletePriceId, quantity: 1 }
@@ -203,11 +250,13 @@ export async function createStripeCheckoutSession({
       const defaultName =
         type === "COURSE"
           ? "REP 1 Academy Course"
+          : type === "RECRUITER"
+          ? "REP 1 College Coach & Recruiter Pass"
           : type === "INTERNATIONAL" || type === "ELITE_PACIFIC"
           ? "REP 1 International Athlete Pass (Elite Pacific)"
           : "REP 1 US Student Athlete Pass";
       const defaultAmount =
-        type === "COURSE" ? 999 : 2999;
+        type === "COURSE" ? 999 : type === "RECRUITER" ? 4999 : 2999;
 
       const inlineParams: Stripe.Checkout.SessionCreateParams = {
         ...sessionParams,

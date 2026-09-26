@@ -64,7 +64,7 @@ export default function PricingPage() {
         "Recruiting alert watchlist & scouting tools",
       ],
       cta: "Get Recruiter Pass",
-      href: "/contact",
+      href: "/signup?plan=recruiter",
       highlight: false,
     },
   ];

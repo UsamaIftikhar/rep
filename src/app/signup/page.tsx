@@ -19,8 +19,10 @@ function SignupForm() {
 
   const initialPlan = rawPlan || "us_athlete";
 
-  const [region, setRegion] = React.useState<"us" | "international" | "course">(
-    initialPlan === "course" || courseSlugParam || courseIdParam
+  const [region, setRegion] = React.useState<"us" | "international" | "course" | "recruiter">(
+    initialPlan === "recruiter" || initialPlan === "RECRUITER"
+      ? "recruiter"
+      : initialPlan === "course" || courseSlugParam || courseIdParam
       ? "course"
       : initialPlan === "international" || initialPlan === "elite_pacific"
       ? "international"
@@ -36,6 +38,14 @@ function SignupForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const getPriceSummary = () => {
+    if (region === "recruiter") {
+      return {
+        title: "College Coach & Recruiter Pass",
+        amount: "$49.99",
+        subtitle: "Annual subscription for full access to prospect search, verified combine metrics, GPA, and recruiting film",
+        type: "RECRUITER",
+      };
+    }
     if (region === "course") {
       return {
         title: "Single Classroom Course Pass",
@@ -74,7 +84,7 @@ function SignupForm() {
         email,
         password,
         sport,
-        role: "ATHLETE",
+        role: region === "recruiter" ? "RECRUITER" : "ATHLETE",
         planType: region,
         courseId: courseIdParam || undefined,
       });
@@ -90,7 +100,27 @@ function SignupForm() {
   };
 
   return (
-    <Card className="bg-[#111111] border-white/10">
+    <div className="space-y-6">
+      <div className="text-center">
+        <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
+          <div className="w-9 h-9 rounded-lg bg-[#F21717] flex items-center justify-center text-white shadow-[0_0_20px_rgba(242,23,23,0.5)]">
+            <Flame className="w-5 h-5 fill-current text-white" />
+          </div>
+          <span className="font-display font-black text-2xl tracking-wider text-white uppercase">
+            REP <span className="text-[#F21717]">1</span>
+          </span>
+        </Link>
+        <h1 className="font-display uppercase text-3xl font-black text-white">
+          {region === "recruiter" ? "Create Recruiter Account" : "Create Athlete Account"}
+        </h1>
+        <p className="text-xs text-[#A3A3A3] mt-1">
+          {region === "recruiter"
+            ? "Select your membership tier and register your official REP 1 recruiter pass."
+            : "Select your membership tier and register your official REP 1 recruiting profile."}
+        </p>
+      </div>
+
+      <Card className="bg-[#111111] border-white/10">
       <CardContent className="space-y-4 pt-6">
         {error && (
           <div className="p-3 bg-red-950/60 border border-red-800/80 rounded text-xs text-red-300">
@@ -153,6 +183,7 @@ function SignupForm() {
             </div>
             <Select
               options={[
+                { value: "recruiter", label: "College Coach / Recruiter ($49.99/yr)" },
                 { value: "us", label: "US / American Athlete ($29.99)" },
                 { value: "international", label: "International Athlete ($29.99)" },
                 ...(region === "course" || initialPlan === "course"
@@ -160,7 +191,7 @@ function SignupForm() {
                   : []),
               ]}
               value={region}
-              onChange={(e) => setRegion(e.target.value as "us" | "international" | "course")}
+              onChange={(e) => setRegion(e.target.value as "us" | "international" | "course" | "recruiter")}
               disabled={isSubmitting || isPlanLocked}
             />
             {isPlanLocked && (
@@ -252,6 +283,7 @@ function SignupForm() {
         </form>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
@@ -259,23 +291,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#070707] text-[#F5F5F5] flex flex-col justify-center items-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-            <div className="w-9 h-9 rounded-lg bg-[#F21717] flex items-center justify-center text-white shadow-[0_0_20px_rgba(242,23,23,0.5)]">
-              <Flame className="w-5 h-5 fill-current text-white" />
-            </div>
-            <span className="font-display font-black text-2xl tracking-wider text-white uppercase">
-              REP <span className="text-[#F21717]">1</span>
-            </span>
-          </Link>
-          <h1 className="font-display uppercase text-3xl font-black text-white">
-            Create Athlete Account
-          </h1>
-          <p className="text-xs text-[#A3A3A3] mt-1">
-            Select your membership tier and register your official REP 1 recruiting profile.
-          </p>
-        </div>
-
         <React.Suspense
           fallback={
             <div className="py-12 text-center text-[#A3A3A3]">

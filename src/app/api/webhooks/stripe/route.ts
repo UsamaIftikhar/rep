@@ -94,9 +94,18 @@ export async function POST(req: Request) {
                 sourceReferenceId: session.id,
               },
             });
-          } else if (type === "SUBSCRIPTION" || type === "ELITE_PACIFIC" || type === "US_ATHLETE" || type === "INTERNATIONAL" || (!type && !courseId)) {
+          } else if (type === "RECRUITER" || type === "SUBSCRIPTION" || type === "ELITE_PACIFIC" || type === "US_ATHLETE" || type === "INTERNATIONAL" || (!type && !courseId)) {
             const customerId = (typeof session.customer === "string" ? session.customer : session.customer?.id) || `cust_${session.id}`;
             const subId = (typeof session.subscription === "string" ? session.subscription : session.subscription?.id) || `sub_${session.id}`;
+
+            if (type === "RECRUITER") {
+              await db.user.update({
+                where: { id: userId },
+                data: { role: "RECRUITER", status: UserStatus.ACTIVE },
+              });
+            }
+
+            const recruiterPrice = process.env.STRIPE_PRICE_RECRUITER || "price_1UJwRd9kvZo5XvSYcqTWSDnT";
 
             await db.subscription.upsert({
               where: { stripeSubscriptionId: subId },
@@ -105,9 +114,9 @@ export async function POST(req: Request) {
                 userId,
                 stripeCustomerId: customerId,
                 stripeSubscriptionId: subId,
-                stripePriceId: type === "ELITE_PACIFIC" ? "price_elite" : "price_1UGhDP9kvZo5XvSYLi8PsBfY",
+                stripePriceId: type === "RECRUITER" ? recruiterPrice : type === "ELITE_PACIFIC" ? "price_elite" : "price_1UGhDP9kvZo5XvSYLi8PsBfY",
                 status: "active",
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
               },
             });
 

@@ -31,12 +31,16 @@ export async function POST(req: Request) {
       position,
     } = result.data;
 
-    const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" =
-      body.planType === "international" || body.planType === "INTERNATIONAL"
+    const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" | "RECRUITER" =
+      body.planType === "recruiter" || body.planType === "RECRUITER"
+        ? "RECRUITER"
+        : body.planType === "international" || body.planType === "INTERNATIONAL"
         ? "INTERNATIONAL"
         : body.planType === "course" || body.planType === "COURSE"
         ? "COURSE"
         : "US_ATHLETE";
+
+    const userRole = planType === "RECRUITER" ? "RECRUITER" : (role || "ATHLETE");
 
     const courseId = body.courseId;
 
@@ -83,7 +87,7 @@ export async function POST(req: Request) {
         firstName,
         lastName,
         name: fullName,
-        role,
+        role: userRole,
         status: UserStatus.PENDING_PAYMENT,
         athleteProfile: {
           create: {
