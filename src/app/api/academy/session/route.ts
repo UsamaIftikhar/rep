@@ -99,6 +99,7 @@ export async function POST(req: Request) {
     });
     let zoomMeetingId = "";
     let joinUrl = "";
+    let meetingPassword = "";
 
     if (body.customJoinUrl) {
       joinUrl = body.customJoinUrl.trim();
@@ -107,6 +108,10 @@ export async function POST(req: Request) {
         zoomMeetingId = match[1];
       } else {
         zoomMeetingId = joinUrl.replace(/[^0-9]/g, "");
+      }
+      const pwdMatch = joinUrl.match(/[?&]pwd=([^&]+)/);
+      if (pwdMatch && pwdMatch[1]) {
+        meetingPassword = decodeURIComponent(pwdMatch[1]);
       }
     }
 
@@ -124,11 +129,18 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             topic: topic || "Rep 1 Coaching Academy Live Strategy & Film Session",
-            type: 1, // Instant meeting
+            type: 2, // Scheduled meeting (enables join_before_host)
+            start_time: new Date().toISOString(),
+            duration: 60,
             settings: {
               host_video: true,
               participant_video: true,
               join_before_host: true,
+              jbh_time: 0,
+              waiting_room: false,
+              approval_type: 2,
+              audio: "both",
+              auto_recording: "none",
             },
           }),
         });
@@ -137,6 +149,7 @@ export async function POST(req: Request) {
           const zoomData = await zoomApiRes.json();
           if (zoomData.id) zoomMeetingId = String(zoomData.id);
           if (zoomData.join_url) joinUrl = zoomData.join_url;
+          meetingPassword = zoomData.encrypted_password || zoomData.password || "";
         } else {
           const errText = await zoomApiRes.text();
           console.error("Zoom API error creating meeting:", zoomApiRes.status, errText);
@@ -174,6 +187,7 @@ export async function POST(req: Request) {
         startTime: new Date(),
         durationMinutes: 60,
         joinUrl,
+        password: meetingPassword || undefined,
         contextType: "coaching_academy",
         contextId: "academy-live",
         status: "started",
@@ -186,6 +200,7 @@ export async function POST(req: Request) {
         startTime: new Date(),
         durationMinutes: 60,
         joinUrl,
+        password: meetingPassword || undefined,
         contextType: "coaching_academy",
         contextId: "academy-live",
         status: "started",
