@@ -73,6 +73,7 @@ export default function AcademyPage() {
   const [activeBoard, setActiveBoard] = React.useState<any>(null);
   const [sessionLoading, setSessionLoading] = React.useState(true);
   const [startingSession, setStartingSession] = React.useState(false);
+  const [roomLayout, setRoomLayout] = React.useState<"split" | "zoom_focus" | "miro_focus">("split");
 
   // File Vault state
   const [activeFolder, setActiveFolder] = React.useState<"OPERATIONS" | "OFFENSE" | "DEFENSE" | "SPECIAL_TEAMS">("OFFENSE");
@@ -491,85 +492,171 @@ export default function AcademyPage() {
             )}
           </div>
 
-          <p className="text-xs md:text-sm text-[#A3A3A3]">
-            When a meeting is started by an admin, the interactive Miro board launches automatically. Presenters and students can collaborate on the board while on the Zoom call!
-          </p>
+          {/* Subheader and Interactive Layout Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <p className="text-xs md:text-sm text-[#A3A3A3]">
+              {roomLayout === "zoom_focus"
+                ? "Zoom Theatre Mode: Expanded 12-column view with full-size video, chat, and participants."
+                : roomLayout === "miro_focus"
+                ? "Miro Whiteboard Mode: Full-canvas whiteboard for deep playbook and film diagramming."
+                : "Collaborative Split Mode: Zoom live video on left with interactive Miro whiteboard on right."}
+            </p>
+
+            {/* Layout Mode Controls */}
+            <div className="flex items-center gap-1 bg-[#141414] p-1 rounded-lg border border-white/10 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setRoomLayout("split")}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  roomLayout === "split"
+                    ? "bg-[#F21717] text-white shadow-[0_0_12px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+                title="Balanced side-by-side view"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Split View</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRoomLayout("zoom_focus")}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  roomLayout === "zoom_focus"
+                    ? "bg-[#F21717] text-white shadow-[0_0_12px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+                title="Maximize Zoom to full conference room width"
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span>Zoom Focus</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRoomLayout("miro_focus")}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  roomLayout === "miro_focus"
+                    ? "bg-[#F21717] text-white shadow-[0_0_12px_rgba(242,23,23,0.4)]"
+                    : "text-[#A3A3A3] hover:text-white hover:bg-white/5"
+                }`}
+                title="Maximize Miro Whiteboard to full width"
+              >
+                <Presentation className="w-3.5 h-3.5" />
+                <span>Miro Focus</span>
+              </button>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-            {/* Embedded Zoom Video Player (Left Column - 5 cols) */}
-            <div className="lg:col-span-5 rounded-xl bg-[#0D0D0D] border border-white/10 overflow-hidden flex flex-col h-[520px]">
-              {activeMeeting?.status === "started" ? (
-                <ZoomEmbeddedMeeting
-                  meetingId={activeMeeting.zoomMeetingId}
-                  joinUrl={activeMeeting.joinUrl}
-                  password={activeMeeting.password || undefined}
-                  userName={user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Academy Member"}
-                  userEmail={user?.email || ""}
-                  height="520px"
-                />
-              ) : (
-                <div className="p-8 text-center flex flex-col items-center justify-center space-y-4 h-full bg-[#000000]">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#737373]">
-                    <Video className="w-8 h-8 text-[#F21717]" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="font-display uppercase text-lg font-bold text-white">
-                      Live Zoom Stream Offline
-                    </h3>
-                    <p className="text-xs text-[#A3A3A3] max-w-xs mx-auto leading-relaxed">
-                      No active meeting right now. When an admin starts a session, the Zoom video call will embed here automatically!
-                    </p>
-                  </div>
-                  {isAdmin && (
-                    <Button
-                      onClick={() => setStartMeetingModalOpen(true)}
-                      disabled={startingSession}
-                      size="sm"
-                      className="mt-2 text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
-                    >
-                      {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
-                      Start Meeting & Board Now
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Embedded Miro Whiteboard (Right Column - 7 cols) */}
-            <div className="lg:col-span-7 rounded-xl bg-[#0D0D0D] border border-white/10 p-2 overflow-hidden flex flex-col h-[520px]">
-              <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-                <div className="flex items-center gap-2">
-                  <Presentation className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Interactive Miro Whiteboard
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-[#A3A3A3] bg-white/5 px-2 py-0.5 rounded">
-                  Dual Presenter & Student Edit
-                </span>
-              </div>
-
-              <div className="w-full flex-1 bg-black/40 relative">
-                {activeBoard ? (
-                  <MiroBoard boardId={activeBoard.id} height="460px" />
+            {/* Embedded Zoom Video Player */}
+            {roomLayout !== "miro_focus" && (
+              <div
+                className={`rounded-xl bg-[#0D0D0D] border border-white/10 overflow-hidden flex flex-col transition-all duration-300 ${
+                  roomLayout === "zoom_focus"
+                    ? "lg:col-span-12 h-[720px]"
+                    : "lg:col-span-6 h-[660px]"
+                }`}
+              >
+                {activeMeeting?.status === "started" ? (
+                  <ZoomEmbeddedMeeting
+                    meetingId={activeMeeting.zoomMeetingId}
+                    joinUrl={activeMeeting.joinUrl}
+                    password={activeMeeting.password || undefined}
+                    userName={user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Academy Member"}
+                    userEmail={user?.email || ""}
+                    height={roomLayout === "zoom_focus" ? "720px" : "660px"}
+                    isTheatre={roomLayout === "zoom_focus"}
+                    onToggleTheatre={() =>
+                      setRoomLayout((prev) => (prev === "zoom_focus" ? "split" : "zoom_focus"))
+                    }
+                  />
                 ) : (
-                  <div className="w-full h-[460px] rounded-b-xl flex flex-col items-center justify-center p-8 text-center bg-[#070707]">
-                    <Presentation className="w-12 h-12 text-amber-400/40 mb-3" />
-                    <h4 className="text-sm font-bold text-white mb-1">
-                      Miro Whiteboard Workspace Ready
-                    </h4>
-                    <p className="text-xs text-[#A3A3A3] max-w-md mb-4">
-                      When live strategy starts, the interactive whiteboard will allow presenters and students to draw plays, analyze formations, and annotate diagrams together.
-                    </p>
-                    {activeMeeting?.status === "started" && (
-                      <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 animate-spin" /> Session active — interactive board loading...
-                      </span>
+                  <div className="p-8 text-center flex flex-col items-center justify-center space-y-4 h-full bg-[#000000]">
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#737373]">
+                      <Video className="w-8 h-8 text-[#F21717]" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-display uppercase text-lg font-bold text-white">
+                        Live Zoom Stream Offline
+                      </h3>
+                      <p className="text-xs text-[#A3A3A3] max-w-xs mx-auto leading-relaxed">
+                        No active meeting right now. When an admin starts a session, the Zoom video call will embed here automatically!
+                      </p>
+                    </div>
+                    {isAdmin && (
+                      <Button
+                        onClick={() => setStartMeetingModalOpen(true)}
+                        disabled={startingSession}
+                        size="sm"
+                        className="mt-2 text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
+                      >
+                        {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
+                        Start Meeting & Board Now
+                      </Button>
                     )}
                   </div>
                 )}
               </div>
-            </div>
+            )}
+
+            {/* Embedded Miro Whiteboard */}
+            {roomLayout !== "zoom_focus" && (
+              <div
+                className={`rounded-xl bg-[#0D0D0D] border border-white/10 p-2 overflow-hidden flex flex-col transition-all duration-300 ${
+                  roomLayout === "miro_focus"
+                    ? "lg:col-span-12 h-[720px]"
+                    : "lg:col-span-6 h-[660px]"
+                }`}
+              >
+                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <Presentation className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      Interactive Miro Whiteboard
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold text-[#A3A3A3] bg-white/5 px-2 py-0.5 rounded">
+                      Dual Presenter & Student Edit
+                    </span>
+                    {roomLayout === "miro_focus" && (
+                      <button
+                        onClick={() => setRoomLayout("split")}
+                        className="text-[10px] text-[#A3A3A3] hover:text-white px-2 py-0.5 rounded bg-white/5 hover:bg-white/10"
+                      >
+                        Show Zoom
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full flex-1 bg-black/40 relative">
+                  {activeBoard ? (
+                    <MiroBoard boardId={activeBoard.id} height={roomLayout === "miro_focus" ? "660px" : "600px"} />
+                  ) : (
+                    <div
+                      className={`w-full rounded-b-xl flex flex-col items-center justify-center p-8 text-center bg-[#070707] ${
+                        roomLayout === "miro_focus" ? "h-[660px]" : "h-[600px]"
+                      }`}
+                    >
+                      <Presentation className="w-12 h-12 text-amber-400/40 mb-3" />
+                      <h4 className="text-sm font-bold text-white mb-1">
+                        Miro Whiteboard Workspace Ready
+                      </h4>
+                      <p className="text-xs text-[#A3A3A3] max-w-md mb-4">
+                        When live strategy starts, the interactive whiteboard will allow presenters and students to draw plays, analyze formations, and annotate diagrams together.
+                      </p>
+                      {activeMeeting?.status === "started" && (
+                        <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 animate-spin" /> Session active — interactive board loading...
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

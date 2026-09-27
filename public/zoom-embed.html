@@ -15,7 +15,7 @@
       margin: 0;
       padding: 0;
     }
-    html, body, #zoom-meeting-root {
+    html, body {
       width: 100%;
       height: 100%;
       background-color: #000000;
@@ -24,6 +24,115 @@
       overflow: hidden;
       position: relative;
     }
+    #zoom-meeting-root {
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      color: #ffffff;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Force Zoom internal root containers to fit 100% and flex cleanly */
+    #zmmtg-root,
+    .meeting-client,
+    .meeting-app,
+    [class*="meeting-client"],
+    [class*="meeting-app"] {
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      position: relative !important;
+      background: #000000 !important;
+    }
+
+    /* Main video viewport area */
+    .speaker-view,
+    .gallery-view,
+    .video-box,
+    [class*="speaker-view"],
+    [class*="gallery-view"],
+    [class*="main-content"],
+    [class*="video-content"],
+    [class*="video-container"] {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    /* Responsive scaling for video elements and canvas */
+    canvas, video {
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+    }
+
+    /* Anchored, fully-visible Zoom bottom control toolbar */
+    .footer,
+    .footer-bar,
+    .meeting-footer,
+    [class*="footer-bar"],
+    [class*="footer__inner"],
+    [class*="meeting-client-footer"],
+    footer {
+      flex-shrink: 0 !important;
+      width: 100% !important;
+      min-height: 60px !important;
+      padding: 6px 12px 10px 12px !important;
+      background: #0D0D0D !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 100 !important;
+      position: relative !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Zoom control buttons hover & sizing */
+    .footer button,
+    .footer-bar button,
+    [class*="footer"] button {
+      transition: all 0.15s ease !important;
+      border-radius: 6px !important;
+    }
+    .footer button:hover,
+    .footer-bar button:hover,
+    [class*="footer"] button:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    /* Dialogs, popups, and side panels (chat, participants) */
+    .popover, .dropdown-menu, [class*="popper"], [class*="dialog"], [class*="drawer"] {
+      z-index: 200 !important;
+      background: #141414 !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
     #status-overlay {
       position: absolute;
       top: 0;
