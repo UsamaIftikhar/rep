@@ -74,6 +74,10 @@
     }
   </style>
 
+  <!-- Zoom Meeting SDK Stylesheets (Required for Component View UI rendering) -->
+  <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.11.0/css/bootstrap.css" />
+  <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.11.0/css/react-select.css" />
+
   <!-- Zoom Meeting SDK Vendor Dependencies -->
   <script src="https://source.zoom.us/3.11.0/lib/vendor/react.min.js"></script>
   <script src="https://source.zoom.us/3.11.0/lib/vendor/react-dom.min.js"></script>
@@ -92,9 +96,12 @@
       <div class="status-sub">Generating secure SDK token & initializing media devices...</div>
     </div>
     <div id="error-view" style="display: none;">
-      <div class="status-title" style="color: #f87171;">Connection Error</div>
+      <div class="status-title" style="color: #f87171;">Connection Notice</div>
       <div id="error-message" class="status-sub">Failed to join session.</div>
-      <button class="btn-rejoin" onclick="joinMeeting()">Rejoin Meeting</button>
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px;">
+        <button class="btn-rejoin" onclick="joinMeeting()">Retry</button>
+        <button id="btn-desktop" class="btn-rejoin" style="background-color: #262626;" onclick="openDesktopApp()">Open in Zoom App</button>
+      </div>
     </div>
   </div>
 
@@ -110,6 +117,12 @@
 
     let client = null;
 
+    function openDesktopApp() {
+      if (meetingNumber) {
+        window.open(`zoommtg://zoom.us/join?confno=${meetingNumber}&pwd=${encodeURIComponent(password)}`, '_blank');
+      }
+    }
+
     async function joinMeeting() {
       const statusOverlay = document.getElementById('status-overlay');
       const loadingView = document.getElementById('loading-view');
@@ -123,7 +136,7 @@
       if (!meetingNumber) {
         loadingView.style.display = 'none';
         errorView.style.display = 'block';
-        errorMessageEl.textContent = 'Invalid meeting number provided.';
+        errorMessageEl.textContent = 'No active meeting number provided.';
         return;
       }
 
@@ -176,7 +189,11 @@
           }
         });
 
-        await client.join({
+        // Hide overlay once SDK container initialized so Zoom native prompts / waiting-for-host UI are visible
+        statusOverlay.style.display = 'none';
+
+        // 2. Join the session
+        const joinResult = await client.join({
           sdkKey: sdkKey,
           signature: signature,
           meetingNumber: meetingNumber,
@@ -185,12 +202,20 @@
           userEmail: userEmail
         });
 
-        statusOverlay.style.display = 'none';
+        if (joinResult && joinResult.errorCode && joinResult.errorCode !== 0) {
+          throw new Error(joinResult.errorMessage || `Zoom error code: ${joinResult.errorCode}`);
+        }
       } catch (err) {
         console.error('Zoom embedded SDK error:', err);
+        statusOverlay.style.display = 'flex';
         loadingView.style.display = 'none';
         errorView.style.display = 'block';
-        errorMessageEl.textContent = err.message || 'Error connecting to Zoom session.';
+        const msg = err.message || 'Error connecting to Zoom session.';
+        if (msg.includes('domain') || msg.includes('200')) {
+          errorMessageEl.textContent = 'Zoom SDK domain authorization error. Please verify the domain allow list in Zoom Marketplace.';
+        } else {
+          errorMessageEl.textContent = msg;
+        }
       }
     }
 
