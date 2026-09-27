@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     });
 
     const activeBoard = await db.miroBoard.findFirst({
-      where: { orgId },
+      where: { orgId, isActive: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -113,6 +113,25 @@ export async function POST(req: Request) {
       if (pwdMatch && pwdMatch[1]) {
         meetingPassword = decodeURIComponent(pwdMatch[1]);
       }
+    }
+
+    if (body.customMiroUrl) {
+      let cleanMiroId = body.customMiroUrl.trim();
+      const boardUrlMatch = cleanMiroId.match(/board\/([a-zA-Z0-9_=-]+)/) || cleanMiroId.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
+      if (boardUrlMatch && boardUrlMatch[1]) {
+        cleanMiroId = boardUrlMatch[1];
+      }
+      await db.miroBoard.create({
+        data: {
+          orgId,
+          miroBoardId: cleanMiroId,
+          title: "Coaching Strategy & Playbook Whiteboard",
+          contextType: "coaching_academy",
+          contextId: "academy-live",
+          createdBy: user.name || user.email,
+          isActive: true,
+        },
+      });
     }
 
     // Try to create real Zoom meeting via Zoom API if Zoom OAuth is connected

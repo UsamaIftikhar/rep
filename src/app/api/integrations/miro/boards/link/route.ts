@@ -19,14 +19,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Miro board URL or Board ID is required" }, { status: 400 });
     }
 
-    // Extract board ID from URL if full URL is passed e.g. https://miro.com/app/board/uXjVO12345=/
+    // Extract board ID from URL if full URL is passed e.g. https://miro.com/app/board/uXjVO12345=/ or /live-embed/
     let miroBoardId = urlOrId.trim();
-    const boardUrlMatch = urlOrId.match(/board\/([a-zA-Z0-9_=-]+)/);
+    const boardUrlMatch = urlOrId.match(/board\/([a-zA-Z0-9_=-]+)/) || urlOrId.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
     if (boardUrlMatch && boardUrlMatch[1]) {
       miroBoardId = boardUrlMatch[1];
     }
+    miroBoardId = miroBoardId.split("?")[0].replace(/\/+$/, "");
 
-    const boardTitle = title || `Linked Board (${miroBoardId.substring(0, 8)})`;
+    const boardTitle = title || `Coaching Strategy Board (${miroBoardId.substring(0, 8)})`;
+
+    if (contextType === "coaching_academy") {
+      await db.miroBoard.updateMany({
+        where: { orgId, contextType: "coaching_academy" },
+        data: { isActive: false },
+      });
+    }
 
     const linkedBoard = await db.miroBoard.create({
       data: {

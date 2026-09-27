@@ -189,9 +189,43 @@ export default function AcademyPage() {
   // Start Meeting modal state (Admin)
   const [startMeetingModalOpen, setStartMeetingModalOpen] = React.useState(false);
   const [customZoomUrlInput, setCustomZoomUrlInput] = React.useState("");
+  const [customMiroUrlInput, setCustomMiroUrlInput] = React.useState("");
+  const [linkMiroModalOpen, setLinkMiroModalOpen] = React.useState(false);
+  const [linkMiroInput, setLinkMiroInput] = React.useState("");
+  const [linkingMiro, setLinkingMiro] = React.useState(false);
+
+  // Handle Admin linking Miro board
+  const handleLinkMiroBoard = async (urlOrId: string) => {
+    if (!urlOrId.trim()) return;
+    try {
+      setLinkingMiro(true);
+      const res = await fetch("/api/integrations/miro/boards/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urlOrId: urlOrId.trim(),
+          title: "Coaching Strategy & Playbook Whiteboard",
+          contextType: "coaching_academy",
+          contextId: "academy-live",
+        }),
+      });
+      if (res.ok) {
+        setLinkMiroModalOpen(false);
+        setLinkMiroInput("");
+        await fetchSession();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to link Miro board");
+      }
+    } catch (e) {
+      console.error("Error linking Miro board:", e);
+    } finally {
+      setLinkingMiro(false);
+    }
+  };
 
   // Handle Admin starting meeting
-  const handleStartMeeting = async (customUrl?: string) => {
+  const handleStartMeeting = async (customUrl?: string, customMiro?: string) => {
     try {
       setStartingSession(true);
       const res = await fetch("/api/academy/session", {
@@ -201,6 +235,7 @@ export default function AcademyPage() {
           action: "start",
           topic: "Rep 1 Coaching Academy Live Strategy & Film Session",
           customJoinUrl: customUrl ? customUrl.trim() : undefined,
+          customMiroUrl: customMiro ? customMiro.trim() : undefined,
         }),
       });
 
@@ -620,6 +655,14 @@ export default function AcademyPage() {
                     <span className="text-[10px] font-semibold text-[#A3A3A3] bg-white/5 px-2 py-0.5 rounded">
                       Dual Presenter & Student Edit
                     </span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setLinkMiroModalOpen(true)}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 transition-colors"
+                      >
+                        {activeBoard ? "Change Board" : "Link Miro Board"}
+                      </button>
+                    )}
                     {roomLayout === "miro_focus" && (
                       <button
                         onClick={() => setRoomLayout("split")}
@@ -633,7 +676,12 @@ export default function AcademyPage() {
 
                 <div className="w-full flex-1 bg-black/40 relative">
                   {activeBoard ? (
-                    <MiroBoard boardId={activeBoard.id} height={roomLayout === "miro_focus" ? "660px" : "600px"} />
+                    <MiroBoard
+                      boardId={activeBoard.id}
+                      height={roomLayout === "miro_focus" ? "660px" : "600px"}
+                      onOpenChangeModal={() => setLinkMiroModalOpen(true)}
+                      isAdmin={isAdmin}
+                    />
                   ) : (
                     <div
                       className={`w-full rounded-b-xl flex flex-col items-center justify-center p-8 text-center bg-[#070707] ${
@@ -647,8 +695,16 @@ export default function AcademyPage() {
                       <p className="text-xs text-[#A3A3A3] max-w-md mb-4">
                         When live strategy starts, the interactive whiteboard will allow presenters and students to draw plays, analyze formations, and annotate diagrams together.
                       </p>
-                      {activeMeeting?.status === "started" && (
-                        <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                      {isAdmin && (
+                        <Button
+                          onClick={() => setLinkMiroModalOpen(true)}
+                          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs gap-1.5"
+                        >
+                          <Presentation className="w-4 h-4" /> Link Miro Whiteboard
+                        </Button>
+                      )}
+                      {activeMeeting?.status === "started" && !isAdmin && (
+                        <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 mt-2">
                           <Sparkles className="w-4 h-4 animate-spin" /> Session active — interactive board loading...
                         </span>
                       )}
@@ -1106,6 +1162,20 @@ export default function AcademyPage() {
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-white uppercase flex items-center justify-between">
+                    <span>Custom Miro Board Link / ID (Optional)</span>
+                    <span className="text-[10px] text-[#A3A3A3] font-normal">Leave blank for active board</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customMiroUrlInput}
+                    onChange={(e) => setCustomMiroUrlInput(e.target.value)}
+                    placeholder="e.g. https://miro.com/app/board/uXjV... (Optional)"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
                 <div className="pt-2 flex items-center justify-between gap-3">
                   <a
                     href="/api/integrations/zoom/connect"
@@ -1126,7 +1196,7 @@ export default function AcademyPage() {
                     <Button
                       type="button"
                       disabled={startingSession}
-                      onClick={() => handleStartMeeting(customZoomUrlInput)}
+                      onClick={() => handleStartMeeting(customZoomUrlInput, customMiroUrlInput)}
                       size="sm"
                       className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 text-xs shadow-[0_0_20px_rgba(242,23,23,0.4)] px-5 py-2.5"
                     >
@@ -1138,6 +1208,84 @@ export default function AcademyPage() {
                       Start Live Session
                     </Button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Link Miro Board Modal */}
+        {linkMiroModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-[#141414] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center">
+                    <Presentation className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Link Miro Whiteboard</h3>
+                    <p className="text-xs text-[#A3A3A3]">
+                      Embed an interactive whiteboard for playbook diagrams & film review
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setLinkMiroModalOpen(false)}
+                  className="text-xs text-[#737373] hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-amber-400/5 border border-amber-400/20 rounded-xl p-3.5 text-xs text-[#CCCCCC] space-y-1.5">
+                  <p className="font-semibold text-amber-300">Public Access Tip:</p>
+                  <p>
+                    In your Miro board, click <strong>Share</strong> in the top-right corner, and make sure <strong>&quot;Anyone with the link can edit&quot;</strong> is enabled so athletes and students can collaborate without signing into Miro!
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white uppercase">
+                    Miro Board Link or Board ID
+                  </label>
+                  <input
+                    type="text"
+                    value={linkMiroInput}
+                    onChange={(e) => setLinkMiroInput(e.target.value)}
+                    placeholder="https://miro.com/app/board/uXjV... or Board ID"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                  <p className="text-[11px] text-[#737373]">
+                    Paste the full Miro board URL or the board ID. We&apos;ll automatically format it for live embedding.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLinkMiroModalOpen(false)}
+                    className="border-white/20 text-white text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={linkingMiro || !linkMiroInput.trim()}
+                    onClick={() => handleLinkMiroBoard(linkMiroInput)}
+                    size="sm"
+                    className="bg-amber-500 hover:bg-amber-600 text-black font-bold gap-2 text-xs px-5 py-2.5"
+                  >
+                    {linkingMiro ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Presentation className="w-4 h-4" />
+                    )}
+                    Save & Link Board
+                  </Button>
                 </div>
               </div>
             </div>
