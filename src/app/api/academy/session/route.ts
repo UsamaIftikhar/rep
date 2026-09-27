@@ -12,9 +12,6 @@ export async function GET(req: Request) {
     }
 
     const isAllowed =
-      user.role === "ADMIN" ||
-      user.role === "SUPER_ADMIN" ||
-      user.role === "RECRUITER" ||
       user.email === "usama@rep1recruiting.com" ||
       user.email === "student@rep1recruiting.com";
 

@@ -13,26 +13,22 @@ export function PublicNavbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const isAllowed =
-    user?.role === "ADMIN" ||
-    user?.role === "SUPER_ADMIN" ||
-    user?.role === "RECRUITER" ||
-    user?.email === "usama@rep1recruiting.com" ||
-    user?.email === "student@rep1recruiting.com";
-
-  const baseLinks = [
+  const unauthLinks = [
     { label: "Home", href: "/" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },
-    { label: "Classroom", href: isAuthenticated ? "/courses" : "/classroom" },
+    { label: "Classroom", href: "/classroom" },
+    { label: "Mock AI Interview", href: "/interview" },
   ];
 
-  if (isAllowed) {
-    baseLinks.push({ label: "Rep 1 Coaching Academy", href: "/academy" });
-  }
+  const authLinks = [
+    { label: "Home", href: "/" },
+    { label: "Elite Pacific Sports", href: "/elite-pacific" },
+    { label: "Classroom", href: "/courses" },
+    { label: "Student Academy", href: "/academy" },
+    { label: "Mock AI Interview", href: "/interview" },
+  ];
 
-  baseLinks.push({ label: "Mock AI Interview", href: "/interview" });
-
-  const links = baseLinks;
+  const links = isAuthenticated ? authLinks : unauthLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070707]/95 backdrop-blur-md border-b border-white/10">

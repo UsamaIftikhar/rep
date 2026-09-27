@@ -58,6 +58,10 @@ export default function AcademyPage() {
     user?.role === "ADMIN" ||
     user?.role === "RECRUITER";
 
+  const isZoomTester =
+    user?.email === "usama@rep1recruiting.com" ||
+    user?.email === "student@rep1recruiting.com";
+
   // Curriculum state
   const [courses, setCourses] = React.useState<CourseItem[]>([]);
   const [completedCount, setCompletedCount] = React.useState(0);
@@ -155,7 +159,9 @@ export default function AcademyPage() {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      fetchSession();
+      if (isZoomTester) {
+        fetchSession();
+      }
       // Fetch 6-class courses
       fetch("/api/courses")
         .then((res) => (res.ok ? res.json() : null))
@@ -171,13 +177,13 @@ export default function AcademyPage() {
         .catch(() => {})
         .finally(() => setCoursesLoading(false));
     }
-  }, [isAuthenticated, fetchSession]);
+  }, [isAuthenticated, isZoomTester, fetchSession]);
 
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isZoomTester) {
       fetchFiles();
     }
-  }, [isAuthenticated, fetchFiles]);
+  }, [isAuthenticated, isZoomTester, fetchFiles]);
 
   // Start Meeting modal state (Admin)
   const [startMeetingModalOpen, setStartMeetingModalOpen] = React.useState(false);
@@ -289,43 +295,133 @@ export default function AcademyPage() {
     );
   }
 
-  const isAllowed =
-    isAdmin ||
-    user?.role === "ADMIN" ||
-    user?.role === "SUPER_ADMIN" ||
-    user?.role === "RECRUITER" ||
-    user?.email === "usama@rep1recruiting.com" ||
-    user?.email === "student@rep1recruiting.com";
-
-  // Hide page completely (404 Page Not Found) for everyone except admins and the 2 test emails
-  if (!isAuthenticated || !isAllowed) {
+  // Locked Gate if user is not signed in
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#070707] text-[#F5F5F5] flex flex-col">
         <PublicNavbar />
-        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-24 flex flex-col justify-center items-center text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#737373]">
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 flex flex-col justify-center items-center text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#F21717]/10 border border-[#F21717]/30 flex items-center justify-center text-[#F21717] shadow-[0_0_30px_rgba(242,23,23,0.3)]">
             <Lock className="w-8 h-8" />
           </div>
 
-          <div className="space-y-2 max-w-md">
+          <div className="space-y-2 max-w-xl">
+            <span className="text-[11px] font-bold tracking-widest text-[#F21717] uppercase">
+              STUDENT ACADEMY ACCESS
+            </span>
             <h1 className="font-display uppercase text-3xl md:text-4xl font-black text-white">
-              Page Not Found
+              Members Only Curriculum
             </h1>
             <p className="text-sm text-[#A3A3A3] leading-relaxed">
-              The page you are looking for does not exist or is currently undergoing private maintenance.
+              The 6-Class Student Academy (Financial Literacy, Personal Branding, NIL Playbooks, Conflict Resolution, Behavioral Analysis) is exclusively available to logged-in athletes.
             </p>
           </div>
 
-          <div className="pt-2">
-            <Link href="/">
-              <Button variant="outline" size="md" className="border-white/20 text-white hover:bg-white/10 text-xs font-semibold">
-                Return to Home Page
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link href="/login">
+              <Button variant="athletic" size="md" className="gap-2 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]">
+                Sign In to Enter Academy <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button variant="outline" size="md" className="text-xs font-semibold border-white/20 text-white hover:bg-white/10">
+                Create Athlete Account
               </Button>
             </Link>
           </div>
         </main>
         <PublicFooter />
       </div>
+    );
+  }
+
+  // Static Student Academy Page for all regular accounts (admin & other students)
+  if (!isZoomTester) {
+    return (
+      <AppShell>
+        <div className="space-y-8 pb-16 max-w-5xl">
+          {/* Student Academy Hero Card */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#990000] via-[#550000] to-[#1A0A0A] border border-white/10 p-8 md:p-10 shadow-2xl">
+            <span className="text-xs font-bold tracking-widest text-red-300 uppercase block mb-3">
+              STUDENT ACADEMY
+            </span>
+            <h2 className="font-display uppercase text-3xl md:text-5xl font-black text-white leading-tight mb-3">
+              Complete Your 6-Class Academy
+            </h2>
+            <p className="text-sm md:text-base text-white/80 max-w-2xl leading-relaxed mb-4">
+              Finish all six required classes to boost your recruiting profile and unlock your Academy badge.
+            </p>
+            <p className="text-xs font-bold text-red-200 uppercase tracking-wider">
+              {completedCount} of {totalCount} classes completed
+            </p>
+          </div>
+
+          {/* Curriculum Section Header */}
+          <div className="pt-2">
+            <span className="text-[11px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
+              CURRICULUM
+            </span>
+            <h3 className="font-display uppercase text-3xl font-black text-white tracking-wide">
+              The 6 Classes
+            </h3>
+          </div>
+
+          {/* The 6 Classes List */}
+          <div className="space-y-6">
+            {coursesLoading ? (
+              <div className="py-8 flex justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-[#F21717]" />
+              </div>
+            ) : (
+              courses.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-white/5"
+                >
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-[#A3A3A3]">
+                      Class {item.order || index + 1}
+                    </span>
+                    <h4 className="font-display uppercase text-xl font-bold text-white tracking-wide">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-[#737373]">{item.category}</p>
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                        item.status === "COMPLETED"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                          : item.status === "IN_PROGRESS"
+                          ? "bg-white text-[#990000]"
+                          : "bg-[#1E1E1E] text-[#A3A3A3]"
+                      }`}
+                    >
+                      {item.status === "COMPLETED"
+                        ? "Completed"
+                        : item.status === "IN_PROGRESS"
+                        ? "In Progress"
+                        : "Not Started"}
+                    </span>
+
+                    <Link href={`/courses/${item.slug}`}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="gap-1.5 h-9 px-4 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F]"
+                      >
+                        <span>{item.status === "NOT_STARTED" ? "Enroll / Open" : "Continue"}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </AppShell>
     );
   }
 
