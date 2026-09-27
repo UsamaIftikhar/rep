@@ -13,7 +13,10 @@ export function PublicNavbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const isTester =
+  const isAllowed =
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "RECRUITER" ||
     user?.email === "usama@rep1recruiting.com" ||
     user?.email === "student@rep1recruiting.com";
 
@@ -23,7 +26,7 @@ export function PublicNavbar() {
     { label: "Classroom", href: isAuthenticated ? "/courses" : "/classroom" },
   ];
 
-  if (isTester) {
+  if (isAllowed) {
     baseLinks.push({ label: "Rep 1 Coaching Academy", href: "/academy" });
   }
 

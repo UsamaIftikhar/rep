@@ -11,11 +11,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const isTester =
+    const isAllowed =
+      user.role === "ADMIN" ||
+      user.role === "SUPER_ADMIN" ||
+      user.role === "RECRUITER" ||
       user.email === "usama@rep1recruiting.com" ||
       user.email === "student@rep1recruiting.com";
 
-    if (!isTester) {
+    if (!isAllowed) {
       return NextResponse.json({ error: "Access denied during testing phase" }, { status: 403 });
     }
 

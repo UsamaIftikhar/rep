@@ -289,12 +289,16 @@ export default function AcademyPage() {
     );
   }
 
-  const isTester =
+  const isAllowed =
+    isAdmin ||
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "RECRUITER" ||
     user?.email === "usama@rep1recruiting.com" ||
     user?.email === "student@rep1recruiting.com";
 
-  // Hide page completely (404 Page Not Found) for everyone except the 2 test emails
-  if (!isAuthenticated || !isTester) {
+  // Hide page completely (404 Page Not Found) for everyone except admins and the 2 test emails
+  if (!isAuthenticated || !isAllowed) {
     return (
       <div className="min-h-screen bg-[#070707] text-[#F5F5F5] flex flex-col">
         <PublicNavbar />
