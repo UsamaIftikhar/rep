@@ -66,6 +66,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const isTester =
+      user.email === "usama@rep1recruiting.com" ||
+      user.email === "student@rep1recruiting.com";
+
+    if (!isTester) {
+      return NextResponse.json(
+        { error: "Access denied during testing phase" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { meetingNumber, role = 0 } = body;
 
