@@ -224,40 +224,11 @@
 
         if (!client) {
           client = ZoomMtgEmbedded.createClient();
-
-          // Register connection and lifecycle events immediately on client instance
-          client.on('connection-change', (payload) => {
-            const state = payload && payload.state ? payload.state : 'Unknown';
-            console.log('[Zoom SDK] Connection state:', state);
-
-            if (state === 'Connected') {
-              console.log('[Zoom SDK] Join success');
-              if (safetyTimer) clearTimeout(safetyTimer);
-              statusOverlay.style.display = 'none';
-            } else if (state === 'Closed') {
-              console.log('[Zoom SDK] Session closed');
-              if (window.parent) {
-                window.parent.postMessage({ type: 'ZOOM_LEAVE' }, '*');
-              }
-            } else if (state === 'Fail') {
-              console.warn('[Zoom SDK] Join failed with error code:', payload.errorCode);
-              showErrorState(
-                'Connection Failed',
-                payload.errorCode === 200
-                  ? 'Zoom SDK domain authorization error. Please ensure the domain is added to the Zoom Marketplace Domain Allow List.'
-                  : `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`
-              );
-            }
-          });
-
-          client.on('error', (err) => {
-            console.warn('[Zoom SDK] Error event received:', err?.type || err);
-          });
         }
 
         const zoomAppRoot = document.getElementById('zoom-meeting-root');
 
-        // 2. Initialize Zoom SDK Component View
+        // 2. Initialize Zoom SDK Component View (must complete BEFORE calling client.on or client.join)
         await client.init({
           zoomAppRoot: zoomAppRoot,
           language: 'en-US',
@@ -284,6 +255,35 @@
 
         console.log('[Zoom SDK] Client initialized');
 
+        // Register connection listener safely after client initialization
+        try {
+          client.on('connection-change', (payload) => {
+            const state = payload && payload.state ? payload.state : 'Unknown';
+            console.log('[Zoom SDK] Connection state:', state);
+
+            if (state === 'Connected') {
+              console.log('[Zoom SDK] Join success');
+              if (safetyTimer) clearTimeout(safetyTimer);
+              statusOverlay.style.display = 'none';
+            } else if (state === 'Closed') {
+              console.log('[Zoom SDK] Session closed');
+              if (window.parent) {
+                window.parent.postMessage({ type: 'ZOOM_LEAVE' }, '*');
+              }
+            } else if (state === 'Fail') {
+              console.warn('[Zoom SDK] Join failed with error code:', payload.errorCode);
+              showErrorState(
+                'Connection Failed',
+                payload.errorCode === 200
+                  ? 'Zoom SDK domain authorization error. Please ensure the domain is added to the Zoom Marketplace Domain Allow List.'
+                  : `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`
+              );
+            }
+          });
+        } catch (onErr) {
+          console.warn('[Zoom SDK] Could not attach connection listener:', onErr);
+        }
+
         // Once the client is initialized, unmask the overlay so Zoom's native UI
         // (such as "Waiting for the host to start this meeting", audio prompts, or waiting room)
         // is directly visible and interactive for the user.
@@ -303,15 +303,21 @@
         }, 20000);
 
         // 3. Join the meeting
-        console.log('[Zoom SDK] Joining meeting');
-        const joinResult = await client.join({
+        const joinParams = {
           sdkKey: sdkKey,
           signature: signature,
           meetingNumber: cleanMeetingNumber,
-          password: password,
-          userName: userName,
-          userEmail: userEmail
-        });
+          userName: userName || 'Academy Member'
+        };
+        if (password) {
+          joinParams.password = password;
+        }
+        if (userEmail) {
+          joinParams.userEmail = userEmail;
+        }
+
+        console.log('[Zoom SDK] Joining meeting');
+        const joinResult = await client.join(joinParams);
 
         if (joinResult && joinResult.errorCode && joinResult.errorCode !== 0) {
           console.warn('[Zoom SDK] Join returned error code:', joinResult.errorCode);
