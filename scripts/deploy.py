@@ -34,6 +34,16 @@ def run_cmd(cmd, check=True):
         print(f"Command failed with exit code {exit_code}", flush=True)
     return exit_code
 
+# Optional: Add local SSH public key to server authorized_keys for key-based authentication
+try:
+    pubkey_path = os.path.expanduser("~/.ssh/id_ed25519.pub")
+    if os.path.exists(pubkey_path):
+        with open(pubkey_path, "r") as f:
+            pubkey = f.read().strip()
+        run_cmd(f"mkdir -p /root/.ssh && chmod 700 /root/.ssh && grep -qxF '{pubkey}' /root/.ssh/authorized_keys 2>/dev/null || echo '{pubkey}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys", check=False)
+except Exception:
+    pass
+
 # 1. Create lightweight tar archive (excluding build/runtime temp dirs and scratch)
 print("Creating lightweight code archive...", flush=True)
 ignore_dirs = {".next", "node_modules", ".git", "scratch", "dist"}
@@ -42,7 +52,7 @@ with tarfile.open(TAR_PATH, "w:gz") as tar:
     for root, dirs, files in os.walk(LOCAL_DIR):
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         for file in files:
-            if file == "video.mov":
+            if file.endswith(".mov") or file.endswith(".mp4"):
                 continue
             full_path = os.path.join(root, file)
             rel_path = os.path.relpath(full_path, LOCAL_DIR)

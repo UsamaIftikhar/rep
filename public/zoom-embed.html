@@ -271,13 +271,25 @@
                 window.parent.postMessage({ type: 'ZOOM_LEAVE' }, '*');
               }
             } else if (state === 'Fail') {
-              console.warn('[Zoom SDK] Join failed with error code:', payload.errorCode);
-              showErrorState(
-                'Connection Failed',
-                payload.errorCode === 200
-                  ? 'Zoom SDK domain authorization error. Please ensure the domain is added to the Zoom Marketplace Domain Allow List.'
-                  : `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`
-              );
+              console.warn('[Zoom SDK] Join failed with error code:', payload.errorCode, payload);
+              let errorMsg = `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`;
+              let errorTitle = 'Connection Notice';
+
+              if (payload.errorCode === 200) {
+                errorTitle = 'Domain Not Allowed';
+                errorMsg = `Zoom SDK domain authorization error (Error 200). Your domain (${window.location.origin}) must be added to the Domain Allow List in your Zoom Marketplace App settings (Features → Embed → Meeting SDK).`;
+              } else if (payload.errorCode === 3000 || payload.errorCode === 3001) {
+                errorTitle = 'Meeting Not Found';
+                errorMsg = 'This Zoom meeting does not exist or has expired. Please verify the Meeting ID or start a new live session.';
+              } else if (payload.errorCode === 3008) {
+                errorTitle = 'Waiting for Host';
+                errorMsg = 'The meeting has not been started yet by the host. Please wait for the host to start the session.';
+              } else if (payload.errorCode === 3712) {
+                errorTitle = 'Passcode Required';
+                errorMsg = 'A valid meeting passcode is required to join this meeting.';
+              }
+
+              showErrorState(errorTitle, errorMsg);
             }
           });
         } catch (onErr) {
