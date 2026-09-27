@@ -33,6 +33,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_..."
 
 # OpenAI API Key (For AI Interview Evaluation)
 OPENAI_API_KEY="sk-proj-..."
+
+# Zoom Meeting SDK (General App with Meeting SDK enabled under Features -> Embed)
+ZOOM_SDK_KEY="your_zoom_general_app_client_id"
+ZOOM_SDK_SECRET="your_zoom_general_app_client_secret"
 ```
 
 ---

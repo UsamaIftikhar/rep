@@ -13,7 +13,9 @@ export async function GET(req: Request) {
 
     const isTester =
       user.email === "usama@rep1recruiting.com" ||
-      user.email === "student@rep1recruiting.com";
+      user.email === "student@rep1recruiting.com" ||
+      user.role === "ADMIN" ||
+      user.role === "SUPER_ADMIN";
 
     if (!isTester) {
       return NextResponse.json({ error: "Access denied during testing phase" }, { status: 403 });

@@ -402,7 +402,9 @@ export default function AcademyPage() {
                 <ZoomEmbeddedMeeting
                   meetingId={activeMeeting.zoomMeetingId}
                   joinUrl={activeMeeting.joinUrl}
+                  password={activeMeeting.password || undefined}
                   userName={user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Academy Member"}
+                  userEmail={user?.email || ""}
                   height="520px"
                 />
               ) : (

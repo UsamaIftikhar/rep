@@ -1,18 +1,29 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getAuthenticatedUser } from "@/lib/auth";
-import { getAuthenticatedOrgId } from "@/lib/org";
-import { db } from "@/lib/db";
 
+/**
+ * Generates an HMAC-SHA256 JWT signature for Zoom Meeting SDK for Web.
+ * Required claims per Zoom Meeting SDK specification:
+ * - appKey: SDK Key / General App Client ID
+ * - sdkKey: SDK Key / General App Client ID
+ * - mn: Clean meeting number (numeric string)
+ * - role: 0 (Attendee) or 1 (Host)
+ * - iat: Timestamp of token issuance (epoch seconds)
+ * - exp: Expiration time (epoch seconds)
+ * - tokenExp: Token expiration time (epoch seconds)
+ */
 function generateZoomSDKJWT(
   sdkKey: string,
   sdkSecret: string,
   meetingNumber: string,
   role: number
 ): string {
+  // Issued 30 seconds in the past to guard against client/server clock skew
   const iat = Math.floor(Date.now() / 1000) - 30;
-  const exp = iat + 60 * 60 * 2; // 2 hours validity
-  const tokenExp = iat + 60 * 60 * 2;
+  // Valid for 2 hours
+  const exp = iat + 60 * 60 * 2;
+  const tokenExp = exp;
 
   const header = { alg: "HS256", typ: "JWT" };
   const payload = {
@@ -55,28 +66,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orgId = await getAuthenticatedOrgId(user);
-    const integration = await db.zoomIntegration.findUnique({
-      where: { orgId },
-    });
-
-    if (!integration || !integration.isActive) {
-      // Fallback: allow authorized admin or student tester if testing live session
-      const isTester =
-        user.email === "usama@rep1recruiting.com" ||
-        user.email === "student@rep1recruiting.com" ||
-        user.role === "ADMIN" ||
-        user.role === "SUPER_ADMIN";
-
-      if (!isTester) {
-        return NextResponse.json(
-          { error: "Zoom integration is not connected for your organization" },
-          { status: 403 }
-        );
-      }
-    }
-
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { meetingNumber, role = 0 } = body;
 
     if (!meetingNumber) {
@@ -87,20 +77,30 @@ export async function POST(req: Request) {
     }
 
     const cleanMeetingNumber = String(meetingNumber).replace(/[^0-9]/g, "");
-    const roleNumber = Number(role) === 1 ? 1 : 0;
+    if (!cleanMeetingNumber || cleanMeetingNumber.length < 9 || cleanMeetingNumber.length > 11) {
+      return NextResponse.json(
+        { error: "Invalid meeting number. Zoom meeting numbers must be 9 to 11 digits." },
+        { status: 400 }
+      );
+    }
 
-    const sdkKey =
-      process.env.ZOOM_SDK_KEY ||
-      process.env.ZOOM_CLIENT_ID ||
-      "";
-    const sdkSecret =
-      process.env.ZOOM_SDK_SECRET ||
-      process.env.ZOOM_CLIENT_SECRET ||
-      "";
+    // Role validation:
+    // Only verified platform administrators may request role = 1 (host).
+    // For standard participants/athletes, strictly enforce role = 0.
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+    const requestedRole = Number(role);
+    const roleNumber = isAdmin && requestedRole === 1 ? 1 : 0;
+
+    // Retrieve Zoom General App Meeting SDK credentials
+    const sdkKey = process.env.ZOOM_SDK_KEY || process.env.ZOOM_CLIENT_ID || "";
+    const sdkSecret = process.env.ZOOM_SDK_SECRET || process.env.ZOOM_CLIENT_SECRET || "";
 
     if (!sdkKey || !sdkSecret) {
       return NextResponse.json(
-        { error: "Zoom SDK credentials missing in server environment" },
+        {
+          error:
+            "Zoom Meeting SDK credentials missing in server environment. Ensure ZOOM_SDK_KEY and ZOOM_SDK_SECRET are set.",
+        },
         { status: 500 }
       );
     }
@@ -112,14 +112,19 @@ export async function POST(req: Request) {
       roleNumber
     );
 
+    // Return the generated signature and the public SDK Key (Client ID).
+    // Note: The SDK Secret is never exposed to the client.
     return NextResponse.json({
       signature,
       sdkKey,
+      role: roleNumber,
     });
-  } catch (error: any) {
-    console.error("[ZOOM_SDK_SIGNATURE_ERROR]", error);
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Internal error";
+    // Log safe error summary without exposing secrets
+    console.error("[ZOOM_SDK_SIGNATURE_ERROR]", errMessage);
     return NextResponse.json(
-      { error: error.message || "Failed to generate SDK signature" },
+      { error: errMessage || "Failed to generate Zoom Meeting SDK signature" },
       { status: 500 }
     );
   }

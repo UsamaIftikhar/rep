@@ -71,10 +71,10 @@ export function ZoomEmbeddedMeeting({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {joinUrl && (
+          {cleanMeetingNumber && (
             <a
-              href={`zoommtg://zoom.us/join?confno=${cleanMeetingNumber}&pwd=${encodeURIComponent(passcode)}`}
-              className="text-[10px] text-[#A3A3A3] hover:text-white flex items-center gap-1 bg-white/5 hover:bg-white/10 px-2 py-1 rounded"
+              href={`zoommtg://zoom.us/join?confno=${cleanMeetingNumber}${passcode ? `&pwd=${encodeURIComponent(passcode)}` : ""}`}
+              className="text-[10px] text-[#A3A3A3] hover:text-white flex items-center gap-1 bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors"
               title="Open in Desktop Zoom App"
             >
               Join in Desktop App <ExternalLink className="w-3 h-3" />

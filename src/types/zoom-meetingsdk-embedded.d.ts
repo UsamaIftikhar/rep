@@ -13,7 +13,7 @@ declare module "@zoom/meetingsdk/embedded.js" {
           }>;
         };
       };
-    }): Promise<any>;
+    }): Promise<unknown>;
     join(options: {
       sdkKey: string;
       signature: string;
@@ -22,8 +22,10 @@ declare module "@zoom/meetingsdk/embedded.js" {
       userName: string;
       userEmail?: string;
       customerKey?: string;
-    }): Promise<any>;
-    leaveMeeting(): Promise<any>;
+    }): Promise<unknown>;
+    leaveMeeting(): Promise<unknown>;
+    on(event: string, callback: (payload: Record<string, unknown>) => void): void;
+    off(event: string, callback: (payload: Record<string, unknown>) => void): void;
   }
 
   export interface ZoomMtgEmbeddedStatic {
