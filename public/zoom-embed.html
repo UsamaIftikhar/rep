@@ -282,8 +282,15 @@
                 errorTitle = 'Meeting Not Found';
                 errorMsg = 'This Zoom meeting does not exist or has expired. Please verify the Meeting ID or start a new live session.';
               } else if (payload.errorCode === 3008) {
-                errorTitle = 'Waiting for Host';
-                errorMsg = 'The meeting has not been started yet by the host. Please wait for the host to start the session.';
+                errorTitle = 'Waiting for Host to Start Meeting';
+                errorMsg = 'The meeting has not been started yet by the host. Auto-checking every 7 seconds — you will be joined automatically as soon as the host begins the session.';
+                if (!window._retryPollTimer) {
+                  window._retryPollTimer = setTimeout(() => {
+                    window._retryPollTimer = null;
+                    console.log('[Zoom SDK] Auto-checking if host started meeting...');
+                    joinMeeting();
+                  }, 7000);
+                }
               } else if (payload.errorCode === 3712) {
                 errorTitle = 'Passcode Required';
                 errorMsg = 'A valid meeting passcode is required to join this meeting.';
