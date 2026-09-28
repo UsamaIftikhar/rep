@@ -17,18 +17,16 @@ export async function GET(
   const orgId = await getAuthenticatedOrgId(user);
 
   let board = await db.miroBoard.findFirst({
-    where: { id, orgId },
+    where: {
+      OR: [
+        { id },
+        { miroBoardId: id },
+      ],
+    },
   });
 
-  // Fallback: try by miroBoardId if id looks like a Miro board identifier
   if (!board) {
-    board = await db.miroBoard.findFirst({
-      where: { miroBoardId: id, orgId },
-    });
-  }
-
-  if (!board) {
-    return NextResponse.json({ error: "Board not found or access denied" }, { status: 404 });
+    return NextResponse.json({ error: "Board not found" }, { status: 404 });
   }
 
   // Ensure board is marked active if it was retrieved
