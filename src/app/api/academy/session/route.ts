@@ -207,6 +207,11 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             name: topic ? `${topic} - Whiteboard` : `Coaching Strategy Whiteboard (${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })})`,
             description: "Live collaborative whiteboard for strategy diagrams and film review.",
+            policy: {
+              sharingPolicy: {
+                access: "edit",
+              },
+            },
           }),
         });
         if (miroRes.ok) {

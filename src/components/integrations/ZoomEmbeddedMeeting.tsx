@@ -253,7 +253,7 @@ export function ZoomEmbeddedMeeting({
       <div className="flex-1 w-full relative bg-black overflow-hidden flex flex-col min-h-0">
         <iframe
           src={embedSrc}
-          allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+          allow="camera *; microphone *; display-capture *; autoplay *; clipboard-write *; fullscreen *; screen-wake-lock *"
           className="w-full h-full border-0 flex-1 min-h-0"
           title="Zoom Strategy Session"
         />
