@@ -356,6 +356,14 @@ export async function POST(req: Request) {
       },
     });
 
+    // Explicitly pair the Miro board directly to this Zoom meeting ID in DB
+    if (sessionBoard && zoomMeetingId) {
+      await db.miroBoard.update({
+        where: { id: sessionBoard.id },
+        data: { contextId: zoomMeetingId },
+      });
+    }
+
     return NextResponse.json({
       success: true,
       meeting,

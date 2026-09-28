@@ -875,16 +875,32 @@ export default function AcademyPage() {
                                       ID: {m.zoomMeetingId} &bull; {new Date(m.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                                     </div>
                                   </div>
-                                  {m.joinUrl && (
-                                    <a
-                                      href={m.joinUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20"
-                                    >
-                                      Join / Check
-                                    </a>
-                                  )}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {allBoards.some((b: any) => b.contextId === m.zoomMeetingId) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const paired = allBoards.find((b: any) => b.contextId === m.zoomMeetingId);
+                                          if (paired) setSelectedBoardId(paired.id);
+                                        }}
+                                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 flex items-center gap-1 transition-colors"
+                                        title="Open whiteboard diagrammed during this meeting"
+                                      >
+                                        <Presentation className="w-2.5 h-2.5" />
+                                        <span>Board</span>
+                                      </button>
+                                    )}
+                                    {m.joinUrl && (
+                                      <a
+                                        href={m.joinUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20"
+                                      >
+                                        Join
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                             </div>
