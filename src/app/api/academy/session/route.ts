@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     const orgId = await getAuthenticatedOrgId(user);
 
-    // Fetch active meeting for coaching_academy
+    // 1. Fetch active meeting for coaching_academy (started or scheduled)
     const activeMeeting = await db.zoomMeeting.findFirst({
       where: {
         contextType: "coaching_academy",
@@ -30,20 +30,48 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Fetch latest active Miro board integration for org
-    const miroIntegration = await db.miroIntegration.findFirst({
-      where: { orgId },
+    // 2. Fetch the most recent meeting regardless of status so users can check meeting details anytime
+    const latestMeeting = await db.zoomMeeting.findFirst({
+      where: {
+        contextType: "coaching_academy",
+      },
+      orderBy: { createdAt: "desc" },
     });
 
+    // 3. Fetch past sessions history (recent 10)
+    const recentMeetings = await db.zoomMeeting.findMany({
+      where: {
+        contextType: "coaching_academy",
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    // 4. Fetch latest active Miro board for coaching_academy / org
     const activeBoard = await db.miroBoard.findFirst({
       where: { orgId, isActive: true },
       orderBy: { createdAt: "desc" },
     });
 
+    // 5. Fetch all Miro boards for org (up to 15) so user can review any past whiteboard anytime
+    const allBoards = await db.miroBoard.findMany({
+      where: { orgId },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+    });
+
+    // Fetch latest active Miro board integration for org
+    const miroIntegration = await db.miroIntegration.findFirst({
+      where: { orgId },
+    });
+
     return NextResponse.json({
       activeMeeting: activeMeeting || null,
-      miroIntegration: !!miroIntegration,
+      latestMeeting: latestMeeting || null,
+      recentMeetings: recentMeetings || [],
       activeBoard: activeBoard || null,
+      allBoards: allBoards || [],
+      miroIntegration: !!miroIntegration,
     });
   } catch (error: any) {
     console.error("[ACADEMY_SESSION_GET]", error);
@@ -97,6 +125,7 @@ export async function POST(req: Request) {
       },
       data: { status: "ended" },
     });
+
     let zoomMeetingId = "";
     let joinUrl = "";
     let meetingPassword = "";
@@ -115,24 +144,84 @@ export async function POST(req: Request) {
       }
     }
 
+    // Clean or determine Miro Board ID for this meeting session
+    let cleanMiroId = "";
     if (body.customMiroUrl) {
-      let cleanMiroId = body.customMiroUrl.trim();
-      const boardUrlMatch = cleanMiroId.match(/board\/([a-zA-Z0-9_=-]+)/) || cleanMiroId.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
+      const trimmed = body.customMiroUrl.trim();
+      const boardUrlMatch = trimmed.match(/board\/([a-zA-Z0-9_=-]+)/) || trimmed.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
       if (boardUrlMatch && boardUrlMatch[1]) {
         cleanMiroId = boardUrlMatch[1];
+      } else {
+        cleanMiroId = trimmed;
       }
-      await db.miroBoard.create({
-        data: {
-          orgId,
-          miroBoardId: cleanMiroId,
-          title: "Coaching Strategy & Playbook Whiteboard",
-          contextType: "coaching_academy",
-          contextId: "academy-live",
-          createdBy: user.name || user.email,
-          isActive: true,
-        },
-      });
+      cleanMiroId = cleanMiroId.split("?")[0].replace(/\/+$/, "");
     }
+
+    // Attempt real Miro API board creation if Miro OAuth is connected
+    if (!cleanMiroId) {
+      try {
+        const { getValidMiroAccessToken } = await import("@/lib/integrations/miro");
+        const miroToken = await getValidMiroAccessToken(orgId);
+        const miroRes = await fetch("https://api.miro.com/v2/boards", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${miroToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: topic ? `${topic} - Whiteboard` : `Coaching Strategy Whiteboard (${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })})`,
+            description: "Live collaborative whiteboard for strategy diagrams and film review.",
+          }),
+        });
+        if (miroRes.ok) {
+          const miroData = await miroRes.json();
+          if (miroData.id) {
+            cleanMiroId = miroData.id;
+          }
+        }
+      } catch (err) {
+        console.warn("Miro API automatic board creation fallback:", err);
+      }
+    }
+
+    // Fallback: If Miro API is not connected or token expired, use established interactive whiteboard ID
+    if (!cleanMiroId) {
+      const latestBoard = await db.miroBoard.findFirst({
+        where: { orgId },
+        orderBy: { createdAt: "desc" },
+      });
+      cleanMiroId = latestBoard?.miroBoardId || "uXjVHi7vvRw=";
+    }
+
+    // Deactivate previous academy boards so new board is the active one
+    await db.miroBoard.updateMany({
+      where: { orgId, contextType: "coaching_academy" },
+      data: { isActive: false },
+    });
+
+    const nowFormatted = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    const boardTitle = topic
+      ? `${topic} - Whiteboard`
+      : `Coaching Strategy Whiteboard (${nowFormatted})`;
+
+    const sessionBoard = await db.miroBoard.create({
+      data: {
+        orgId,
+        miroBoardId: cleanMiroId,
+        title: boardTitle,
+        description: `Whiteboard created for session: ${topic || "Coaching Academy Live Session"}`,
+        contextType: "coaching_academy",
+        contextId: "academy-live",
+        createdBy: user.name || user.email,
+        isActive: true,
+      },
+    });
 
     // Try to create real Zoom meeting via Zoom API if Zoom OAuth is connected
     const integration = await db.zoomIntegration.findUnique({ where: { orgId } });
@@ -230,6 +319,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       meeting,
+      board: sessionBoard,
       status: "started",
     });
   } catch (error: any) {

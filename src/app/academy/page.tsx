@@ -25,7 +25,11 @@ import {
   Sparkles,
   ExternalLink,
   Users,
-  Presentation
+  Presentation,
+  Copy,
+  Check,
+  Clock,
+  History
 } from "lucide-react";
 
 interface CourseItem {
@@ -70,10 +74,31 @@ export default function AcademyPage() {
 
   // Live session state (Zoom + Miro)
   const [activeMeeting, setActiveMeeting] = React.useState<any>(null);
+  const [latestMeeting, setLatestMeeting] = React.useState<any>(null);
+  const [recentMeetings, setRecentMeetings] = React.useState<any[]>([]);
   const [activeBoard, setActiveBoard] = React.useState<any>(null);
+  const [allBoards, setAllBoards] = React.useState<any[]>([]);
+  const [selectedBoardId, setSelectedBoardId] = React.useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = React.useState(true);
   const [startingSession, setStartingSession] = React.useState(false);
   const [roomLayout, setRoomLayout] = React.useState<"split" | "zoom_focus" | "miro_focus">("split");
+  const [showMeetingHistory, setShowMeetingHistory] = React.useState(false);
+  const [copiedMeetingId, setCopiedMeetingId] = React.useState(false);
+  const [copiedMeetingPwd, setCopiedMeetingPwd] = React.useState(false);
+
+  const copyMeetingId = (idStr: string) => {
+    if (!idStr) return;
+    navigator.clipboard.writeText(idStr);
+    setCopiedMeetingId(true);
+    setTimeout(() => setCopiedMeetingId(false), 2000);
+  };
+
+  const copyMeetingPassword = (pwdStr: string) => {
+    if (!pwdStr) return;
+    navigator.clipboard.writeText(pwdStr);
+    setCopiedMeetingPwd(true);
+    setTimeout(() => setCopiedMeetingPwd(false), 2000);
+  };
 
   // File Vault state
   const [activeFolder, setActiveFolder] = React.useState<"OPERATIONS" | "OFFENSE" | "DEFENSE" | "SPECIAL_TEAMS">("OFFENSE");
@@ -129,7 +154,13 @@ export default function AcademyPage() {
       if (res.ok) {
         const data = await res.json();
         setActiveMeeting(data.activeMeeting);
+        setLatestMeeting(data.latestMeeting);
+        setRecentMeetings(data.recentMeetings || []);
         setActiveBoard(data.activeBoard);
+        setAllBoards(data.allBoards || []);
+        if (data.activeBoard) {
+          setSelectedBoardId((prev) => prev || data.activeBoard.id);
+        }
       }
     } catch (e) {
       console.error("Error fetching academy session:", e);
@@ -137,6 +168,14 @@ export default function AcademyPage() {
       setSessionLoading(false);
     }
   }, []);
+
+  const displayedBoard = React.useMemo(() => {
+    if (selectedBoardId && allBoards.length > 0) {
+      const found = allBoards.find((b: any) => b.id === selectedBoardId);
+      if (found) return found;
+    }
+    return activeBoard || (allBoards.length > 0 ? allBoards[0] : null);
+  }, [selectedBoardId, allBoards, activeBoard]);
 
   // Fetch files based on active category & subfolder
   const fetchFiles = React.useCallback(async () => {
@@ -240,7 +279,11 @@ export default function AcademyPage() {
       });
 
       if (res.ok) {
+        const data = await res.json();
         setStartMeetingModalOpen(false);
+        if (data.board) {
+          setSelectedBoardId(data.board.id);
+        }
         await fetchSession();
       } else {
         const errData = await res.json();
@@ -607,29 +650,185 @@ export default function AcademyPage() {
                     }
                   />
                 ) : (
-                  <div className="p-8 text-center flex flex-col items-center justify-center space-y-4 h-full bg-[#000000]">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#737373]">
-                      <Video className="w-8 h-8 text-[#F21717]" />
+                  <div className="flex flex-col h-full bg-[#070707] divide-y divide-white/10 overflow-y-auto">
+                    {/* Header bar */}
+                    <div className="p-4 bg-white/[0.02] flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">
+                          Live Session Hub & Checker
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#A3A3A3] bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                        {latestMeeting ? "Latest Meeting Details" : "Standby"}
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="font-display uppercase text-lg font-bold text-white">
-                        Live Zoom Stream Offline
-                      </h3>
-                      <p className="text-xs text-[#A3A3A3] max-w-xs mx-auto leading-relaxed">
-                        No active meeting right now. When an admin starts a session, the Zoom video call will embed here automatically!
-                      </p>
+
+                    {/* Main Content Area */}
+                    <div className="p-6 flex-1 flex flex-col justify-center space-y-5">
+                      {latestMeeting ? (
+                        <>
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[#F21717] tracking-wider uppercase">
+                              SESSION DETAILS
+                            </span>
+                            <h3 className="font-display uppercase text-lg md:text-xl font-bold text-white">
+                              {latestMeeting.topic || "Rep 1 Coaching Strategy & Film Review"}
+                            </h3>
+                            <p className="text-xs text-[#A3A3A3]">
+                              {latestMeeting.status === "started"
+                                ? "Host is currently streaming live."
+                                : "Meeting has concluded. You can review meeting credentials, check room status, or launch Zoom below."}
+                            </p>
+                          </div>
+
+                          {/* Meeting Credentials Card */}
+                          <div className="bg-[#121212] border border-white/10 rounded-xl p-4 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                              <div className="bg-white/5 rounded-lg p-2.5 border border-white/5 flex items-center justify-between">
+                                <div>
+                                  <span className="text-[10px] text-[#737373] block uppercase font-bold">Meeting ID</span>
+                                  <span className="text-xs font-mono font-bold text-white">
+                                    {latestMeeting.zoomMeetingId}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => copyMeetingId(latestMeeting.zoomMeetingId)}
+                                  className="p-1.5 rounded hover:bg-white/10 text-[#A3A3A3] hover:text-white transition-colors"
+                                  title="Copy Meeting ID"
+                                >
+                                  {copiedMeetingId ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+
+                              <div className="bg-white/5 rounded-lg p-2.5 border border-white/5 flex items-center justify-between">
+                                <div>
+                                  <span className="text-[10px] text-[#737373] block uppercase font-bold">Passcode</span>
+                                  <span className="text-xs font-mono font-bold text-white">
+                                    {latestMeeting.password || "No Passcode"}
+                                  </span>
+                                </div>
+                                {latestMeeting.password && (
+                                  <button
+                                    type="button"
+                                    onClick={() => copyMeetingPassword(latestMeeting.password)}
+                                    className="p-1.5 rounded hover:bg-white/10 text-[#A3A3A3] hover:text-white transition-colors"
+                                    title="Copy Passcode"
+                                  >
+                                    {copiedMeetingPwd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {latestMeeting.createdAt && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-[#737373] pt-1">
+                                <Clock className="w-3 h-3 text-[#A3A3A3]" />
+                                <span>Last Session Held: {new Date(latestMeeting.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            {latestMeeting.joinUrl && (
+                              <a
+                                href={latestMeeting.joinUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white transition-all shadow-sm"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                                <span>Check / Join in Browser</span>
+                              </a>
+                            )}
+
+                            <a
+                              href={`zoommtg://zoom.us/join?confno=${latestMeeting.zoomMeetingId}${latestMeeting.password ? `&pwd=${latestMeeting.password}` : ""}`}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-xs font-bold text-blue-300 transition-all"
+                            >
+                              <Video className="w-3.5 h-3.5 text-blue-400" />
+                              <span>Open in Zoom App</span>
+                            </a>
+
+                            {isAdmin && (
+                              <Button
+                                onClick={() => setStartMeetingModalOpen(true)}
+                                disabled={startingSession}
+                                size="sm"
+                                className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
+                              >
+                                {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
+                                Start New Meeting & Board
+                              </Button>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-8 space-y-3">
+                          <Video className="w-12 h-12 text-[#F21717]/40 mx-auto" />
+                          <h4 className="text-sm font-bold text-white">No Live Session Started</h4>
+                          <p className="text-xs text-[#A3A3A3] max-w-sm mx-auto">
+                            When coaches begin a meeting, live video streams automatically here. In the meantime, use the interactive whiteboard on the right to design plays.
+                          </p>
+                          {isAdmin && (
+                            <Button
+                              onClick={() => setStartMeetingModalOpen(true)}
+                              disabled={startingSession}
+                              size="sm"
+                              className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2"
+                            >
+                              <Play className="w-4 h-4 fill-white" /> Start Meeting & Board
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Past Meetings Toggle */}
+                      {recentMeetings.length > 0 && (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowMeetingHistory((prev) => !prev)}
+                            className="inline-flex items-center gap-1.5 text-xs text-[#A3A3A3] hover:text-white transition-colors"
+                          >
+                            <History className="w-3.5 h-3.5 text-amber-400" />
+                            <span className="font-semibold">{showMeetingHistory ? "Hide Past Sessions" : `View Session History (${recentMeetings.length})`}</span>
+                          </button>
+
+                          {showMeetingHistory && (
+                            <div className="mt-2.5 max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                              {recentMeetings.map((m: any) => (
+                                <div
+                                  key={m.id}
+                                  className="p-2 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between text-xs"
+                                >
+                                  <div>
+                                    <div className="font-semibold text-white truncate max-w-[180px]">
+                                      {m.topic}
+                                    </div>
+                                    <div className="text-[10px] text-[#737373]">
+                                      ID: {m.zoomMeetingId} &bull; {new Date(m.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                    </div>
+                                  </div>
+                                  {m.joinUrl && (
+                                    <a
+                                      href={m.joinUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20"
+                                    >
+                                      Join / Check
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {isAdmin && (
-                      <Button
-                        onClick={() => setStartMeetingModalOpen(true)}
-                        disabled={startingSession}
-                        size="sm"
-                        className="mt-2 text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
-                      >
-                        {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
-                        Start Meeting & Board Now
-                      </Button>
-                    )}
                   </div>
                 )}
               </div>
@@ -644,23 +843,43 @@ export default function AcademyPage() {
                     : "lg:col-span-6 h-[660px]"
                 }`}
               >
-                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+                <div className="px-4 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Presentation className="w-4 h-4 text-amber-400" />
+                    <Presentation className="w-4 h-4 text-amber-400 shrink-0" />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      Interactive Miro Whiteboard
+                      Interactive Whiteboard
                     </span>
+                    {allBoards.length > 1 ? (
+                      <div className="flex items-center gap-1.5 ml-1">
+                        <select
+                          value={displayedBoard?.id || ""}
+                          onChange={(e) => setSelectedBoardId(e.target.value)}
+                          className="bg-black/60 border border-white/15 rounded px-2 py-0.5 text-[11px] text-amber-300 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer max-w-[200px] truncate"
+                          title="Select whiteboard from session history"
+                        >
+                          {allBoards.map((b: any) => (
+                            <option key={b.id} value={b.id} className="bg-[#141414] text-white">
+                              {b.id === activeBoard?.id ? `★ (Active) ${b.title}` : b.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded truncate max-w-[180px]">
+                        {displayedBoard?.title || "Active Canvas"}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-semibold text-[#A3A3A3] bg-white/5 px-2 py-0.5 rounded">
-                      Dual Presenter & Student Edit
+                    <span className="hidden sm:inline-block text-[10px] font-semibold text-[#A3A3A3] bg-white/5 px-2 py-0.5 rounded">
+                      24/7 Canvas Access
                     </span>
                     {isAdmin && (
                       <button
                         onClick={() => setLinkMiroModalOpen(true)}
                         className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/20 transition-colors"
                       >
-                        {activeBoard ? "Change Board" : "Link Miro Board"}
+                        Link / Switch Board
                       </button>
                     )}
                     {roomLayout === "miro_focus" && (
@@ -675,9 +894,10 @@ export default function AcademyPage() {
                 </div>
 
                 <div className="w-full flex-1 bg-black/40 relative">
-                  {activeBoard ? (
+                  {displayedBoard ? (
                     <MiroBoard
-                      boardId={activeBoard.id}
+                      key={displayedBoard.id}
+                      boardId={displayedBoard.id}
                       height={roomLayout === "miro_focus" ? "660px" : "600px"}
                       onOpenChangeModal={() => setLinkMiroModalOpen(true)}
                       isAdmin={isAdmin}
