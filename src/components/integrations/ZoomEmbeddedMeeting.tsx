@@ -26,6 +26,7 @@ interface ZoomEmbeddedMeetingProps {
   isTheatre?: boolean;
   onToggleTheatre?: () => void;
   onLeave?: () => void;
+  onForceClose?: () => void;
 }
 
 export function ZoomEmbeddedMeeting({
@@ -40,6 +41,7 @@ export function ZoomEmbeddedMeeting({
   isTheatre = false,
   onToggleTheatre,
   onLeave,
+  onForceClose,
 }: ZoomEmbeddedMeetingProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
@@ -115,10 +117,13 @@ export function ZoomEmbeddedMeeting({
       if (event.data && event.data.type === "ZOOM_LEAVE") {
         if (onLeave) onLeave();
       }
+      if (event.data && event.data.type === "ZOOM_FORCE_CLOSE") {
+        if (onForceClose) onForceClose();
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [onLeave]);
+  }, [onLeave, onForceClose]);
 
   const embedSrc = `/zoom-embed.html?meetingNumber=${encodeURIComponent(
     cleanMeetingNumber

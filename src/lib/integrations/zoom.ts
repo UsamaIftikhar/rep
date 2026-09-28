@@ -20,7 +20,7 @@ export function getZoomAuthUrl(orgId: string): string {
     client_id: getZoomClientId(),
     redirect_uri: getZoomRedirectUri(),
     state,
-    scope: "meeting:write:meeting meeting:read:meeting user:read:user",
+    scope: "meeting:write:meeting meeting:read:meeting user:read:user meeting:update:status meeting:delete:meeting",
   });
   return `https://zoom.us/oauth/authorize?${params.toString()}`;
 }
@@ -175,4 +175,63 @@ async function refreshZoomToken(orgId: string, refreshTokenStr: string): Promise
     await db.zoomIntegration.update({ where: { orgId }, data: { isActive: false } });
     throw err;
   }
+}
+
+/**
+ * Terminates a meeting on Zoom Cloud so it does not block subsequent sessions.
+ */
+export async function endZoomMeetingOnCloud(orgId: string, meetingId: string): Promise<boolean> {
+  try {
+    const token = await getValidZoomAccessToken(orgId);
+    const cleanId = meetingId.replace(/[^0-9]/g, "");
+    const res = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}/status`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "end" }),
+    });
+    return res.status === 204 || res.ok;
+  } catch (e) {
+    console.warn(`[ZOOM_END_MEETING] Failed to end meeting ${meetingId} on Zoom Cloud:`, e);
+    return false;
+  }
+}
+
+/**
+ * Finds and ends all in-progress / live meetings for the host on Zoom Cloud.
+ */
+export async function endAllLiveZoomMeetings(orgId: string): Promise<{ endedIds: string[]; count: number }> {
+  const endedIds: string[] = [];
+  try {
+    const token = await getValidZoomAccessToken(orgId);
+    const listRes = await fetch("https://api.zoom.us/v2/users/me/meetings?type=live", {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if (listRes.ok) {
+      const data = await listRes.json();
+      if (Array.isArray(data.meetings)) {
+        for (const m of data.meetings) {
+          if (m.id) {
+            const cleanId = String(m.id).replace(/[^0-9]/g, "");
+            const endRes = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}/status`, {
+              method: "PUT",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ action: "end" }),
+            });
+            if (endRes.status === 204 || endRes.ok) {
+              endedIds.push(cleanId);
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[ZOOM_END_ALL_MEETINGS] Error querying live meetings:", e);
+  }
+  return { endedIds, count: endedIds.length };
 }

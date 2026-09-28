@@ -106,7 +106,27 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, topic } = body; // action: 'start' | 'end'
 
-    if (action === "end") {
+    if (action === "end" || action === "close_in_progress") {
+      // 1. Find all active coaching_academy meetings in DB
+      const activeMeetings = await db.zoomMeeting.findMany({
+        where: {
+          contextType: "coaching_academy",
+          status: "started",
+        },
+      });
+
+      // 2. Attempt to terminate meetings on Zoom Cloud
+      try {
+        const { endZoomMeetingOnCloud, endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
+        for (const m of activeMeetings) {
+          await endZoomMeetingOnCloud(orgId, m.zoomMeetingId);
+        }
+        await endAllLiveZoomMeetings(orgId);
+      } catch (e) {
+        console.warn("[SESSION_END] Could not terminate on Zoom Cloud:", e);
+      }
+
+      // 3. Mark all started meetings as ended in DB
       await db.zoomMeeting.updateMany({
         where: {
           contextType: "coaching_academy",
@@ -114,10 +134,20 @@ export async function POST(req: Request) {
         },
         data: { status: "ended" },
       });
-      return NextResponse.json({ success: true, status: "ended" });
+
+      return NextResponse.json({
+        success: true,
+        status: "ended",
+        message: "All in-progress meetings closed successfully.",
+      });
     }
 
-    // Action: 'start' - End any prior active sessions first
+    // Action: 'start' - End any prior active sessions first locally and on Zoom Cloud
+    try {
+      const { endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
+      await endAllLiveZoomMeetings(orgId);
+    } catch (e) {}
+
     await db.zoomMeeting.updateMany({
       where: {
         contextType: "coaching_academy",

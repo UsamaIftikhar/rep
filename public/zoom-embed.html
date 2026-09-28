@@ -233,6 +233,7 @@
       <div id="error-title" class="status-title" style="color: #f87171;">Connection Notice</div>
       <div id="error-message" class="status-sub">Unable to join session.</div>
       <div class="action-row">
+        <button id="btn-force-close" class="btn-action" style="display: none; background: #dc2626;" onclick="forceCloseInProgressMeetings()">Close In-Progress Meetings</button>
         <button class="btn-action" onclick="joinMeeting()">Retry</button>
         <button id="btn-desktop" class="btn-action btn-secondary" onclick="openDesktopApp()">Open in Zoom App</button>
         <button id="btn-web" class="btn-action btn-secondary" onclick="openWebClient()">Join in Browser Tab</button>
@@ -268,13 +269,14 @@
       }
     }
 
-    function showErrorState(title, message) {
+    function showErrorState(title, message, isMeetingsInProgress = false) {
       if (safetyTimer) clearTimeout(safetyTimer);
       const statusOverlay = document.getElementById('status-overlay');
       const loadingView = document.getElementById('loading-view');
       const errorView = document.getElementById('error-view');
       const errorTitleEl = document.getElementById('error-title');
       const errorMessageEl = document.getElementById('error-message');
+      const forceCloseBtn = document.getElementById('btn-force-close');
 
       statusOverlay.style.display = 'flex';
       statusOverlay.style.opacity = '1';
@@ -283,9 +285,49 @@
 
       errorTitleEl.textContent = title || 'Connection Notice';
       errorMessageEl.textContent = message || 'Unable to join session.';
+
+      if (isMeetingsInProgress || message.includes('meetings in progress') || message.includes('Already has other meetings')) {
+        if (forceCloseBtn) {
+          forceCloseBtn.style.display = 'inline-block';
+        }
+      } else {
+        if (forceCloseBtn) {
+          forceCloseBtn.style.display = 'none';
+        }
+      }
     }
 
-    async function joinMeeting() {
+    async function forceCloseInProgressMeetings() {
+      const btn = document.getElementById('btn-force-close');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Closing active sessions...';
+      }
+      try {
+        const res = await fetch('/api/academy/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'close_in_progress' }),
+        });
+        if (window.parent) {
+          window.parent.postMessage({ type: 'ZOOM_FORCE_CLOSE' }, '*');
+        }
+        const errorMsgEl = document.getElementById('error-message');
+        if (errorMsgEl) errorMsgEl.textContent = 'Prior meetings closed. Reconnecting session...';
+        setTimeout(() => {
+          joinMeeting(true);
+        }, 1200);
+      } catch (e) {
+        alert('Failed to close in-progress meetings: ' + (e.message || e));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Close In-Progress Meetings';
+        }
+      }
+    }
+
+    async function joinMeeting(skipEmail = false) {
       const statusOverlay = document.getElementById('status-overlay');
       const loadingView = document.getElementById('loading-view');
       const errorView = document.getElementById('error-view');
@@ -383,13 +425,16 @@
               console.warn('[Zoom SDK] Join failed with error code:', payload.errorCode, payload);
               let errorMsg = `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`;
               let errorTitle = 'Connection Notice';
+              let isConflict = false;
 
               if (payload.errorCode === 200) {
                 errorTitle = 'Domain Not Allowed';
                 errorMsg = `Zoom SDK domain authorization error (Error 200). Your domain (${window.location.origin}) must be added to the Domain Allow List in your Zoom Marketplace App settings (Features → Embed → Meeting SDK).`;
               } else if (payload.errorCode === 3000 || payload.errorCode === 3001) {
-                errorTitle = 'Meeting Not Found';
-                errorMsg = 'This Zoom meeting does not exist or has expired. Please verify the Meeting ID or start a new live session.';
+                // Code 3001 in Zoom is either meeting not found OR already has other meetings in progress
+                isConflict = true;
+                errorTitle = 'Another Meeting in Progress';
+                errorMsg = 'Zoom reports that your host account already has another meeting in progress. Click "Close In-Progress Meetings" to terminate prior sessions and reconnect.';
               } else if (payload.errorCode === 3008) {
                 errorTitle = 'Waiting for Host to Start Meeting';
                 errorMsg = 'The meeting has not been started yet by the host. Auto-checking every 7 seconds — you will be joined automatically as soon as the host begins the session.';
@@ -405,27 +450,24 @@
                 errorMsg = 'A valid meeting passcode is required to join this meeting.';
               }
 
-              showErrorState(errorTitle, errorMsg);
+              showErrorState(errorTitle, errorMsg, isConflict);
             }
           });
         } catch (onErr) {
           console.warn('[Zoom SDK] Could not attach connection listener:', onErr);
         }
 
-        // Once the client is initialized, unmask the overlay so Zoom's native UI
-        // (such as "Waiting for the host to start this meeting", audio prompts, or waiting room)
-        // is directly visible and interactive for the user.
+        // Once the client is initialized, unmask the overlay
         statusOverlay.style.display = 'none';
 
-        // Set safety timeout guard: if meeting does not establish within 20s, provide fallback
+        // Set safety timeout guard
         if (safetyTimer) clearTimeout(safetyTimer);
         safetyTimer = setTimeout(() => {
-          // If zoomAppRoot has children (Zoom rendered something), leave it visible
           if (zoomAppRoot && zoomAppRoot.children.length === 0) {
             console.warn('[Zoom SDK] Meeting connection timed out');
             showErrorState(
               'Session Slow to Connect',
-              'The Zoom session is taking longer than usual to connect. You can retry or open the session in the Zoom App.'
+              'The Zoom session is taking longer than usual to connect. You can retry, close in-progress meetings, or open the session in the Zoom App.'
             );
           }
         }, 20000);
@@ -440,7 +482,9 @@
         if (password) {
           joinParams.password = password;
         }
-        if (userEmail) {
+        // Crucial fix: Only pass userEmail if role is 1 and not skipEmail.
+        // For attendee joins (role 0), omitting userEmail prevents Zoom from checking host concurrent meetings!
+        if (userEmail && role === 1 && !skipEmail) {
           joinParams.userEmail = userEmail;
         }
 
@@ -457,15 +501,29 @@
       } catch (err) {
         console.error('[Zoom SDK] Join failed:', err?.message || err);
         const msg = err?.message || 'Error connecting to Zoom session.';
+        const isConflict = msg.includes('other meetings in progress') || msg.includes('meetings in progress');
+
+        // Auto-retry without email if conflict occurred on first try
+        if (isConflict && !skipEmail) {
+          console.warn('[Zoom SDK] Conflict with active meetings detected. Retrying without host email lock...');
+          return joinMeeting(true);
+        }
+
         let userMsg = msg;
-        if (msg.includes('domain') || msg.includes('200')) {
+        let title = 'Unable to Join Session';
+
+        if (isConflict) {
+          title = 'Another Meeting in Progress';
+          userMsg = 'Zoom detected that your Zoom host account already has another meeting active. Click "Close In-Progress Meetings" below to terminate prior sessions and retry.';
+        } else if (msg.includes('domain') || msg.includes('200')) {
           userMsg = 'Zoom SDK domain authorization error. Please verify the domain allow list in your Zoom Marketplace App settings.';
         } else if (msg.includes('Signature') || msg.includes('signature')) {
           userMsg = 'Zoom rejected the Meeting SDK authentication signature. Please verify the SDK Key and Secret configuration.';
         } else if (msg.includes('password') || msg.includes('passcode')) {
           userMsg = 'Incorrect meeting passcode. Please check the meeting details and try again.';
         }
-        showErrorState('Unable to Join Session', userMsg);
+
+        showErrorState(title, userMsg, isConflict);
       }
     }
 

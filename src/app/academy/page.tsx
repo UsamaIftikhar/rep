@@ -29,7 +29,8 @@ import {
   Copy,
   Check,
   Clock,
-  History
+  History,
+  RotateCcw
 } from "lucide-react";
 
 interface CourseItem {
@@ -315,6 +316,31 @@ export default function AcademyPage() {
     }
   };
 
+  // Handle closing in-progress/ghost Zoom meetings
+  const [closingInProgress, setClosingInProgress] = React.useState(false);
+  const handleCloseInProgressMeetings = async () => {
+    try {
+      setClosingInProgress(true);
+      const res = await fetch("/api/academy/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "close_in_progress" }),
+      });
+      if (res.ok) {
+        await fetchSession();
+        alert("All in-progress Zoom sessions terminated and reset successfully.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to close in-progress meetings.");
+      }
+    } catch (e) {
+      console.error("Error closing meetings:", e);
+      alert("Error closing in-progress meetings.");
+    } finally {
+      setClosingInProgress(false);
+    }
+  };
+
   // Handle Admin upload file
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -544,7 +570,18 @@ export default function AcademyPage() {
               </h2>
             </div>
             {isAdmin && (
-              <div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleCloseInProgressMeetings}
+                  disabled={closingInProgress || startingSession}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-white/20 bg-white/5 hover:bg-white/10 text-white/90 text-xs font-semibold"
+                  title="Force terminate in-progress/ghost Zoom meetings on account"
+                >
+                  {closingInProgress ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 text-amber-400" />}
+                  <span>Close In-Progress</span>
+                </Button>
                 {activeMeeting?.status === "started" ? (
                   <Button
                     onClick={handleEndMeeting}
@@ -648,6 +685,7 @@ export default function AcademyPage() {
                     onToggleTheatre={() =>
                       setRoomLayout((prev) => (prev === "zoom_focus" ? "split" : "zoom_focus"))
                     }
+                    onForceClose={fetchSession}
                   />
                 ) : (
                   <div className="flex flex-col h-full bg-[#070707] divide-y divide-white/10 overflow-y-auto">
@@ -753,15 +791,28 @@ export default function AcademyPage() {
                             </a>
 
                             {isAdmin && (
-                              <Button
-                                onClick={() => setStartMeetingModalOpen(true)}
-                                disabled={startingSession}
-                                size="sm"
-                                className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
-                              >
-                                {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
-                                Start New Meeting & Board
-                              </Button>
+                              <>
+                                <Button
+                                  onClick={handleCloseInProgressMeetings}
+                                  disabled={closingInProgress || startingSession}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold gap-1.5"
+                                  title="Force terminate ghost or in-progress Zoom sessions"
+                                >
+                                  {closingInProgress ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 text-amber-400" />}
+                                  <span>Close In-Progress</span>
+                                </Button>
+                                <Button
+                                  onClick={() => setStartMeetingModalOpen(true)}
+                                  disabled={startingSession}
+                                  size="sm"
+                                  className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2 shadow-[0_0_20px_rgba(242,23,23,0.4)]"
+                                >
+                                  {startingSession ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-white" />}
+                                  Start New Meeting & Board
+                                </Button>
+                              </>
                             )}
                           </div>
                         </>
@@ -773,14 +824,26 @@ export default function AcademyPage() {
                             When coaches begin a meeting, live video streams automatically here. In the meantime, use the interactive whiteboard on the right to design plays.
                           </p>
                           {isAdmin && (
-                            <Button
-                              onClick={() => setStartMeetingModalOpen(true)}
-                              disabled={startingSession}
-                              size="sm"
-                              className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2"
-                            >
-                              <Play className="w-4 h-4 fill-white" /> Start Meeting & Board
-                            </Button>
+                            <div className="flex items-center justify-center gap-2 pt-2">
+                              <Button
+                                onClick={handleCloseInProgressMeetings}
+                                disabled={closingInProgress || startingSession}
+                                variant="outline"
+                                size="sm"
+                                className="text-xs border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold gap-1.5"
+                              >
+                                {closingInProgress ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5 text-amber-400" />}
+                                Close In-Progress Meetings
+                              </Button>
+                              <Button
+                                onClick={() => setStartMeetingModalOpen(true)}
+                                disabled={startingSession}
+                                size="sm"
+                                className="text-xs bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2"
+                              >
+                                <Play className="w-4 h-4 fill-white" /> Start Meeting & Board
+                              </Button>
+                            </div>
                           )}
                         </div>
                       )}
@@ -1396,13 +1459,24 @@ export default function AcademyPage() {
                   />
                 </div>
 
-                <div className="pt-2 flex items-center justify-between gap-3">
-                  <a
-                    href="/api/integrations/zoom/connect"
-                    className="text-xs text-[#A3A3A3] hover:text-white underline flex items-center gap-1"
-                  >
-                    Connect Zoom Account
-                  </a>
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="/api/integrations/zoom/connect"
+                      className="text-xs text-[#A3A3A3] hover:text-white underline flex items-center gap-1"
+                    >
+                      Connect Zoom Account
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleCloseInProgressMeetings}
+                      disabled={closingInProgress}
+                      className="text-xs text-amber-400/90 hover:text-amber-300 underline flex items-center gap-1 font-medium"
+                      title="End any active sessions on Zoom before starting"
+                    >
+                      {closingInProgress ? "Closing..." : "Close In-Progress Meetings"}
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
