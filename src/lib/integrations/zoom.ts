@@ -113,22 +113,43 @@ export async function handleZoomOAuthCallback(code: string, stateStr: string) {
 
 /**
  * Retrieves valid decrypted Zoom access token, auto-refreshing before expiry.
+ * Defaults to the connected company Zoom account across the entire platform.
  */
-export async function getValidZoomAccessToken(orgId: string): Promise<string> {
-  const integration = await db.zoomIntegration.findUnique({
-    where: { orgId },
-  });
+export async function getValidZoomAccessToken(orgId?: string): Promise<string> {
+  let integration = null;
 
-  if (!integration || !integration.isActive) {
-    throw new Error("Zoom integration is not connected for this organization");
+  if (orgId) {
+    integration = await db.zoomIntegration.findUnique({
+      where: { orgId },
+    });
   }
+
+  // Single company account fallback for the entire app:
+  if (!integration) {
+    integration = await db.zoomIntegration.findFirst({
+      where: { isActive: true },
+      orderBy: { connectedAt: "desc" },
+    });
+  }
+
+  if (!integration) {
+    integration = await db.zoomIntegration.findFirst({
+      orderBy: { connectedAt: "desc" },
+    });
+  }
+
+  if (!integration) {
+    throw new Error("Zoom company account is not connected. Please connect Zoom in Settings.");
+  }
+
+  const targetOrgId = integration.orgId;
 
   if (integration.tokenExpiresAt && integration.tokenExpiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
     if (!integration.refreshToken) {
-      await db.zoomIntegration.update({ where: { orgId }, data: { isActive: false } });
-      throw new Error("Zoom refresh token missing. Please reconnect Zoom.");
+      await db.zoomIntegration.update({ where: { orgId: targetOrgId }, data: { isActive: false } });
+      throw new Error("Zoom refresh token missing. Please reconnect Zoom in Settings.");
     }
-    return refreshZoomToken(orgId, decryptToken(integration.refreshToken));
+    return refreshZoomToken(targetOrgId, decryptToken(integration.refreshToken));
   }
 
   return decryptToken(integration.accessToken);
@@ -180,7 +201,8 @@ async function refreshZoomToken(orgId: string, refreshTokenStr: string): Promise
 /**
  * Terminates a meeting on Zoom Cloud so it does not block subsequent sessions.
  */
-export async function endZoomMeetingOnCloud(orgId: string, meetingId: string): Promise<boolean> {
+export async function endZoomMeetingOnCloud(orgId?: string, meetingId?: string): Promise<boolean> {
+  if (!meetingId) return false;
   try {
     const token = await getValidZoomAccessToken(orgId);
     const cleanId = meetingId.replace(/[^0-9]/g, "");
@@ -202,7 +224,7 @@ export async function endZoomMeetingOnCloud(orgId: string, meetingId: string): P
 /**
  * Finds and ends all in-progress / live meetings for the host on Zoom Cloud.
  */
-export async function endAllLiveZoomMeetings(orgId: string): Promise<{ endedIds: string[]; count: number }> {
+export async function endAllLiveZoomMeetings(orgId?: string): Promise<{ endedIds: string[]; count: number }> {
   const endedIds: string[] = [];
   try {
     const token = await getValidZoomAccessToken(orgId);

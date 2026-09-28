@@ -1408,18 +1408,18 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Active
+                    Connected (Company Workspace)
                   </span>
                 </div>
                 <p className="text-xs text-[#737373] leading-relaxed">
-                  Connect your Miro team workspace to embed real-time interactive whiteboards into classrooms and recruiting sessions.
+                  Single company workspace connected for the entire application. Embeds interactive whiteboards into live strategy sessions and athlete film classrooms.
                 </p>
                 <div className="flex items-center gap-3 pt-2">
                   <a
                     href="/api/integrations/miro/connect"
-                    className="px-4 py-2 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-xs font-semibold text-yellow-300 transition-colors inline-flex items-center gap-2"
+                    className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-yellow-300/90 transition-colors inline-flex items-center gap-2"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" /> Connect / Reconnect Miro
+                    <ExternalLink className="w-3.5 h-3.5" /> Reconnect / Change Miro Workspace
                   </a>
                 </div>
               </div>
@@ -1437,18 +1437,18 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Active
+                    Connected (Company Host)
                   </span>
                 </div>
                 <p className="text-xs text-[#737373] leading-relaxed">
-                  Schedule Zoom meetings directly in the portal. Cloud recordings are fetched via webhooks and stored in encrypted S3 storage.
+                  Single company host account connected for the entire application. Orchestrates live video sessions, dual screen sharing, and auto-archived encrypted storage.
                 </p>
                 <div className="flex items-center gap-3 pt-2">
                   <a
                     href="/api/integrations/zoom/connect"
-                    className="px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-xs font-semibold text-blue-300 transition-colors inline-flex items-center gap-2"
+                    className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-blue-300/90 transition-colors inline-flex items-center gap-2"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" /> Connect / Reconnect Zoom
+                    <ExternalLink className="w-3.5 h-3.5" /> Reconnect / Change Zoom Account
                   </a>
                 </div>
               </div>

@@ -47,23 +47,29 @@ export async function GET(req: Request) {
       take: 10,
     });
 
-    // 4. Fetch latest active Miro board for coaching_academy / org
+    // 4. Fetch latest active Miro board for coaching_academy
     const activeBoard = await db.miroBoard.findFirst({
-      where: { orgId, isActive: true },
+      where: {
+        isActive: true,
+        OR: [{ contextType: "coaching_academy" }, { orgId }],
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    // 5. Fetch all Miro boards for org (up to 15) so user can review any past whiteboard anytime
+    // 5. Fetch all Miro boards (up to 15) so user can review any past whiteboard anytime
     const allBoards = await db.miroBoard.findMany({
-      where: { orgId },
+      where: {
+        OR: [{ contextType: "coaching_academy" }, { orgId }],
+      },
       orderBy: { createdAt: "desc" },
       take: 15,
     });
 
-    // Fetch latest active Miro board integration for org
-    const miroIntegration = await db.miroIntegration.findFirst({
-      where: { orgId },
-    });
+    // Fetch company Miro integration
+    const miroIntegration =
+      (await db.miroIntegration.findFirst({
+        where: { isActive: true },
+      })) || (await db.miroIntegration.findFirst());
 
     return NextResponse.json({
       activeMeeting: activeMeeting || null,
@@ -253,12 +259,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Try to create real Zoom meeting via Zoom API if Zoom OAuth is connected
-    const integration = await db.zoomIntegration.findUnique({ where: { orgId } });
-    if (integration && integration.isActive && !joinUrl) {
+    // Try to create real Zoom meeting via Zoom API using company Zoom integration
+    const integration =
+      (await db.zoomIntegration.findUnique({ where: { orgId } })) ||
+      (await db.zoomIntegration.findFirst({ where: { isActive: true } })) ||
+      (await db.zoomIntegration.findFirst());
+
+    if (integration && !joinUrl) {
       try {
         const { getValidZoomAccessToken } = await import("@/lib/integrations/zoom");
-        const token = await getValidZoomAccessToken(orgId);
+        const token = await getValidZoomAccessToken(integration.orgId);
         const zoomApiRes = await fetch("https://api.zoom.us/v2/users/me/meetings", {
           method: "POST",
           headers: {
@@ -295,7 +305,7 @@ export async function POST(req: Request) {
             return NextResponse.json(
               {
                 error:
-                  "Zoom Marketplace App is missing the 'meeting:write:meeting' scope. Please add the scope under Scopes in your Zoom Marketplace App settings and click 'Connect Zoom Account' again.",
+                  "Zoom Marketplace App is missing the 'meeting:write:meeting' scope. Please verify the scope in your Zoom Marketplace settings.",
               },
               { status: 400 }
             );
@@ -311,7 +321,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Unable to start session. Please either Connect Zoom Account (with meeting:write scope on Zoom Marketplace) or enter a custom Zoom Meeting link.",
+            "Unable to generate meeting automatically. Please enter a custom Zoom Meeting link or check Settings.",
         },
         { status: 400 }
       );

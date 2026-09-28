@@ -107,23 +107,44 @@ export async function handleMiroOAuthCallback(code: string, stateStr: string) {
 
 /**
  * Retrieves valid decrypted access token for org, refreshing if expired.
+ * Defaults to the connected company Miro account across the entire platform.
  */
-export async function getValidMiroAccessToken(orgId: string): Promise<string> {
-  const integration = await db.miroIntegration.findUnique({
-    where: { orgId },
-  });
+export async function getValidMiroAccessToken(orgId?: string): Promise<string> {
+  let integration = null;
 
-  if (!integration || !integration.isActive) {
-    throw new Error("Miro integration is not connected for this organization");
+  if (orgId) {
+    integration = await db.miroIntegration.findUnique({
+      where: { orgId },
+    });
   }
+
+  // Single company account fallback for the entire app:
+  if (!integration) {
+    integration = await db.miroIntegration.findFirst({
+      where: { isActive: true },
+      orderBy: { connectedAt: "desc" },
+    });
+  }
+
+  if (!integration) {
+    integration = await db.miroIntegration.findFirst({
+      orderBy: { connectedAt: "desc" },
+    });
+  }
+
+  if (!integration) {
+    throw new Error("Miro company account is not connected. Please connect Miro in Settings.");
+  }
+
+  const targetOrgId = integration.orgId;
 
   // Check if token is expired or expiring within 5 minutes
   if (integration.tokenExpiresAt && integration.tokenExpiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
     if (!integration.refreshToken) {
-      await db.miroIntegration.update({ where: { orgId }, data: { isActive: false } });
-      throw new Error("Miro refresh token missing. Please reconnect Miro.");
+      await db.miroIntegration.update({ where: { orgId: targetOrgId }, data: { isActive: false } });
+      throw new Error("Miro refresh token missing. Please reconnect Miro in Settings.");
     }
-    return refreshMiroToken(orgId, decryptToken(integration.refreshToken));
+    return refreshMiroToken(targetOrgId, decryptToken(integration.refreshToken));
   }
 
   return decryptToken(integration.accessToken);

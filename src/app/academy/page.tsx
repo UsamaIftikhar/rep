@@ -1461,12 +1461,10 @@ export default function AcademyPage() {
 
                 <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <a
-                      href="/api/integrations/zoom/connect"
-                      className="text-xs text-[#A3A3A3] hover:text-white underline flex items-center gap-1"
-                    >
-                      Connect Zoom Account
-                    </a>
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>Company Zoom & Miro Connected</span>
+                    </div>
                     <button
                       type="button"
                       onClick={handleCloseInProgressMeetings}

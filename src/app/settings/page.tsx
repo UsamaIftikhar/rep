@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Textarea } from "@/components/ui";
-import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2, Copy, Check, ExternalLink, Share2 } from "lucide-react";
+import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2, Copy, Check, ExternalLink, Share2, Video, Layout, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function SettingsPage() {
@@ -88,6 +88,21 @@ export default function SettingsPage() {
       mounted = false;
     };
   }, [user]);
+
+  const [integrationsStatus, setIntegrationsStatus] = React.useState<{
+    zoom?: { connected: boolean; isActive: boolean; accountEmail?: string };
+    miro?: { connected: boolean; isActive: boolean; teamId?: string };
+    isAdmin?: boolean;
+  } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/integrations/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setIntegrationsStatus(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -559,6 +574,85 @@ export default function SettingsPage() {
               <Button onClick={handleStripePortal} variant="outline" size="sm" className="w-full gap-2">
                 <CreditCard className="w-4 h-4" /> Manage in Stripe Portal
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle isDisplay className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#F21717]" />
+                Company Integrations
+              </CardTitle>
+              <CardDescription>
+                Connected company accounts powering live video sessions and collaborative whiteboards for all users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Zoom Integration */}
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <Video className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Zoom Video SDK</span>
+                      <span className="text-[10px] text-[#A3A3A3]">Company Host Account</span>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Connected
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#888888] leading-relaxed">
+                  Active company host account. Powers embedded live video conferencing, interactive strategy rooms, and automatic meeting orchestration for all members.
+                </p>
+                {integrationsStatus?.isAdmin && (
+                  <div className="pt-1 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] text-[#737373]">Single app account</span>
+                    <a
+                      href="/api/integrations/zoom/connect"
+                      className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Reconnect Zoom
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Miro Integration */}
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <Layout className="w-4 h-4 text-yellow-400" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Miro Whiteboard</span>
+                      <span className="text-[10px] text-[#A3A3A3]">Company Team Workspace</span>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Connected
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#888888] leading-relaxed">
+                  Active company workspace. Powers real-time playbook diagramming, dual whiteboard canvases, and collaborative strategy sessions.
+                </p>
+                {integrationsStatus?.isAdmin && (
+                  <div className="pt-1 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] text-[#737373]">Single app workspace</span>
+                    <a
+                      href="/api/integrations/miro/connect"
+                      className="text-[11px] text-yellow-400 hover:text-yellow-300 underline font-medium inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Reconnect Miro
+                    </a>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
