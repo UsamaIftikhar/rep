@@ -132,3 +132,58 @@ export async function isMember(userId: string): Promise<boolean> {
   );
 }
 
+export async function canAccessCoachesAcademy(userId: string): Promise<{
+  allowed: boolean;
+  isPresenter: boolean;
+  reason?: string;
+}> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      subscriptions: {
+        where: { status: "active" },
+      },
+      entitlements: {
+        where: {
+          revokedAt: null,
+          OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return { allowed: false, isPresenter: false, reason: "User not found" };
+  }
+
+  // Presenter check: Marvin, Terry, Darius, Super Admin, Admin
+  const isPresenter =
+    user.role === UserRole.SUPER_ADMIN ||
+    user.role === UserRole.ADMIN ||
+    user.role === UserRole.COACHES_ACADEMY_PRESENTER ||
+    [
+      "marvin@rep1recruiting.com",
+      "terry@rep1recruiting.com",
+      "darius@rep1recruiting.com",
+      "usama@rep1recruiting.com",
+    ].includes(user.email.toLowerCase());
+
+  if (isPresenter) {
+    return { allowed: true, isPresenter: true };
+  }
+
+  // Coaches Academy Member check
+  const isDirectMember = user.role === UserRole.COACHES_ACADEMY_MEMBER;
+  const hasEntitlement = user.entitlements.some((e) => e.type === "COACHES_ACADEMY");
+  const hasActiveSub = user.subscriptions.length > 0;
+
+  if (isDirectMember || hasEntitlement || hasActiveSub) {
+    return { allowed: true, isPresenter: false };
+  }
+
+  return { allowed: false, isPresenter: false, reason: "Requires active REP 1 Coaches Academy Membership" };
+}
+
