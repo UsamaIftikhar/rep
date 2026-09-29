@@ -95,7 +95,12 @@ function SignupForm() {
         email,
         password,
         sport,
-        role: region === "recruiter" ? "RECRUITER" : "ATHLETE",
+        role:
+          region === "recruiter"
+            ? "RECRUITER"
+            : region === "coaches"
+            ? "COACHES_ACADEMY_MEMBER"
+            : "ATHLETE",
         planType: region,
         courseId: courseIdParam || undefined,
       });
@@ -122,11 +127,17 @@ function SignupForm() {
           </span>
         </Link>
         <h1 className="font-display uppercase text-3xl font-black text-white">
-          {region === "recruiter" ? "Create Recruiter Account" : "Create Athlete Account"}
+          {region === "recruiter"
+            ? "Create Recruiter Account"
+            : region === "coaches"
+            ? "Create Coach Account"
+            : "Create Athlete Account"}
         </h1>
         <p className="text-xs text-[#A3A3A3] mt-1">
           {region === "recruiter"
             ? "Select your membership tier and register your official REP 1 recruiter pass."
+            : region === "coaches"
+            ? "Register your coach account and get instant access to the REP 1 Coaches Academy."
             : "Select your membership tier and register your official REP 1 recruiting profile."}
         </p>
       </div>
@@ -295,6 +306,26 @@ function SignupForm() {
         </form>
       </CardContent>
     </Card>
+
+      <p className="text-center text-xs text-[#737373]">
+        {region === "coaches"
+          ? "Already have a coach account? "
+          : region === "recruiter"
+          ? "Already have a recruiter account? "
+          : "Already have an account? "}
+        <Link
+          href={
+            callbackUrlParam
+              ? `/login?callbackUrl=${encodeURIComponent(callbackUrlParam)}`
+              : region === "coaches"
+              ? "/login?callbackUrl=/coaches-academy"
+              : "/login"
+          }
+          className="text-[#F21717] hover:underline font-semibold"
+        >
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
@@ -313,13 +344,6 @@ export default function SignupPage() {
         >
           <SignupForm />
         </React.Suspense>
-
-        <p className="text-center text-xs text-[#737373]">
-          Already have an athlete account?{" "}
-          <Link href="/login" className="text-[#F21717] hover:underline font-semibold">
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );

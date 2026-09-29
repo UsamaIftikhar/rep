@@ -111,6 +111,35 @@ export async function createStripeCheckoutSession({
       return { url: `${origin}/dashboard?subscribed=true` };
     }
 
+    if (type === "COACHES") {
+      await db.user.update({
+        where: { id: userId },
+        data: { role: "COACHES_ACADEMY_MEMBER", status: UserStatus.ACTIVE },
+      });
+
+      await db.subscription.create({
+        data: {
+          userId,
+          stripeCustomerId: `cus_mock_${userId}`,
+          stripeSubscriptionId: `sub_mock_${Date.now().toString(36)}`,
+          stripePriceId: process.env.STRIPE_PRICE_COACHES || "price_1UL8QL9kvZo5XvSYIcZa3xYK",
+          status: "active",
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      await db.entitlement.create({
+        data: {
+          userId,
+          type: "COACHES_ACADEMY",
+          source: "SUBSCRIPTION",
+          referenceId: "prod_VLq6JQvqh5xwLP",
+        },
+      });
+
+      return { url: `${origin}/coaches-academy?subscribed=true` };
+    }
+
     // US_ATHLETE or SUBSCRIPTION
     await db.subscription.create({
       data: {
@@ -123,30 +152,13 @@ export async function createStripeCheckoutSession({
       },
     });
 
-    // Add entitlement for coaches pass if applicable
-    if (type === "COACHES") {
-      await db.entitlement.create({
-        data: {
-          userId,
-          type: "COACHES_ACADEMY",
-          source: "SUBSCRIPTION",
-          referenceId: "prod_VLq6JQvqh5xwLP",
-        },
-      });
-      await db.user.update({
-        where: { id: userId },
-        data: { role: "COACHES_ACADEMY_MEMBER" },
-      });
-      return { url: `${origin}/coaches-academy?subscribed=true` };
-    } else {
-      await db.entitlement.create({
-        data: {
-          userId,
-          type: "ACADEMY",
-          source: "SUBSCRIPTION",
-        },
-      });
-    }
+    await db.entitlement.create({
+      data: {
+        userId,
+        type: "ACADEMY",
+        source: "SUBSCRIPTION",
+      },
+    });
 
     return { url: `${origin}/dashboard?subscribed=true` };
   }

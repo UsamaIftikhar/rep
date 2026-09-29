@@ -31,8 +31,10 @@ export async function POST(req: Request) {
       position,
     } = result.data;
 
-    const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" | "RECRUITER" =
-      body.planType === "recruiter" || body.planType === "RECRUITER"
+    const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" | "RECRUITER" | "COACHES" =
+      body.planType === "coaches" || body.planType === "COACHES"
+        ? "COACHES"
+        : body.planType === "recruiter" || body.planType === "RECRUITER"
         ? "RECRUITER"
         : body.planType === "international" || body.planType === "INTERNATIONAL"
         ? "INTERNATIONAL"
@@ -40,7 +42,12 @@ export async function POST(req: Request) {
         ? "COURSE"
         : "US_ATHLETE";
 
-    const userRole = planType === "RECRUITER" ? "RECRUITER" : (role || "ATHLETE");
+    const userRole =
+      planType === "COACHES"
+        ? "COACHES_ACADEMY_MEMBER"
+        : planType === "RECRUITER"
+        ? "RECRUITER"
+        : (role || "ATHLETE");
 
     const courseId = body.courseId;
 

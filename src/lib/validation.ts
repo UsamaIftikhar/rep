@@ -5,7 +5,9 @@ export const signUpSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  role: z.enum(["ATHLETE", "RECRUITER", "ADMIN"]).default("ATHLETE"),
+  role: z
+    .enum(["ATHLETE", "RECRUITER", "ADMIN", "COACHES_ACADEMY_MEMBER", "COACHES_ACADEMY_PRESENTER"])
+    .default("ATHLETE"),
   schoolClub: z.string().optional(),
   graduationYear: z.number().int().optional(),
   location: z.string().optional(),

@@ -602,14 +602,14 @@ export default function CoachesAcademyPage() {
                 </Button>
               ) : (
                 <div className="flex flex-wrap gap-4">
-                  <Link href="/login?callbackUrl=/coaches-academy">
-                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-8 py-6 rounded-xl text-base">
-                      Sign In to Coach Account <ChevronRight className="w-5 h-5 ml-2" />
+                  <Link href="/signup?plan=coaches&callbackUrl=/coaches-academy">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-8 py-6 rounded-xl text-base shadow-lg shadow-amber-500/20">
+                      Sign Up to Enroll ($69.99/yr) <ChevronRight className="w-5 h-5 ml-2" />
                     </Button>
                   </Link>
-                  <Link href="/signup?callbackUrl=/coaches-academy">
+                  <Link href="/login?callbackUrl=/coaches-academy">
                     <Button variant="outline" className="border-slate-700 hover:bg-slate-800 text-white font-semibold px-8 py-6 rounded-xl text-base">
-                      Create Coach Account
+                      Sign In to Coach Account
                     </Button>
                   </Link>
                 </div>
@@ -669,11 +669,18 @@ export default function CoachesAcademyPage() {
                   {activatingMembership ? "Enrolling..." : "Enroll in Coaches Academy Now"}
                 </Button>
               ) : (
-                <Link href="/login?callbackUrl=/coaches-academy">
-                  <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-10 py-6 rounded-xl text-base w-full sm:w-auto">
-                    Sign In to Enroll
-                  </Button>
-                </Link>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Link href="/signup?plan=coaches&callbackUrl=/coaches-academy">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-10 py-6 rounded-xl text-base w-full sm:w-auto shadow-lg shadow-amber-500/20">
+                      Sign Up to Enroll ($69.99/yr) <ChevronRight className="w-5 h-5 ml-1.5" />
+                    </Button>
+                  </Link>
+                  <Link href="/login?callbackUrl=/coaches-academy">
+                    <Button variant="outline" className="border-slate-700 hover:bg-slate-800 text-slate-300 font-semibold px-6 py-6 rounded-xl text-base w-full sm:w-auto">
+                      Existing Member? Sign In
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
