@@ -36,6 +36,27 @@ export async function POST(req: Request) {
       });
     }
 
+    try {
+      const { getValidMiroAccessToken } = await import("@/lib/integrations/miro");
+      const miroToken = await getValidMiroAccessToken(orgId);
+      await fetch(`https://api.miro.com/v2/boards/${miroBoardId}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${miroToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          policy: {
+            sharingPolicy: {
+              access: "view",
+            },
+          },
+        }),
+      });
+    } catch {
+      // Optional enhancement: if board belongs to another account, ignore
+    }
+
     const linkedBoard = await db.miroBoard.create({
       data: {
         orgId,

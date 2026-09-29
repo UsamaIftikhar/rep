@@ -307,6 +307,7 @@ export async function POST(req: Request) {
             description: `Dedicated interactive whiteboard for Coaches Academy playbook diagrams and film review: ${sessionTopic}`,
             policy: {
               sharingPolicy: {
+                access: "view",
                 teamAccess: "edit",
               },
             },
