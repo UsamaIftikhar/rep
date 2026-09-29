@@ -26,6 +26,47 @@ export async function GET(
   });
 
   if (!board) {
+    let cleanFallbackId = id.trim();
+    const fallbackMatch = cleanFallbackId.match(/board\/([a-zA-Z0-9_=-]+)/) || cleanFallbackId.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
+    if (fallbackMatch && fallbackMatch[1]) {
+      cleanFallbackId = fallbackMatch[1];
+    }
+    cleanFallbackId = cleanFallbackId.split("?")[0].replace(/\/+$/, "");
+
+    if (cleanFallbackId) {
+      try {
+        board = await db.miroBoard.create({
+          data: {
+            orgId: orgId || "cmumx0l6f0000rl6ni1o5kw3c",
+            miroBoardId: cleanFallbackId,
+            title: `Coaching Strategy Board (${cleanFallbackId.substring(0, 8)})`,
+            description: "Dedicated interactive whiteboard for Coaches Academy",
+            contextType: "coaching_academy",
+            contextId: "coaches-academy-live",
+            createdBy: user.name || user.email,
+            isActive: true,
+          },
+        });
+      } catch (err) {
+        board = {
+          id: cleanFallbackId,
+          orgId: orgId || "cmumx0l6f0000rl6ni1o5kw3c",
+          miroBoardId: cleanFallbackId,
+          title: "Coaching Strategy Board",
+          description: "Dedicated interactive whiteboard",
+          contextType: "coaching_academy",
+          contextId: "coaches-academy-live",
+          createdBy: user.name || user.email,
+          createdAt: new Date(),
+          isActive: true,
+        } as any;
+      }
+    } else {
+      return NextResponse.json({ error: "Board not found" }, { status: 404 });
+    }
+  }
+
+  if (!board) {
     return NextResponse.json({ error: "Board not found" }, { status: 404 });
   }
 

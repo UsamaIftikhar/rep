@@ -110,6 +110,10 @@ export async function handleMiroOAuthCallback(code: string, stateStr: string) {
  * Defaults to the connected company Miro account across the entire platform.
  */
 export async function getValidMiroAccessToken(orgId?: string): Promise<string> {
+  if (process.env.MIRO_ACCESS_TOKEN) {
+    return process.env.MIRO_ACCESS_TOKEN;
+  }
+
   let integration = null;
 
   if (orgId) {

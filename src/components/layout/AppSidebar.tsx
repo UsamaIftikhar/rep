@@ -15,6 +15,7 @@ import {
   Flame,
   LogOut,
   BookOpen,
+  Shield,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,6 +41,12 @@ const navItems: NavItem[] = [
     title: "Student Academy",
     href: "/academy",
     icon: GraduationCap,
+    requiresAuth: true,
+  },
+  {
+    title: "REP 1 Coaches Academy",
+    href: "/coaches-academy",
+    icon: Shield,
     requiresAuth: true,
   },
   {

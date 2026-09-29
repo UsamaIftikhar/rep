@@ -15,6 +15,8 @@ export function PublicNavbar() {
 
   const unauthLinks = [
     { label: "Home", href: "/" },
+    { label: "Student Academy", href: "/academy" },
+    { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },
     { label: "Classroom", href: "/classroom" },
     { label: "Mock AI Interview", href: "/interview" },
@@ -22,9 +24,10 @@ export function PublicNavbar() {
 
   const authLinks = [
     { label: "Home", href: "/" },
+    { label: "Student Academy", href: "/academy" },
+    { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },
     { label: "Classroom", href: "/courses" },
-    { label: "Student Academy", href: "/academy" },
     { label: "Mock AI Interview", href: "/interview" },
   ];
 

@@ -600,10 +600,16 @@ export default function SettingsPage() {
                       <span className="text-[10px] text-[#A3A3A3]">Company Host Account</span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Connected
-                  </span>
+                  {integrationsStatus?.zoom?.connected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      Not Connected
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] text-[#888888] leading-relaxed">
                   Active company host account. Powers embedded live video conferencing, interactive strategy rooms, and automatic meeting orchestration for all members.
@@ -615,7 +621,7 @@ export default function SettingsPage() {
                       href="/api/integrations/zoom/connect"
                       className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium inline-flex items-center gap-1"
                     >
-                      <ExternalLink className="w-3 h-3" /> Reconnect Zoom
+                      <ExternalLink className="w-3 h-3" /> {integrationsStatus?.zoom?.connected ? "Reconnect Zoom" : "Connect Zoom"}
                     </a>
                   </div>
                 )}
@@ -633,10 +639,16 @@ export default function SettingsPage() {
                       <span className="text-[10px] text-[#A3A3A3]">Company Team Workspace</span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Connected
-                  </span>
+                  {integrationsStatus?.miro?.connected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      Not Connected
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] text-[#888888] leading-relaxed">
                   Active company workspace. Powers real-time playbook diagramming, dual whiteboard canvases, and collaborative strategy sessions.
@@ -648,7 +660,7 @@ export default function SettingsPage() {
                       href="/api/integrations/miro/connect"
                       className="text-[11px] text-yellow-400 hover:text-yellow-300 underline font-medium inline-flex items-center gap-1"
                     >
-                      <ExternalLink className="w-3 h-3" /> Reconnect Miro
+                      <ExternalLink className="w-3 h-3" /> {integrationsStatus?.miro?.connected ? "Reconnect Miro" : "Connect Miro Account"}
                     </a>
                   </div>
                 )}

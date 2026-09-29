@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { getAuthenticatedOrgId } from "@/lib/org";
+import { canAccessCoachesAcademy } from "@/lib/entitlements";
+import { isCoachesAcademyPresenter } from "@/lib/permissions";
 
-// GET /api/academy/session - Fetch active Coaching Academy session (Zoom + Miro)
+// GET /api/coaches-academy/session - Fetch active session & past archives
 export async function GET(req: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -11,26 +13,82 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const isAllowed =
-      user.email === "usama@rep1recruiting.com" ||
-      user.email === "student@rep1recruiting.com";
-
-    if (!isAllowed) {
-      return NextResponse.json({ error: "Access denied during testing phase" }, { status: 403 });
+    const access = await canAccessCoachesAcademy(user.id);
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          allowed: false,
+          isPresenter: false,
+          reason: access.reason || "Annual Coaches Academy subscription required",
+        },
+        { status: 403 }
+      );
     }
 
     const orgId = await getAuthenticatedOrgId(user);
 
-    // 1. Fetch active meeting for coaching_academy (started or scheduled)
+    // 1. Fetch active session from CoachesAcademySession model
+    let activeSession = await db.coachesAcademySession.findFirst({
+      where: {
+        status: { in: ["started", "scheduled"] },
+      },
+      orderBy: { scheduledDate: "desc" },
+    });
+
+    // Fallback: check ZoomMeeting table if no CoachesAcademySession is active
+    if (!activeSession) {
+      const activeZoom = await db.zoomMeeting.findFirst({
+        where: {
+          contextType: "coaching_academy",
+          status: { in: ["started", "scheduled"] },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (activeZoom) {
+        const pairedBoard = await db.miroBoard.findFirst({
+          where: {
+            OR: [
+              { contextId: activeZoom.zoomMeetingId },
+              { contextType: "coaching_academy", isActive: true },
+            ],
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        activeSession = {
+          id: activeZoom.id,
+          title: activeZoom.topic,
+          description: null,
+          scheduledDate: activeZoom.startTime,
+          zoomMeetingId: activeZoom.zoomMeetingId,
+          zoomJoinUrl: activeZoom.joinUrl,
+          zoomPassword: activeZoom.password,
+          whiteboardId: pairedBoard?.miroBoardId || null,
+          whiteboardUrl: pairedBoard?.miroBoardId
+            ? `https://miro.com/app/live-embed/${pairedBoard.miroBoardId}/?embedAutoplay=true`
+            : null,
+          recordingUrl: null,
+          retentionUntil: new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000),
+          status: activeZoom.status,
+          presenterId: activeZoom.createdBy,
+          presenterName: "REP 1 Coaching Staff",
+          department: "GENERAL",
+          createdAt: activeZoom.createdAt,
+          updatedAt: activeZoom.createdAt,
+        };
+      }
+    }
+
+    // 2. Fetch active and latest Zoom meetings
     const activeMeeting = await db.zoomMeeting.findFirst({
       where: {
         contextType: "coaching_academy",
-        status: { in: ["started", "scheduled"] },
+        status: "started",
       },
       orderBy: { createdAt: "desc" },
     });
 
-    // 2. Fetch the most recent meeting regardless of status so users can check meeting details anytime
     const latestMeeting = await db.zoomMeeting.findFirst({
       where: {
         contextType: "coaching_academy",
@@ -38,8 +96,14 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 3. Fetch past sessions history (recent 10)
-    const recentMeetings = await db.zoomMeeting.findMany({
+    // 3. Fetch past sessions history (24-month retained sessions)
+    const pastSessions = await db.coachesAcademySession.findMany({
+      orderBy: { scheduledDate: "desc" },
+      take: 25,
+    });
+
+    // Also fetch recent zoom meetings for any older sessions
+    const recentZoomMeetings = await db.zoomMeeting.findMany({
       where: {
         contextType: "coaching_academy",
       },
@@ -47,8 +111,8 @@ export async function GET(req: Request) {
       take: 10,
     });
 
-    // 4. Fetch latest active Miro board for coaching_academy
-    const activeBoard = await db.miroBoard.findFirst({
+    // 4. Fetch active Miro board
+    let activeBoard = await db.miroBoard.findFirst({
       where: {
         isActive: true,
         OR: [{ contextType: "coaching_academy" }, { orgId }],
@@ -56,8 +120,7 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 5. Fetch all Miro boards (up to 15) so user can review any past whiteboard anytime
-    const allBoards = await db.miroBoard.findMany({
+    let allBoards = await db.miroBoard.findMany({
       where: {
         OR: [{ contextType: "coaching_academy" }, { orgId }],
       },
@@ -65,22 +128,34 @@ export async function GET(req: Request) {
       take: 15,
     });
 
-    // Fetch company Miro integration
+    if (!activeBoard) {
+      activeBoard = await db.miroBoard.findFirst({
+        orderBy: { createdAt: "desc" },
+      });
+      if (activeBoard && allBoards.length === 0) {
+        allBoards = [activeBoard];
+      }
+    }
+
     const miroIntegration =
       (await db.miroIntegration.findFirst({
         where: { isActive: true },
-      })) || (await db.miroIntegration.findFirst());
+      })) || Boolean(process.env.MIRO_ACCESS_TOKEN);
 
     return NextResponse.json({
+      allowed: true,
+      isPresenter: access.isPresenter,
+      isMiroConnected: Boolean(miroIntegration),
+      activeSession,
       activeMeeting: activeMeeting || null,
       latestMeeting: latestMeeting || null,
-      recentMeetings: recentMeetings || [],
-      activeBoard: activeBoard || null,
-      allBoards: allBoards || [],
-      miroIntegration: !!miroIntegration,
+      recentMeetings: recentZoomMeetings,
+      pastSessions,
+      activeBoard,
+      allBoards,
     });
   } catch (error: any) {
-    console.error("[ACADEMY_SESSION_GET]", error);
+    console.error("[COACHES_ACADEMY_SESSION_GET]", error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch session state" },
       { status: 500 }
@@ -88,7 +163,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/academy/session - Start or End a live session (Admin Only)
+// POST /api/coaches-academy/session - Start or End a live session (Presenter Only)
 export async function POST(req: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -96,43 +171,40 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orgId = await getAuthenticatedOrgId(user);
-
-    const isAdmin =
-      user.role === "SUPER_ADMIN" ||
-      user.role === "ADMIN";
-
-    if (!isAdmin) {
+    const isPresenter = isCoachesAcademyPresenter(user as any);
+    if (!isPresenter) {
       return NextResponse.json(
-        { error: "Forbidden: Only admins can start/end coaching academy live sessions" },
+        { error: "Forbidden: Only approved presenters and admins can manage live classroom sessions" },
         { status: 403 }
       );
     }
 
+    const orgId = await getAuthenticatedOrgId(user);
     const body = await req.json();
-    const { action, topic } = body; // action: 'start' | 'end'
+    const { action, topic, department, customJoinUrl, customMiroUrl, recordingUrl } = body;
 
+    // --- Action: 'end' or 'close_in_progress' ---
     if (action === "end" || action === "close_in_progress") {
-      // 1. Find all active coaching_academy meetings in DB
-      const activeMeetings = await db.zoomMeeting.findMany({
-        where: {
-          contextType: "coaching_academy",
-          status: "started",
+      // 1. Terminate all live Zoom meetings on Zoom Cloud
+      try {
+        const { endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
+        await endAllLiveZoomMeetings(orgId);
+      } catch (e) {
+        console.warn("[COACHES_SESSION_END] Zoom cloud cleanup warning:", e);
+      }
+
+      // 2. Mark active sessions as ended in CoachesAcademySession
+      const twentyFourMonthsLater = new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000);
+      await db.coachesAcademySession.updateMany({
+        where: { status: "started" },
+        data: {
+          status: "ended",
+          retentionUntil: twentyFourMonthsLater,
+          ...(recordingUrl ? { recordingUrl } : {}),
         },
       });
 
-      // 2. Attempt to terminate meetings on Zoom Cloud
-      try {
-        const { endZoomMeetingOnCloud, endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
-        for (const m of activeMeetings) {
-          await endZoomMeetingOnCloud(orgId, m.zoomMeetingId);
-        }
-        await endAllLiveZoomMeetings(orgId);
-      } catch (e) {
-        console.warn("[SESSION_END] Could not terminate on Zoom Cloud:", e);
-      }
-
-      // 3. Mark all started meetings as ended in DB
+      // 3. Mark active meetings in ZoomMeeting as ended
       await db.zoomMeeting.updateMany({
         where: {
           contextType: "coaching_academy",
@@ -144,15 +216,21 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         status: "ended",
-        message: "All in-progress meetings closed successfully.",
+        message: "Live session concluded. Archival record retained for 24 months.",
       });
     }
 
-    // Action: 'start' - End any prior active sessions first locally and on Zoom Cloud
+    // --- Action: 'start' ---
+    // End any prior active sessions first
     try {
       const { endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
       await endAllLiveZoomMeetings(orgId);
     } catch (e) {}
+
+    await db.coachesAcademySession.updateMany({
+      where: { status: "started" },
+      data: { status: "ended" },
+    });
 
     await db.zoomMeeting.updateMany({
       where: {
@@ -166,8 +244,8 @@ export async function POST(req: Request) {
     let joinUrl = "";
     let meetingPassword = "";
 
-    if (body.customJoinUrl) {
-      joinUrl = body.customJoinUrl.trim();
+    if (customJoinUrl) {
+      joinUrl = customJoinUrl.trim();
       const match = joinUrl.match(/\/j\/(\d+)/) || joinUrl.match(/\/wc\/(\d+)/) || joinUrl.match(/^(\d+)$/);
       if (match && match[1]) {
         zoomMeetingId = match[1];
@@ -180,10 +258,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Clean or determine Miro Board ID for this meeting session
+    // Determine Miro Board for this session
     let cleanMiroId = "";
-    if (body.customMiroUrl) {
-      const trimmed = body.customMiroUrl.trim();
+    if (customMiroUrl) {
+      const trimmed = customMiroUrl.trim();
       const boardUrlMatch = trimmed.match(/board\/([a-zA-Z0-9_=-]+)/) || trimmed.match(/live-embed\/([a-zA-Z0-9_=-]+)/);
       if (boardUrlMatch && boardUrlMatch[1]) {
         cleanMiroId = boardUrlMatch[1];
@@ -193,7 +271,15 @@ export async function POST(req: Request) {
       cleanMiroId = cleanMiroId.split("?")[0].replace(/\/+$/, "");
     }
 
-    // Attempt real Miro API board creation if Miro OAuth is connected
+    const sessionTopic = topic || "REP 1 Coaches Academy Live Strategy & Film Session";
+    const nowFormatted = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    // Attempt automatic Miro API board creation if connected
     if (!cleanMiroId) {
       try {
         const { getValidMiroAccessToken } = await import("@/lib/integrations/miro");
@@ -205,13 +291,8 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: topic ? `${topic} - Whiteboard` : `Coaching Strategy Whiteboard (${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })})`,
-            description: "Live collaborative whiteboard for strategy diagrams and film review.",
-            policy: {
-              sharingPolicy: {
-                access: "edit",
-              },
-            },
+            name: `${sessionTopic} - Board (${nowFormatted})`,
+            description: "Dedicated interactive whiteboard for Coaches Academy playbook diagrams and film review.",
           }),
         });
         if (miroRes.ok) {
@@ -225,46 +306,35 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback: If Miro API is not connected or token expired, use established interactive whiteboard ID
+    // Fallback whiteboard ID if API board creation was not possible
     if (!cleanMiroId) {
       const latestBoard = await db.miroBoard.findFirst({
         where: { orgId },
         orderBy: { createdAt: "desc" },
       });
-      cleanMiroId = latestBoard?.miroBoardId || "uXjVHi7vvRw=";
+      cleanMiroId = latestBoard?.miroBoardId || "uXjVHg26c9M=";
     }
 
-    // Deactivate previous academy boards so new board is the active one
+    // Deactivate previous academy boards in DB
     await db.miroBoard.updateMany({
       where: { orgId, contextType: "coaching_academy" },
       data: { isActive: false },
     });
 
-    const nowFormatted = new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-
-    const boardTitle = topic
-      ? `${topic} - Whiteboard`
-      : `Coaching Strategy Whiteboard (${nowFormatted})`;
-
     const sessionBoard = await db.miroBoard.create({
       data: {
         orgId,
         miroBoardId: cleanMiroId,
-        title: boardTitle,
-        description: `Whiteboard created for session: ${topic || "Coaching Academy Live Session"}`,
+        title: `${sessionTopic} - Board (${nowFormatted})`,
+        description: `Dedicated whiteboard for: ${sessionTopic}`,
         contextType: "coaching_academy",
-        contextId: "academy-live",
+        contextId: "coaches-academy-live",
         createdBy: user.name || user.email,
         isActive: true,
       },
     });
 
-    // Try to create real Zoom meeting via Zoom API using company Zoom integration
+    // Attempt Zoom API meeting creation if no custom URL
     const integration =
       (await db.zoomIntegration.findUnique({ where: { orgId } })) ||
       (await db.zoomIntegration.findFirst({ where: { isActive: true } })) ||
@@ -281,10 +351,10 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            topic: topic || "Rep 1 Coaching Academy Live Strategy & Film Session",
-            type: 2, // Scheduled meeting (enables join_before_host)
+            topic: sessionTopic,
+            type: 2,
             start_time: new Date().toISOString(),
-            duration: 60,
+            duration: 90,
             settings: {
               host_video: true,
               participant_video: true,
@@ -293,7 +363,7 @@ export async function POST(req: Request) {
               waiting_room: false,
               approval_type: 2,
               audio: "both",
-              auto_recording: "none",
+              auto_recording: "cloud", // Auto record for 24-month retention
             },
           }),
         });
@@ -303,25 +373,13 @@ export async function POST(req: Request) {
           if (zoomData.id) zoomMeetingId = String(zoomData.id);
           if (zoomData.join_url) joinUrl = zoomData.join_url;
           meetingPassword = zoomData.encrypted_password || zoomData.password || "";
-        } else {
-          const errText = await zoomApiRes.text();
-          console.error("Zoom API error creating meeting:", zoomApiRes.status, errText);
-          if (errText.includes("meeting:write")) {
-            return NextResponse.json(
-              {
-                error:
-                  "Zoom Marketplace App is missing the 'meeting:write:meeting' scope. Please verify the scope in your Zoom Marketplace settings.",
-              },
-              { status: 400 }
-            );
-          }
         }
       } catch (e: any) {
-        console.warn("Failed to create meeting via Zoom API:", e);
+        console.warn("Zoom meeting creation fallback:", e);
       }
     }
 
-    // Fallback if no zoomMeetingId set yet
+    // Fallback if no Zoom meeting ID or join URL created via Zoom API
     if (!zoomMeetingId && !joinUrl) {
       const latestMeeting = await db.zoomMeeting.findFirst({
         where: { orgId },
@@ -338,36 +396,37 @@ export async function POST(req: Request) {
       }
     }
 
+    // Save Zoom Meeting in DB
     const meeting = await db.zoomMeeting.upsert({
       where: { zoomMeetingId },
       update: {
         orgId,
-        topic: topic || "Rep 1 Coaching Academy Live Strategy & Film Session",
+        topic: sessionTopic,
         startTime: new Date(),
-        durationMinutes: 60,
+        durationMinutes: 90,
         joinUrl,
         password: meetingPassword || undefined,
         contextType: "coaching_academy",
-        contextId: "academy-live",
+        contextId: "coaches-academy-live",
         status: "started",
         createdBy: user.id,
       },
       create: {
         orgId,
         zoomMeetingId,
-        topic: topic || "Rep 1 Coaching Academy Live Strategy & Film Session",
+        topic: sessionTopic,
         startTime: new Date(),
-        durationMinutes: 60,
+        durationMinutes: 90,
         joinUrl,
         password: meetingPassword || undefined,
         contextType: "coaching_academy",
-        contextId: "academy-live",
+        contextId: "coaches-academy-live",
         status: "started",
         createdBy: user.id,
       },
     });
 
-    // Explicitly pair the Miro board directly to this Zoom meeting ID in DB
+    // Pair Miro board to Zoom meeting ID
     if (sessionBoard && zoomMeetingId) {
       await db.miroBoard.update({
         where: { id: sessionBoard.id },
@@ -375,14 +434,38 @@ export async function POST(req: Request) {
       });
     }
 
+    // 24 months retention calculation
+    const retentionDate = new Date();
+    retentionDate.setMonth(retentionDate.getMonth() + 24);
+
+    // Create high-level CoachesAcademySession record
+    const coachSession = await db.coachesAcademySession.create({
+      data: {
+        title: sessionTopic,
+        description: `Live interactive classroom session led by ${user.name || user.email}`,
+        scheduledDate: new Date(),
+        zoomMeetingId,
+        zoomJoinUrl: joinUrl,
+        zoomPassword: meetingPassword || undefined,
+        whiteboardId: cleanMiroId,
+        whiteboardUrl: `https://miro.com/app/live-embed/${cleanMiroId}/?embedAutoplay=true`,
+        retentionUntil: retentionDate,
+        status: "started",
+        presenterId: user.id,
+        presenterName: user.name || user.email,
+        department: department || "GENERAL",
+      },
+    });
+
     return NextResponse.json({
       success: true,
+      session: coachSession,
       meeting,
       board: sessionBoard,
       status: "started",
     });
   } catch (error: any) {
-    console.error("[ACADEMY_SESSION_POST]", error);
+    console.error("[COACHES_ACADEMY_SESSION_POST]", error);
     return NextResponse.json(
       { error: error.message || "Failed to manage session" },
       { status: 500 }
