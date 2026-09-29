@@ -150,19 +150,44 @@ async function main() {{
       emailVerified: new Date(),
     }}
   }});
-  await db.user.upsert({{
+  const studentUser = await db.user.upsert({{
     where: {{ email: 'student@rep1recruiting.com' }},
-    update: {{ passwordHash: hash, role: 'ATHLETE', emailVerified: new Date() }},
+    update: {{ passwordHash: hash, role: 'COACHES_ACADEMY_MEMBER', emailVerified: new Date() }},
     create: {{
       email: 'student@rep1recruiting.com',
       firstName: 'Test',
       lastName: 'Student',
       passwordHash: hash,
-      role: 'ATHLETE',
+      role: 'COACHES_ACADEMY_MEMBER',
       emailVerified: new Date(),
     }}
   }});
-  console.log('Production test users created/updated successfully!');
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+  const existingEntitlement = await db.entitlement.findFirst({{
+    where: {{
+      userId: studentUser.id,
+      type: 'COACHES_ACADEMY',
+    }}
+  }});
+  if (existingEntitlement) {{
+    await db.entitlement.update({{
+      where: {{ id: existingEntitlement.id }},
+      data: {{ endsAt: oneYearFromNow, revokedAt: null }}
+    }});
+  }} else {{
+    await db.entitlement.create({{
+      data: {{
+        userId: studentUser.id,
+        type: 'COACHES_ACADEMY',
+        source: 'SUBSCRIPTION',
+        sourceReferenceId: 'annual_membership_student',
+        startsAt: new Date(),
+        endsAt: oneYearFromNow,
+      }}
+    }});
+  }}
+  console.log('Production test users and student entitlement created/updated successfully!');
 }}
 main().catch(console.error).finally(() => process.exit(0));
 " """)
