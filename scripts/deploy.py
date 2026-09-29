@@ -187,7 +187,31 @@ async function main() {{
       }}
     }});
   }}
-  console.log('Production test users and student entitlement created/updated successfully!');
+
+  const existingAcademyEntitlement = await db.entitlement.findFirst({{
+    where: {{
+      userId: studentUser.id,
+      type: 'ACADEMY',
+    }}
+  }});
+  if (existingAcademyEntitlement) {{
+    await db.entitlement.update({{
+      where: {{ id: existingAcademyEntitlement.id }},
+      data: {{ endsAt: oneYearFromNow, revokedAt: null }}
+    }});
+  }} else {{
+    await db.entitlement.create({{
+      data: {{
+        userId: studentUser.id,
+        type: 'ACADEMY',
+        source: 'SUBSCRIPTION',
+        sourceReferenceId: 'annual_membership_student_academy',
+        startsAt: new Date(),
+        endsAt: oneYearFromNow,
+      }}
+    }});
+  }}
+  console.log('Production test users and student entitlements created/updated successfully!');
 }}
 main().catch(console.error).finally(() => process.exit(0));
 " """)

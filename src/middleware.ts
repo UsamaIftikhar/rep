@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "rep1_secret_jwt_key_super_secure_production_change_me_32char"
 );
 
-const PROTECTED_PLATFORM_ROUTES = ["/dashboard", "/academy", "/settings", "/interview", "/recruiting"];
+const PROTECTED_PLATFORM_ROUTES = ["/dashboard", "/academy", "/settings", "/recruiting"];
 const ADMIN_ROUTES = ["/admin"];
 
 export async function middleware(req: NextRequest) {
@@ -54,7 +54,6 @@ export const config = {
     "/dashboard/:path*",
     "/academy/:path*",
     "/settings/:path*",
-    "/interview/:path*",
     "/recruiting/:path*",
     "/admin/:path*",
   ],

@@ -18,7 +18,7 @@ export function PublicNavbar() {
     { label: "Student Academy", href: "/academy" },
     { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },
-    { label: "Classroom", href: "/classroom" },
+    { label: "Classroom", href: "/courses" },
     { label: "Mock AI Interview", href: "/interview" },
   ];
 

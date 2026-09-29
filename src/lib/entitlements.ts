@@ -55,10 +55,10 @@ export async function canAccessCourse(userId: string, courseId: string): Promise
   // Active subscription or Full Access Membership entitlement unlocks all courses
   const hasSub = user.subscriptions.length > 0;
   const hasFullMembership = user.entitlements.some(
-    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC"
+    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "COACHES_ACADEMY"
   );
 
-  if (hasSub || hasFullMembership) {
+  if (hasSub || hasFullMembership || user.role === UserRole.COACHES_ACADEMY_MEMBER || user.role === UserRole.COACHES_ACADEMY_PRESENTER) {
     return true;
   }
 

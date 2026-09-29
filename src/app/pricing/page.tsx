@@ -67,6 +67,21 @@ export default function PricingPage() {
       href: "/signup?plan=recruiter",
       highlight: false,
     },
+    {
+      name: "Coaches Academy",
+      price: "$69.99",
+      period: "/year",
+      desc: "For coaches, strategy staff, and playbook study.",
+      features: [
+        "Live interactive Zoom & whiteboard split classroom",
+        "24-month archived strategy and chalk talk replays",
+        "Full Positional Playbook CMS scheme library",
+        "Offense, defense, and special teams vaults",
+      ],
+      cta: "Join Coaches Academy",
+      href: "/coaches-academy",
+      highlight: false,
+    },
   ];
 
   return (
@@ -80,7 +95,7 @@ export default function PricingPage() {
           description="Invest in your athletic and collegiate career with comprehensive preparation and recruiting access."
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {plans.map((p) => (
             <Card
               key={p.name}

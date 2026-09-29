@@ -15,7 +15,7 @@ export async function createStripeCheckoutSession({
 }: {
   userId: string;
   userEmail: string;
-  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL" | "RECRUITER";
+  type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL" | "RECRUITER" | "COACHES";
   courseId?: string;
   origin: string;
 }) {
@@ -123,13 +123,30 @@ export async function createStripeCheckoutSession({
       },
     });
 
-    await db.entitlement.create({
-      data: {
-        userId,
-        type: "ACADEMY",
-        source: "SUBSCRIPTION",
-      },
-    });
+    // Add entitlement for coaches pass if applicable
+    if (type === "COACHES") {
+      await db.entitlement.create({
+        data: {
+          userId,
+          type: "COACHES_ACADEMY",
+          source: "SUBSCRIPTION",
+          referenceId: "prod_VLq6JQvqh5xwLP",
+        },
+      });
+      await db.user.update({
+        where: { id: userId },
+        data: { role: "COACHES_ACADEMY_MEMBER" },
+      });
+      return { url: `${origin}/coaches-academy?subscribed=true` };
+    } else {
+      await db.entitlement.create({
+        data: {
+          userId,
+          type: "ACADEMY",
+          source: "SUBSCRIPTION",
+        },
+      });
+    }
 
     return { url: `${origin}/dashboard?subscribed=true` };
   }
@@ -173,6 +190,25 @@ export async function createStripeCheckoutSession({
             tax_code: "txcd_10000000",
           },
           unit_amount: 4999,
+        },
+        quantity: 1,
+      },
+    ];
+  } else if (type === "COACHES") {
+    const coachesPriceId = process.env.STRIPE_PRICE_COACHES || "price_1UL8QL9kvZo5XvSYIcZa3xYK";
+    mode = coachesPriceId ? "subscription" : "payment";
+    lineItems = coachesPriceId ? [
+      { price: coachesPriceId, quantity: 1 }
+    ] : [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "REP 1 Coaches Academy Annual Membership",
+            description: "Full access to live film study, whiteboard strategy classrooms, and complete playbook CMS",
+            tax_code: "txcd_10000000",
+          },
+          unit_amount: 6999,
         },
         quantity: 1,
       },
@@ -224,8 +260,12 @@ export async function createStripeCheckoutSession({
     mode,
     managed_payments: { enabled: false },
     payment_method_types: ["card"],
-    success_url: `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/settings?checkout_cancelled=true`,
+    success_url: type === "COACHES" 
+      ? `${origin}/coaches-academy?checkout_success=true&session_id={CHECKOUT_SESSION_ID}` 
+      : `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: type === "COACHES"
+      ? `${origin}/coaches-academy?checkout_cancelled=true`
+      : `${origin}/settings?checkout_cancelled=true`,
     metadata: {
       userId,
       type,
@@ -252,11 +292,13 @@ export async function createStripeCheckoutSession({
           ? "REP 1 Academy Course"
           : type === "RECRUITER"
           ? "REP 1 College Coach & Recruiter Pass"
+          : type === "COACHES"
+          ? "REP 1 Coaches Academy Annual Membership"
           : type === "INTERNATIONAL" || type === "ELITE_PACIFIC"
           ? "REP 1 International Athlete Pass (Elite Pacific)"
           : "REP 1 US Student Athlete Pass";
       const defaultAmount =
-        type === "COURSE" ? 999 : type === "RECRUITER" ? 4999 : 2999;
+        type === "COURSE" ? 999 : type === "RECRUITER" ? 4999 : type === "COACHES" ? 6999 : 2999;
 
       const inlineParams: Stripe.Checkout.SessionCreateParams = {
         ...sessionParams,

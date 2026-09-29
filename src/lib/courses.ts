@@ -59,10 +59,15 @@ export async function getCoursesWithUserProgress(userId?: string | null) {
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
   const hasActiveSub = user.subscriptions.length > 0;
   const hasFullMembership = user.entitlements.some(
-    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC"
+    (e) => e.type === "ACADEMY" || e.type === "ELITE_PACIFIC" || e.type === "COACHES_ACADEMY"
   );
 
-  const hasFullAccess = isAdmin || hasActiveSub || hasFullMembership;
+  const hasFullAccess =
+    isAdmin ||
+    hasActiveSub ||
+    hasFullMembership ||
+    user.role === "COACHES_ACADEMY_MEMBER" ||
+    user.role === "COACHES_ACADEMY_PRESENTER";
 
   // Determine purchased or granted course IDs for individual classroom buyers
   const accessibleCourseIds = new Set<string>();

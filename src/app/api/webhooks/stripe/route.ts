@@ -94,7 +94,7 @@ export async function POST(req: Request) {
                 sourceReferenceId: session.id,
               },
             });
-          } else if (type === "RECRUITER" || type === "SUBSCRIPTION" || type === "ELITE_PACIFIC" || type === "US_ATHLETE" || type === "INTERNATIONAL" || (!type && !courseId)) {
+          } else if (type === "RECRUITER" || type === "SUBSCRIPTION" || type === "ELITE_PACIFIC" || type === "US_ATHLETE" || type === "INTERNATIONAL" || type === "COACHES" || (!type && !courseId)) {
             const customerId = (typeof session.customer === "string" ? session.customer : session.customer?.id) || `cust_${session.id}`;
             const subId = (typeof session.subscription === "string" ? session.subscription : session.subscription?.id) || `sub_${session.id}`;
 
@@ -103,9 +103,15 @@ export async function POST(req: Request) {
                 where: { id: userId },
                 data: { role: "RECRUITER", status: UserStatus.ACTIVE },
               });
+            } else if (type === "COACHES") {
+              await db.user.update({
+                where: { id: userId },
+                data: { role: "COACHES_ACADEMY_MEMBER", status: UserStatus.ACTIVE },
+              });
             }
 
             const recruiterPrice = process.env.STRIPE_PRICE_RECRUITER || "price_1UJwRd9kvZo5XvSYcqTWSDnT";
+            const coachesPrice = process.env.STRIPE_PRICE_COACHES || "price_1UL8QL9kvZo5XvSYIcZa3xYK";
 
             await db.subscription.upsert({
               where: { stripeSubscriptionId: subId },
@@ -114,7 +120,7 @@ export async function POST(req: Request) {
                 userId,
                 stripeCustomerId: customerId,
                 stripeSubscriptionId: subId,
-                stripePriceId: type === "RECRUITER" ? recruiterPrice : type === "ELITE_PACIFIC" ? "price_elite" : "price_1UGhDP9kvZo5XvSYLi8PsBfY",
+                stripePriceId: type === "RECRUITER" ? recruiterPrice : type === "COACHES" ? coachesPrice : type === "ELITE_PACIFIC" ? "price_elite" : "price_1UGhDP9kvZo5XvSYLi8PsBfY",
                 status: "active",
                 currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
               },
@@ -123,9 +129,10 @@ export async function POST(req: Request) {
             await db.entitlement.create({
               data: {
                 userId,
-                type: type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
+                type: type === "COACHES" ? "COACHES_ACADEMY" : type === "ELITE_PACIFIC" ? "ELITE_PACIFIC" : "ACADEMY",
                 source: "SUBSCRIPTION",
                 sourceReferenceId: session.id,
+                referenceId: type === "COACHES" ? "prod_VLq6JQvqh5xwLP" : undefined,
               },
             });
           }

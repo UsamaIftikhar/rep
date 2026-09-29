@@ -100,6 +100,7 @@ export default function CoachesAcademyPage() {
   const [startingSession, setStartingSession] = React.useState<boolean>(false);
   const [isMiroConnected, setIsMiroConnected] = React.useState<boolean>(false);
   const [roomLayout, setRoomLayout] = React.useState<"split" | "zoom_focus" | "miro_focus">("split");
+  const [overrideShowBoardWhenEnded, setOverrideShowBoardWhenEnded] = React.useState<boolean>(false);
 
   // Link Miro Board modal state (Presenter only)
   const [linkMiroModalOpen, setLinkMiroModalOpen] = React.useState<boolean>(false);
@@ -326,10 +327,22 @@ export default function CoachesAcademyPage() {
   }, [hasAccess, fetchSessionData, fetchFiles]);
 
 
-  // Activate annual pass (for testing or direct enrollment)
+  // Activate annual pass (Stripe checkout or direct enrollment)
   const handleActivateAnnualPass = async () => {
     setActivatingMembership(true);
     try {
+      const checkoutRes = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "COACHES" }),
+      });
+      const data = await checkoutRes.json();
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      // Fallback direct activation
       const res = await fetch("/api/coaches-academy/entitlement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -583,7 +596,7 @@ export default function CoachesAcademyPage() {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5 mr-2" /> Activate Annual Coaches Pass ($999/yr)
+                      <Sparkles className="w-5 h-5 mr-2" /> Activate Annual Coaches Pass ($69.99/yr)
                     </>
                   )}
                 </Button>
@@ -641,7 +654,7 @@ export default function CoachesAcademyPage() {
           <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-amber-500/30 rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Annual Coaches Membership</h2>
             <div className="text-5xl font-black text-amber-400 tracking-tight">
-              $999 <span className="text-slate-400 text-lg font-normal">/ year</span>
+              $69.99 <span className="text-slate-400 text-lg font-normal">/ year</span>
             </div>
             <p className="text-slate-300 text-sm max-w-md mx-auto">
               Full 365-day access for coaching staff to live film study, whiteboard diagrams, complete playbook vaults, and 24-month archived session replays.
@@ -1071,7 +1084,9 @@ export default function CoachesAcademyPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="hidden sm:inline-block text-[10px] font-semibold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md">
-                        24/7 Canvas Access
+                        {(activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)
+                          ? "Live Chalk Talk Active"
+                          : "Meeting Finished • Board Closed"}
                       </span>
                       {isPresenter && (
                         <button
@@ -1104,15 +1119,106 @@ export default function CoachesAcademyPage() {
                   </div>
 
                   {/* Whiteboard Canvas */}
-                  <div className="w-full flex-1 bg-slate-950 relative">
-                    {displayedBoard ? (
-                      <MiroBoard
-                        key={displayedBoard.id || displayedBoard.miroBoardId}
-                        boardId={displayedBoard.miroBoardId || displayedBoard.id}
-                        height="100%"
-                        onOpenChangeModal={() => setLinkMiroModalOpen(true)}
-                        isAdmin={isPresenter}
-                      />
+                  <div className="w-full flex-1 bg-slate-950 relative flex flex-col">
+                    {!((activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)) && !overrideShowBoardWhenEnded ? (
+                      isPresenter ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 space-y-4">
+                          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                            <CheckCircle2 className="w-8 h-8" />
+                          </div>
+                          <div className="space-y-1 max-w-md">
+                            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+                              SESSION CONCLUDED
+                            </span>
+                            <h4 className="text-lg font-bold text-white">
+                              Meeting Finished — Whiteboard Closed
+                            </h4>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              The live classroom meeting has concluded. The whiteboard has been closed and safely preserved in the 24-month archives.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            <Button
+                              onClick={() => setShowStartModal(true)}
+                              size="sm"
+                              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl"
+                            >
+                              <Video className="w-3.5 h-3.5 mr-1.5" /> Start New Classroom
+                            </Button>
+                            <Button
+                              onClick={() => setOverrideShowBoardWhenEnded(true)}
+                              variant="outline"
+                              size="sm"
+                              className="border-slate-700 hover:bg-slate-800 text-slate-300 text-xs rounded-xl"
+                            >
+                              <Presentation className="w-3.5 h-3.5 mr-1.5" /> Inspect Whiteboard
+                            </Button>
+                            <Button
+                              onClick={() => setActiveTab("archive")}
+                              variant="outline"
+                              size="sm"
+                              className="border-slate-700 hover:bg-slate-800 text-slate-300 text-xs rounded-xl"
+                            >
+                              <History className="w-3.5 h-3.5 mr-1.5" /> View Archives
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 space-y-4">
+                          <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
+                            <Lock className="w-8 h-8 text-amber-400/80" />
+                          </div>
+                          <div className="space-y-1 max-w-md">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              MEETING FINISHED
+                            </span>
+                            <h4 className="text-lg font-bold text-white">
+                              Classroom Session Finished
+                            </h4>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              The live meeting has ended and the interactive whiteboard is currently closed. Thank you for attending! All chalk talk diagrams and recordings will be available in the Archives.
+                            </p>
+                          </div>
+
+                          <div className="pt-2">
+                            <Button
+                              onClick={() => setActiveTab("archive")}
+                              variant="outline"
+                              size="sm"
+                              className="border-amber-500/40 hover:bg-amber-500/10 text-amber-300 text-xs rounded-xl font-semibold"
+                            >
+                              <History className="w-3.5 h-3.5 mr-1.5" /> Explore Session Archives
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    ) : displayedBoard ? (
+                      <div className="w-full h-full flex flex-col">
+                        {!((activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)) && (
+                          <div className="bg-amber-950/80 border-b border-amber-800/60 px-4 py-2 flex items-center justify-between text-xs text-amber-200">
+                            <span className="font-medium flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                              Reviewing Archived Whiteboard (Meeting Finished)
+                            </span>
+                            <button
+                              onClick={() => setOverrideShowBoardWhenEnded(false)}
+                              className="text-[11px] underline hover:text-white font-semibold cursor-pointer"
+                            >
+                              Close Whiteboard
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex-1 w-full relative">
+                          <MiroBoard
+                            key={displayedBoard.id || displayedBoard.miroBoardId}
+                            boardId={displayedBoard.miroBoardId || displayedBoard.id}
+                            height="100%"
+                            onOpenChangeModal={() => setLinkMiroModalOpen(true)}
+                            isAdmin={isPresenter}
+                          />
+                        </div>
+                      </div>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950">
                         <Presentation className="w-12 h-12 text-amber-400/40 mb-3" />

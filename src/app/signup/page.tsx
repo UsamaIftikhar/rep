@@ -14,13 +14,16 @@ function SignupForm() {
   const rawPlan = searchParams.get("plan");
   const courseSlugParam = searchParams.get("courseSlug") || "";
   const courseIdParam = searchParams.get("courseId") || "";
+  const callbackUrlParam = searchParams.get("callbackUrl") || "";
 
   const isPlanLocked = searchParams.has("plan") || Boolean(courseSlugParam || courseIdParam);
 
   const initialPlan = rawPlan || "us_athlete";
 
-  const [region, setRegion] = React.useState<"us" | "international" | "course" | "recruiter">(
-    initialPlan === "recruiter" || initialPlan === "RECRUITER"
+  const [region, setRegion] = React.useState<"us" | "international" | "course" | "recruiter" | "coaches">(
+    initialPlan === "coaches" || initialPlan === "COACHES" || callbackUrlParam.includes("coaches-academy")
+      ? "coaches"
+      : initialPlan === "recruiter" || initialPlan === "RECRUITER"
       ? "recruiter"
       : initialPlan === "course" || courseSlugParam || courseIdParam
       ? "course"
@@ -38,6 +41,14 @@ function SignupForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const getPriceSummary = () => {
+    if (region === "coaches") {
+      return {
+        title: "REP 1 Coaches Academy Annual Pass",
+        amount: "$69.99",
+        subtitle: "Annual subscription for live interactive whiteboard classrooms, scheme archives, and playbook CMS",
+        type: "COACHES",
+      };
+    }
     if (region === "recruiter") {
       return {
         title: "College Coach & Recruiter Pass",
@@ -183,6 +194,7 @@ function SignupForm() {
             </div>
             <Select
               options={[
+                { value: "coaches", label: "Coaches Academy Annual Pass ($69.99/yr)" },
                 { value: "recruiter", label: "College Coach / Recruiter ($49.99/yr)" },
                 { value: "us", label: "US / American Athlete ($29.99)" },
                 { value: "international", label: "International Athlete ($29.99)" },
@@ -191,7 +203,7 @@ function SignupForm() {
                   : []),
               ]}
               value={region}
-              onChange={(e) => setRegion(e.target.value as "us" | "international" | "course" | "recruiter")}
+              onChange={(e) => setRegion(e.target.value as "us" | "international" | "course" | "recruiter" | "coaches")}
               disabled={isSubmitting || isPlanLocked}
             />
             {isPlanLocked && (
