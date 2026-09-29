@@ -232,13 +232,7 @@ export default function CoachesAcademyPage() {
   };
 
   // Active navigation tab
-  const [activeTab, setActiveTab] = React.useState<"classroom" | "playbooks" | "curriculum" | "archive">("classroom");
-
-  // The 6 Required Classes state
-  const [courses, setCourses] = React.useState<CourseItem[]>([]);
-  const [completedCount, setCompletedCount] = React.useState(0);
-  const [totalCount, setTotalCount] = React.useState(6);
-  const [coursesLoading, setCoursesLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState<"classroom" | "playbooks" | "archive">("classroom");
 
   // Check entitlement status
   const checkEntitlement = React.useCallback(async () => {
@@ -331,21 +325,6 @@ export default function CoachesAcademyPage() {
     }
   }, [hasAccess, fetchSessionData, fetchFiles]);
 
-  React.useEffect(() => {
-    fetch("/api/courses")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) {
-          if (data.courses) setCourses(data.courses);
-          if (data.summary) {
-            setCompletedCount(data.summary.completedAcademyCount);
-            setTotalCount(data.summary.totalAcademyCount);
-          }
-        }
-      })
-      .catch((err) => console.warn("Failed to load courses:", err))
-      .finally(() => setCoursesLoading(false));
-  }, []);
 
   // Activate annual pass (for testing or direct enrollment)
   const handleActivateAnnualPass = async () => {
@@ -689,114 +668,6 @@ export default function CoachesAcademyPage() {
       );
     }
 
-    const renderCurriculum = () => (
-      <div className="space-y-6 pt-6 border-t border-slate-800">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-[11px] font-bold tracking-widest text-[#F21717] uppercase block mb-1">
-              ACADEMY CURRICULUM
-            </span>
-            <h3 className="font-display uppercase text-2xl sm:text-3xl font-black text-white flex items-center gap-2.5">
-              <GraduationCap className="w-6 h-6 text-amber-400" />
-              The 6 Required Classes
-            </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              Complete all six required core classes to master financial literacy, branding, NIL foundations, and unlock your official Academy badge.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl">
-              {completedCount} of {totalCount} Completed
-            </span>
-            <Link href="/courses">
-              <Button size="sm" variant="outline" className="border-slate-800 text-xs text-slate-300 hover:text-white rounded-xl">
-                Open Classroom →
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Overall Progress Bar */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
-          <div className="flex justify-between text-xs text-slate-300 font-medium">
-            <span>Overall Curriculum Progress</span>
-            <span className="text-amber-400 font-bold">
-              {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%
-            </span>
-          </div>
-          <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-            <div
-              className="h-full bg-gradient-to-r from-red-500 to-amber-400 rounded-full transition-all duration-500"
-              style={{
-                width: `${totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Courses List */}
-        <div className="space-y-3">
-          {coursesLoading ? (
-            <div className="py-8 flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
-            </div>
-          ) : (
-            courses.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-400 font-mono">
-                      Class {item.order || index + 1}
-                    </span>
-                    {item.status === "COMPLETED" && (
-                      <span className="text-emerald-400 inline-flex items-center gap-1 text-[11px] font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Passed
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="font-display uppercase text-base sm:text-lg font-bold text-white tracking-wide">
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-slate-400">{item.category}</p>
-                </div>
-
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                      item.status === "COMPLETED"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                        : item.status === "IN_PROGRESS"
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                        : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {item.status === "COMPLETED"
-                      ? "Completed"
-                      : item.status === "IN_PROGRESS"
-                      ? "In Progress"
-                      : "Not Started"}
-                  </span>
-
-                  <Link href={`/courses/${item.slug}`}>
-                    <Button
-                      size="sm"
-                      className="gap-1.5 h-9 px-4 text-xs font-bold bg-[#F21717] hover:bg-[#D90F0F] text-white rounded-xl"
-                    >
-                      <span>{item.status === "NOT_STARTED" ? "Enroll / Open" : "Continue"}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
 
     return (
       <div className="space-y-8 pb-12">
@@ -896,19 +767,6 @@ export default function CoachesAcademyPage() {
             </span>
           </button>
 
-          <button
-            onClick={() => setActiveTab("curriculum")}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
-              activeTab === "curriculum"
-                ? "bg-amber-500 text-slate-950 shadow-md"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" /> The 6 Required Classes
-            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs">
-              {completedCount}/{totalCount}
-            </span>
-          </button>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
@@ -1564,14 +1422,6 @@ export default function CoachesAcademyPage() {
           </div>
         )}
 
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 4: THE 6 REQUIRED CLASSES CURRICULUM
-           ───────────────────────────────────────────────────────────── */}
-        {activeTab === "curriculum" && (
-          <div className="space-y-6">
-            {renderCurriculum()}
-          </div>
-        )}
 
         {/* ─────────────────────────────────────────────────────────────
             MODAL: START LIVE SESSION (PRESENTER ONLY)
