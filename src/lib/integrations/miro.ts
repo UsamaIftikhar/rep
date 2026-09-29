@@ -142,13 +142,15 @@ export async function getValidMiroAccessToken(orgId?: string): Promise<string> {
 
   const targetOrgId = integration.orgId;
 
-  // Check if token is expired or expiring within 5 minutes
+  // Check if token has a refresh token and needs refreshing
   if (integration.tokenExpiresAt && integration.tokenExpiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
-    if (!integration.refreshToken) {
-      await db.miroIntegration.update({ where: { orgId: targetOrgId }, data: { isActive: false } });
-      throw new Error("Miro refresh token missing. Please reconnect Miro in Settings.");
+    if (integration.refreshToken) {
+      try {
+        return await refreshMiroToken(targetOrgId, decryptToken(integration.refreshToken));
+      } catch (err) {
+        console.warn("Failed to refresh Miro token, continuing with current access token:", err);
+      }
     }
-    return refreshMiroToken(targetOrgId, decryptToken(integration.refreshToken));
   }
 
   return decryptToken(integration.accessToken);

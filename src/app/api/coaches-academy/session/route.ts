@@ -111,14 +111,26 @@ export async function GET(req: Request) {
       take: 10,
     });
 
-    // 4. Fetch active Miro board
-    let activeBoard = await db.miroBoard.findFirst({
-      where: {
-        isActive: true,
-        OR: [{ contextType: "coaching_academy" }, { orgId }],
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    // 4. Fetch active Miro board (prioritizing current live session board)
+    let activeBoard = null;
+    if (activeSession?.whiteboardId) {
+      activeBoard = await db.miroBoard.findFirst({
+        where: {
+          miroBoardId: activeSession.whiteboardId,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    if (!activeBoard) {
+      activeBoard = await db.miroBoard.findFirst({
+        where: {
+          isActive: true,
+          OR: [{ contextType: "coaching_academy" }, { orgId }],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     let allBoards = await db.miroBoard.findMany({
       where: {
@@ -292,14 +304,23 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             name: `${sessionTopic} - Board (${nowFormatted})`,
-            description: "Dedicated interactive whiteboard for Coaches Academy playbook diagrams and film review.",
+            description: `Dedicated interactive whiteboard for Coaches Academy playbook diagrams and film review: ${sessionTopic}`,
+            policy: {
+              sharingPolicy: {
+                teamAccess: "edit",
+              },
+            },
           }),
         });
         if (miroRes.ok) {
           const miroData = await miroRes.json();
           if (miroData.id) {
             cleanMiroId = miroData.id;
+            console.log("Successfully created fresh Miro board for session:", cleanMiroId, miroData.name);
           }
+        } else {
+          const errText = await miroRes.text();
+          console.warn("Miro API automatic board creation failed with status:", miroRes.status, errText);
         }
       } catch (err) {
         console.warn("Miro API automatic board creation fallback:", err);

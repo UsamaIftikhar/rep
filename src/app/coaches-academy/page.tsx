@@ -120,15 +120,28 @@ export default function CoachesAcademyPage() {
 
   const displayedBoard = React.useMemo(() => {
     if (selectedBoardId && allBoards.length > 0) {
-      const found = allBoards.find((b: any) => b.id === selectedBoardId);
+      const found = allBoards.find(
+        (b: any) => b.id === selectedBoardId || b.miroBoardId === selectedBoardId
+      );
       if (found) return found;
     }
-    return activeBoard || (allBoards.length > 0 ? allBoards[0] : {
-      id: "uXjVHi7vvRw=",
-      miroBoardId: "uXjVHi7vvRw=",
-      title: "REP 1 Coaching Strategy Whiteboard",
-    });
-  }, [selectedBoardId, allBoards, activeBoard]);
+    if (activeSession?.whiteboardId && allBoards.length > 0) {
+      const sessionBoard = allBoards.find(
+        (b: any) => b.miroBoardId === activeSession.whiteboardId || b.id === activeSession.whiteboardId
+      );
+      if (sessionBoard) return sessionBoard;
+    }
+    return (
+      activeBoard ||
+      (allBoards.length > 0
+        ? allBoards[0]
+        : {
+            id: "uXjVHi7vvRw=",
+            miroBoardId: "uXjVHi7vvRw=",
+            title: "REP 1 Coaching Strategy Whiteboard",
+          })
+    );
+  }, [selectedBoardId, allBoards, activeBoard, activeSession]);
 
   const copyMeetingPassword = (pwdStr: string) => {
     if (!pwdStr) return;
@@ -263,7 +276,18 @@ export default function CoachesAcademyPage() {
         setLatestMeeting(data.latestMeeting || null);
         setActiveBoard(data.activeBoard || null);
         setAllBoards(data.allBoards || []);
-        if (data.activeBoard) {
+        if (data.activeSession?.whiteboardId) {
+          const matching = (data.allBoards || []).find(
+            (b: any) =>
+              b.miroBoardId === data.activeSession.whiteboardId ||
+              b.id === data.activeSession.whiteboardId
+          );
+          if (matching) {
+            setSelectedBoardId(matching.id);
+          } else if (data.activeBoard) {
+            setSelectedBoardId(data.activeBoard.id);
+          }
+        } else if (data.activeBoard) {
           setSelectedBoardId((prev) => prev || data.activeBoard.id);
         }
         setPastSessions(data.pastSessions || []);
@@ -368,6 +392,11 @@ export default function CoachesAcademyPage() {
       setSessionTopic("");
       setCustomZoomUrl("");
       setCustomMiroUrl("");
+      if (data.board?.id) {
+        setSelectedBoardId(data.board.id);
+      } else if (data.session?.whiteboardId) {
+        setSelectedBoardId(data.session.whiteboardId);
+      }
       await fetchSessionData();
     } catch (err: any) {
       alert(err.message || "An unexpected error occurred");
