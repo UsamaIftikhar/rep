@@ -1279,9 +1279,6 @@ export default function CoachesAcademyPage() {
                 </div>
               )}
             </div>
-
-            {/* The 6 Required Classes Curriculum Section */}
-            {renderCurriculum()}
           </div>
         )}
 
