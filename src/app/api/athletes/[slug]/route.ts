@@ -32,6 +32,28 @@ export async function GET(
   const isOwner = currentUser.id === profile.userId;
   const isUserAdmin = isAdmin(currentUser);
 
+  // Recruits may ONLY access their own page
+  if (currentUser.role === "ATHLETE" && !isOwner) {
+    return NextResponse.json(
+      {
+        error: "Access Restricted: Recruits may only access their own profile page.",
+        isLocked: true,
+      },
+      { status: 403 }
+    );
+  }
+
+  // Coaches enrolled in Coaches Academy cannot access recruit profiles
+  if (currentUser.role === "COACHES_ACADEMY_MEMBER" && !isUserAdmin) {
+    return NextResponse.json(
+      {
+        error: "Access Restricted: Coaches do not have access to athlete scouting profiles.",
+        isLocked: true,
+      },
+      { status: 403 }
+    );
+  }
+
   if (!isOwner && !isUserAdmin) {
     const userIsMember = await isMember(currentUser.id);
     if (!userIsMember) {

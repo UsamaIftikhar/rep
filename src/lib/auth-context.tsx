@@ -9,7 +9,7 @@ export interface UserProfile {
   firstName?: string | null;
   lastName?: string | null;
   email: string;
-  role: "ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN";
+  role: "ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN" | "COACHES_ACADEMY_MEMBER" | "COACHES_ACADEMY_PRESENTER";
   avatar?: string;
   image?: string | null;
 }

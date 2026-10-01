@@ -20,6 +20,8 @@ import {
   Trash2,
   ExternalLink,
   Users,
+  User,
+  Search,
   Copy,
   Check,
   Clock,
@@ -732,6 +734,64 @@ export default function CoachesAcademyPage() {
     // PUBLIC / NON-MEMBER LANDING PAGE
     // ─────────────────────────────────────────────────────────────
     if (!hasAccess) {
+      // 1. Recruits (Athletes) are strictly barred from Coaches Academy
+      if (user?.role === "ATHLETE") {
+        return (
+          <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-500/10">
+              <Lock className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+                RECRUITS ACCESS RESTRICTED
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Recruits Cannot Access the Coaches Academy
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed max-w-lg mx-auto">
+                The Coaches Academy curriculum and live chalk-talk whiteboard are strictly reserved for professional and collegiate coaching staff. Please return to your personal athlete profile.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <Link href="/profile">
+                <Button className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2">
+                  <User className="w-4 h-4" /> Go to My Athlete Profile
+                </Button>
+              </Link>
+            </div>
+          </div>
+        );
+      }
+
+      // 2. College Recruiters are strictly barred from Coaches Academy
+      if (user?.role === "RECRUITER") {
+        return (
+          <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mx-auto shadow-lg shadow-blue-500/10">
+              <Shield className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-400/10 border border-blue-400/20 px-3 py-1 rounded-full">
+                RECRUITER ACCESS RESTRICTED
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Recruiters Cannot Access the Coaches Academy
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed max-w-lg mx-auto">
+                The Coaches Academy is reserved exclusively for high school and college coaches. Verified recruiters have full access to evaluate prospects in the Recruiter Database.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <Link href="/recruiting/search">
+                <Button className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2">
+                  <Search className="w-4 h-4" /> Go to Recruiter Database
+                </Button>
+              </Link>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="max-w-6xl mx-auto px-4 py-12 space-y-16">
           {/* Hero Banner */}

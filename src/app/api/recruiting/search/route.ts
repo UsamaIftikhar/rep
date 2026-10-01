@@ -1,8 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
+import { getAuthenticatedUser } from "@/lib/auth";
+import { canAccessRecruitDatabase } from "@/lib/permissions";
 
 export async function GET(req: Request) {
+  const currentUser = await getAuthenticatedUser();
+  if (!currentUser) {
+    return NextResponse.json(
+      { error: "Authentication required to access the recruit database." },
+      { status: 401 }
+    );
+  }
+
+  if (!canAccessRecruitDatabase(currentUser)) {
+    return NextResponse.json(
+      {
+        error:
+          "Access Denied: The recruit database is reserved for verified college recruiters and scouts. Recruits and coaches are not permitted.",
+      },
+      { status: 403 }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") || "";
   const sport = searchParams.get("sport") || "";

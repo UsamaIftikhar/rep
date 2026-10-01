@@ -64,3 +64,30 @@ export function isCoachesAcademyMember(user: SessionUser | null | undefined): bo
   if (isCoachesAcademyPresenter(user)) return true;
   return user.role === UserRole.COACHES_ACADEMY_MEMBER;
 }
+
+/**
+ * Access control for the Recruit Database:
+ * Only verified College Recruiters, Scouts, and Admins can access.
+ * Recruits (Athletes) and Coaches are strictly barred.
+ */
+export function canAccessRecruitDatabase(user: SessionUser | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === UserRole.RECRUITER || isAdmin(user);
+}
+
+/**
+ * Role-level check for Coaches Academy:
+ * Recruits and Recruiters are strictly barred.
+ * Only Admins, Presenters, and Coaches Academy members are permitted.
+ */
+export function canAccessCoachesAcademySection(user: SessionUser | null | undefined): boolean {
+  if (!user) return false;
+  if (user.role === UserRole.ATHLETE || user.role === UserRole.RECRUITER) {
+    return false;
+  }
+  return (
+    isAdmin(user) ||
+    isCoachesAcademyPresenter(user) ||
+    user.role === UserRole.COACHES_ACADEMY_MEMBER
+  );
+}

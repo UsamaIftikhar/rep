@@ -16,6 +16,8 @@ import {
   LogOut,
   BookOpen,
   Shield,
+  User,
+  Search,
 } from "lucide-react";
 
 interface NavItem {
@@ -23,13 +25,29 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   requiresAuth?: boolean;
+  allowedRoles?: string[];
+  excludedRoles?: string[];
 }
 
 const navItems: NavItem[] = [
   {
+    title: "My Profile",
+    href: "/profile",
+    icon: User,
+    requiresAuth: true,
+    allowedRoles: ["ATHLETE"],
+  },
+  {
     title: "Home",
     href: "/dashboard",
     icon: Home,
+  },
+  {
+    title: "Recruiter Directory",
+    href: "/recruiting/search",
+    icon: Search,
+    requiresAuth: true,
+    allowedRoles: ["RECRUITER", "ADMIN", "SUPER_ADMIN"],
   },
   {
     title: "Classroom",
@@ -42,12 +60,14 @@ const navItems: NavItem[] = [
     href: "/academy",
     icon: GraduationCap,
     requiresAuth: true,
+    excludedRoles: ["COACHES_ACADEMY_MEMBER", "COACHES_ACADEMY_PRESENTER"],
   },
   {
     title: "REP 1 Coaches Academy",
     href: "/coaches-academy",
     icon: Shield,
     requiresAuth: true,
+    excludedRoles: ["ATHLETE", "RECRUITER"],
   },
   {
     title: "Elite Pacific Sports",
@@ -58,6 +78,7 @@ const navItems: NavItem[] = [
     title: "Mock AI Interview",
     href: "/interview",
     icon: Mic,
+    excludedRoles: ["COACHES_ACADEMY_MEMBER", "COACHES_ACADEMY_PRESENTER"],
   },
   {
     title: "Settings",
@@ -137,7 +158,16 @@ export function AppSidebar({ isOpen = false, onClose, isAdmin }: AppSidebarProps
         {/* Navigation List */}
         <nav className="flex-1 px-3 space-y-1 overflow-hidden">
           {navItems
-            .filter((item) => !item.requiresAuth || isAuthenticated)
+            .filter((item) => {
+              if (item.requiresAuth && !isAuthenticated) return false;
+              if (item.allowedRoles && (!user?.role || !item.allowedRoles.includes(user.role))) {
+                return false;
+              }
+              if (item.excludedRoles && user?.role && item.excludedRoles.includes(user.role)) {
+                return false;
+              }
+              return true;
+            })
             .map((item) => {
               const Icon = item.icon;
               const isActive =

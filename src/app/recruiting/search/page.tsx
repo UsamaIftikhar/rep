@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardContent, Button, Input, Select } from "@/components/ui";
-import { Search, Filter, MapPin, School, Calendar, ArrowRight, Loader2, UserCheck, Shield } from "lucide-react";
+import { Search, Filter, MapPin, School, Calendar, ArrowRight, Loader2, UserCheck, Shield, Lock, User, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 interface SearchAthlete {
   id: string;
@@ -33,6 +35,9 @@ interface SearchAthlete {
 }
 
 export default function RecruitSearchPage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
   const [query, setQuery] = React.useState("");
   const [sport, setSport] = React.useState("");
   const [gradYear, setGradYear] = React.useState("");
@@ -45,8 +50,15 @@ export default function RecruitSearchPage() {
   const [page, setPage] = React.useState(1);
   const [totalPages, setTotalPages] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
+  const [accessError, setAccessError] = React.useState<string | null>(null);
 
   const fetchAthletes = React.useCallback(async () => {
+    // If user is loaded and not a recruiter/admin, skip querying
+    if (user && user.role !== "RECRUITER" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -66,13 +78,16 @@ export default function RecruitSearchPage() {
           setTotal(data.pagination.total);
           setTotalPages(data.pagination.totalPages);
         }
+      } else if (res.status === 403) {
+        const err = await res.json().catch(() => ({}));
+        setAccessError(err.error || "Access Denied: The recruit database is reserved for college recruiters.");
       }
     } catch {
       // Ignore network errors
     } finally {
       setLoading(false);
     }
-  }, [query, sport, gradYear, location, level, athleteType, page]);
+  }, [user, query, sport, gradYear, location, level, athleteType, page]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -80,6 +95,96 @@ export default function RecruitSearchPage() {
     }, 250);
     return () => clearTimeout(timer);
   }, [fetchAthletes]);
+
+  // Recruits/Athletes can ONLY access their own page
+  if (!isLoading && user?.role === "ATHLETE") {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-500/10">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+              RECRUITS ACCESS RESTRICTED
+            </span>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Recruits Cannot Access the Recruiter Database
+            </h2>
+            <p className="text-sm text-[#A3A3A3] leading-relaxed">
+              As an athlete recruit, your access is focused on your personal athlete showcase profile, highlight reels, and training. The college scouting database is reserved strictly for verified college scouts and recruiters.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <Link href="/profile">
+              <Button className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold gap-2">
+                <User className="w-4 h-4" /> Go to My Athlete Profile
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Coaches enrolled in Coaches Academy cannot access recruit database
+  if (!isLoading && (user?.role === "COACHES_ACADEMY_MEMBER" || user?.role === "COACHES_ACADEMY_PRESENTER")) {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#F21717]/10 border border-[#F21717]/30 flex items-center justify-center text-[#F21717] mx-auto shadow-lg shadow-[#F21717]/10">
+            <Shield className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-[#F21717] uppercase tracking-widest bg-[#F21717]/10 border border-[#F21717]/20 px-3 py-1 rounded-full">
+              COACHES ACADEMY
+            </span>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Recruit Database Reserved for College Scouts
+            </h2>
+            <p className="text-sm text-[#A3A3A3] leading-relaxed">
+              Coaches enrolled in the Coaches Academy cannot access the athlete recruit scouting database. Please return to the Coaches Academy to access live classrooms, chalk-talk whiteboards, and coaching playbooks.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <Link href="/coaches-academy">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold gap-2">
+                <ArrowLeft className="w-4 h-4" /> Go to Coaches Academy Hub
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Not signed in
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <AppShell>
+        <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white mx-auto">
+            <Lock className="w-8 h-8 text-neutral-400" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Recruiter Sign In Required
+            </h2>
+            <p className="text-sm text-[#A3A3A3] leading-relaxed">
+              Access to verified high school and international prospect evaluations is reserved for college coaches and verified recruiters.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <Link href="/login?callbackUrl=/recruiting/search">
+              <Button className="bg-[#F21717] hover:bg-[#D90F0F] text-white font-bold">
+                Sign In as Recruiter
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>

@@ -159,7 +159,25 @@ export async function canAccessCoachesAcademy(userId: string): Promise<{
     return { allowed: false, isPresenter: false, reason: "User not found" };
   }
 
-  // Presenter check: Marvin, Terry, Darius, Super Admin, Admin
+  // 1. Recruits (Athletes) are strictly forbidden from Coaches Academy
+  if (user.role === UserRole.ATHLETE) {
+    return {
+      allowed: false,
+      isPresenter: false,
+      reason: "Access restricted: Recruits cannot access the Coaches Academy.",
+    };
+  }
+
+  // 2. College Recruiters are strictly forbidden from Coaches Academy
+  if (user.role === UserRole.RECRUITER) {
+    return {
+      allowed: false,
+      isPresenter: false,
+      reason: "Access restricted: Recruiters cannot access the Coaches Academy.",
+    };
+  }
+
+  // 3. Presenter check: Marvin, Terry, Darius, Usama, Super Admin, Admin
   const isPresenter =
     user.role === UserRole.SUPER_ADMIN ||
     user.role === UserRole.ADMIN ||
@@ -175,12 +193,17 @@ export async function canAccessCoachesAcademy(userId: string): Promise<{
     return { allowed: true, isPresenter: true };
   }
 
-  // Coaches Academy Member check
+  // 4. Coaches Academy Member check (Coach members or coach-specific subscriptions)
   const isDirectMember = user.role === UserRole.COACHES_ACADEMY_MEMBER;
   const hasEntitlement = user.entitlements.some((e) => e.type === "COACHES_ACADEMY");
-  const hasActiveSub = user.subscriptions.length > 0;
+  const hasCoachesSub = user.subscriptions.some(
+    (s: any) =>
+      s.planId?.toLowerCase().includes("coach") ||
+      s.priceId === process.env.STRIPE_PRICE_COACHES ||
+      s.productId === process.env.STRIPE_PRODUCT_COACHES
+  );
 
-  if (isDirectMember || hasEntitlement || hasActiveSub) {
+  if (isDirectMember || hasEntitlement || hasCoachesSub) {
     return { allowed: true, isPresenter: false };
   }
 

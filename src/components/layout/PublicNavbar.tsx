@@ -22,16 +22,32 @@ export function PublicNavbar() {
     { label: "Mock AI Interview", href: "/interview" },
   ];
 
-  const authLinks = [
-    { label: "Home", href: "/" },
-    { label: "Student Academy", href: "/academy" },
-    { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
-    { label: "Elite Pacific Sports", href: "/elite-pacific" },
-    { label: "Classroom", href: "/courses" },
-    { label: "Mock AI Interview", href: "/interview" },
-  ];
+  const getAuthLinks = () => {
+    const list = [
+      { label: "Home", href: "/" },
+      { label: "Classroom", href: "/courses" },
+    ];
 
-  const links = isAuthenticated ? authLinks : unauthLinks;
+    if (user?.role === "ATHLETE") {
+      list.push({ label: "My Profile", href: "/profile" });
+      list.push({ label: "Student Academy", href: "/academy" });
+      list.push({ label: "Mock AI Interview", href: "/interview" });
+    } else if (user?.role === "RECRUITER") {
+      list.push({ label: "Recruiter Directory", href: "/recruiting/search" });
+    } else if (user?.role === "COACHES_ACADEMY_MEMBER" || user?.role === "COACHES_ACADEMY_PRESENTER") {
+      list.push({ label: "REP 1 Coaches Academy", href: "/coaches-academy" });
+    } else {
+      // Admins & super admins
+      list.push({ label: "Recruiter Directory", href: "/recruiting/search" });
+      list.push({ label: "REP 1 Coaches Academy", href: "/coaches-academy" });
+      list.push({ label: "Student Academy", href: "/academy" });
+    }
+
+    list.push({ label: "Elite Pacific Sports", href: "/elite-pacific" });
+    return list;
+  };
+
+  const links = isAuthenticated ? getAuthLinks() : unauthLinks;
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#070707]/95 backdrop-blur-md border-b border-white/10">

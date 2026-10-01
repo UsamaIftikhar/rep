@@ -64,31 +64,59 @@ export function AppHeader({ onMenuToggle }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Right Controls: Search, Recruit Search button, My Account */}
+      {/* Right Controls: Role-Specific Action Buttons & My Account */}
       <div className="flex items-center gap-3 md:gap-4">
-        {/* Athlete Search input */}
-        <form onSubmit={handleSearchSubmit} className="relative hidden md:block w-64">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search athletes..."
-            className="h-10 w-full rounded-lg bg-[#141414] border border-white/10 pl-9 pr-3.5 text-xs text-[#F5F5F5] placeholder:text-[#737373] focus:outline-none focus:border-[#F21717]"
-          />
-        </form>
+        {/* Recruiter & Admin Only: Athlete Search input and Recruit Search button */}
+        {(user?.role === "RECRUITER" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+          <>
+            <form onSubmit={handleSearchSubmit} className="relative hidden md:block w-64">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search athletes..."
+                className="h-10 w-full rounded-lg bg-[#141414] border border-white/10 pl-9 pr-3.5 text-xs text-[#F5F5F5] placeholder:text-[#737373] focus:outline-none focus:border-[#F21717]"
+              />
+            </form>
 
-        {/* Recruit Search Button */}
-        <Link href="/recruiting/search">
-          <Button
-            variant="primary"
-            size="sm"
-            className="gap-1.5 h-10 px-4 text-xs font-semibold bg-[#F21717] hover:bg-[#D90F0F]"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Recruit Search</span>
-          </Button>
-        </Link>
+            <Link href="/recruiting/search">
+              <Button
+                variant="primary"
+                size="sm"
+                className="gap-1.5 h-10 px-4 text-xs font-semibold bg-[#F21717] hover:bg-[#D90F0F]"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Recruit Search</span>
+              </Button>
+            </Link>
+          </>
+        )}
+
+        {/* Athlete Quick Profile Link */}
+        {user?.role === "ATHLETE" && (
+          <Link href="/profile">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-10 px-4 text-xs font-semibold border-white/10 text-white hover:bg-white/10"
+            >
+              <span>My Athlete Profile</span>
+            </Button>
+          </Link>
+        )}
+
+        {/* Coach Quick Academy Link */}
+        {(user?.role === "COACHES_ACADEMY_MEMBER" || user?.role === "COACHES_ACADEMY_PRESENTER") && (
+          <Link href="/coaches-academy">
+            <Button
+              size="sm"
+              className="gap-1.5 h-10 px-4 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+            >
+              <span>Coaches Academy Hub</span>
+            </Button>
+          </Link>
+        )}
 
         {/* My Account Dropdown */}
         <Link
