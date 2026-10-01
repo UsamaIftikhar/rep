@@ -115,6 +115,7 @@ export default function CoachesAcademyPage() {
   const [isMiroConnected, setIsMiroConnected] = React.useState<boolean>(false);
   const [roomLayout, setRoomLayout] = React.useState<"split" | "zoom_focus" | "miro_focus">("split");
   const [overrideShowBoardWhenEnded, setOverrideShowBoardWhenEnded] = React.useState<boolean>(false);
+  const [hasJoinedLiveSession, setHasJoinedLiveSession] = React.useState<boolean>(false);
 
   // Link Miro Board modal state (Presenter only)
   const [linkMiroModalOpen, setLinkMiroModalOpen] = React.useState<boolean>(false);
@@ -311,6 +312,9 @@ export default function CoachesAcademyPage() {
           }
         } else if (data.activeBoard) {
           setSelectedBoardId((prev) => prev || data.activeBoard.id);
+        }
+        if (!data.activeSession || data.activeSession.status === "ended") {
+          setHasJoinedLiveSession(false);
         }
         setPastSessions(data.pastSessions || []);
         if (data.upcomingSessions && data.upcomingSessions.length > 0) {
@@ -929,6 +933,36 @@ export default function CoachesAcademyPage() {
           </div>
         </div>
 
+        {/* Live Broadcast Banner for Participants */}
+        {activeSession?.status === "started" && !isPresenter && !hasJoinedLiveSession && (
+          <div className="bg-gradient-to-r from-red-950/60 via-slate-900 to-slate-900 border border-red-500/30 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-red-500/5">
+            <div className="flex items-center gap-3">
+              <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Live Session In Progress:</span>
+                  <span className="text-amber-400">{activeSession.title}</span>
+                </p>
+                <p className="text-xs text-slate-400">
+                  Presenter: <span className="text-slate-200">{activeSession.presenterName || "REP 1 Staff"}</span>
+                  {activeSession.department && ` • ${activeSession.department}`}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("classroom");
+                setHasJoinedLiveSession(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer transition"
+            >
+              <Video className="w-3.5 h-3.5 fill-current" />
+              <span>Join Live Classroom</span>
+            </button>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
           <button
@@ -1073,20 +1107,127 @@ export default function CoachesAcademyPage() {
                   }`}
                 >
                   {(activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId) ? (
-                    <ZoomEmbeddedMeeting
-                      meetingId={activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId || ""}
-                      joinUrl={activeMeeting?.joinUrl || activeSession?.zoomJoinUrl || undefined}
-                      password={activeMeeting?.password || activeSession?.zoomPassword || undefined}
-                      userName={user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Coach Member")}
-                      userEmail={user?.email || ""}
-                      role={isPresenter ? 1 : 0}
-                      height="100%"
-                      isTheatre={roomLayout === "zoom_focus"}
-                      onToggleTheatre={() =>
-                        setRoomLayout((prev) => (prev === "zoom_focus" ? "split" : "zoom_focus"))
-                      }
-                      onForceClose={fetchSessionData}
-                    />
+                    (isPresenter || hasJoinedLiveSession) ? (
+                      <ZoomEmbeddedMeeting
+                        meetingId={activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId || ""}
+                        joinUrl={activeMeeting?.joinUrl || activeSession?.zoomJoinUrl || undefined}
+                        password={activeMeeting?.password || activeSession?.zoomPassword || undefined}
+                        userName={user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Coach Member")}
+                        userEmail={user?.email || ""}
+                        role={isPresenter ? 1 : 0}
+                        height="100%"
+                        isTheatre={roomLayout === "zoom_focus"}
+                        onToggleTheatre={() =>
+                          setRoomLayout((prev) => (prev === "zoom_focus" ? "split" : "zoom_focus"))
+                        }
+                        onLeave={() => setHasJoinedLiveSession(false)}
+                        onForceClose={fetchSessionData}
+                      />
+                    ) : (
+                      <div className="flex flex-col h-full bg-slate-950 divide-y divide-slate-800/80 overflow-y-auto">
+                        {/* Live Active Header */}
+                        <div className="p-4 bg-gradient-to-r from-red-950/40 via-slate-900/60 to-slate-900/40 flex items-center justify-between shrink-0 border-b border-red-500/20">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                              Live Classroom in Progress
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                            Active Now
+                          </span>
+                        </div>
+
+                        {/* Gateway Join Content */}
+                        <div className="p-6 sm:p-8 flex-1 flex flex-col justify-center items-center text-center space-y-6">
+                          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-500/5">
+                            <Video className="w-8 h-8" />
+                          </div>
+
+                          <div className="max-w-md space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+                              <span>Presenter:</span>
+                              <span className="text-amber-400 font-bold">
+                                {activeSession?.presenterName || "REP 1 Staff"}
+                              </span>
+                              {activeSession?.department && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-slate-400 uppercase font-mono">{activeSession.department}</span>
+                                </>
+                              )}
+                            </div>
+                            <h3 className="text-2xl font-black text-white tracking-tight">
+                              {activeSession?.title || latestMeeting?.topic || "Coaches Academy Masterclass"}
+                            </h3>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              This live strategy session is currently broadcasting. Click below to enter the live classroom.
+                            </p>
+                          </div>
+
+                          {/* Primary Join Action */}
+                          <div className="space-y-3 w-full max-w-sm">
+                            <button
+                              type="button"
+                              onClick={() => setHasJoinedLiveSession(true)}
+                              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all transform hover:scale-[1.02] cursor-pointer"
+                            >
+                              <Video className="w-5 h-5 fill-current" />
+                              <span>Join Live Classroom</span>
+                            </button>
+
+                            {(activeMeeting?.joinUrl || activeSession?.zoomJoinUrl) && (
+                              <a
+                                href={activeMeeting?.joinUrl || activeSession?.zoomJoinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition"
+                              >
+                                <span>Or join via external Zoom client</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Meeting Credentials */}
+                          {(activeSession?.zoomMeetingId || latestMeeting?.zoomMeetingId) && (
+                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-slate-400">
+                              <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
+                                <span className="text-slate-500">ID:</span>
+                                <span className="font-mono text-slate-200 font-bold">
+                                  {activeSession?.zoomMeetingId || latestMeeting?.zoomMeetingId}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyMeetingId(activeSession?.zoomMeetingId || latestMeeting?.zoomMeetingId || "")}
+                                  className="text-slate-400 hover:text-white"
+                                  title="Copy Meeting ID"
+                                >
+                                  {copiedMeetingId ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+
+                              {(activeSession?.zoomPassword || latestMeeting?.password) && (
+                                <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
+                                  <span className="text-slate-500">Passcode:</span>
+                                  <span className="font-mono text-slate-200 font-bold">
+                                    {activeSession?.zoomPassword || latestMeeting?.password}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyMeetingPassword(activeSession?.zoomPassword || latestMeeting?.password || "")}
+                                    className="text-slate-400 hover:text-white"
+                                    title="Copy Passcode"
+                                  >
+                                    {copiedMeetingPwd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-col h-full bg-slate-950 divide-y divide-slate-800/80 overflow-y-auto">
                       {/* Standby Header */}
