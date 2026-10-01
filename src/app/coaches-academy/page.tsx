@@ -39,6 +39,19 @@ import {
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
+import {
+  UPCOMING_COACHES_SESSIONS,
+  FOOTBALL_OFFENSE_SUBFOLDERS,
+  FOOTBALL_DEFENSE_SUBFOLDERS,
+  FOOTBALL_SPECIAL_TEAMS_SUBFOLDERS,
+  FOOTBALL_OPERATIONS_SUBFOLDERS,
+  FLAG_OFFENSE_SUBFOLDERS,
+  FLAG_DEFENSE_SUBFOLDERS,
+  BASKETBALL_SUBFOLDERS,
+  CoachSport,
+  CoachesUpcomingSession,
+  SubfolderItem,
+} from "@/lib/coaches-academy";
 
 interface AcademyFile {
   id: string;
@@ -182,7 +195,12 @@ export default function CoachesAcademyPage() {
     }
   };
 
+  // Upcoming Sessions & Schedule state
+  const [upcomingSessions, setUpcomingSessions] = React.useState<CoachesUpcomingSession[]>(UPCOMING_COACHES_SESSIONS);
+  const [selectedUpcomingPreset, setSelectedUpcomingPreset] = React.useState<string>("");
+
   // Playbooks CMS state
+  const [selectedSport, setSelectedSport] = React.useState<CoachSport>("FOOTBALL");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("OFFENSE");
   const [selectedSubfolder, setSelectedSubfolder] = React.useState<string>("ALL");
   const [files, setFiles] = React.useState<AcademyFile[]>([]);
@@ -286,6 +304,9 @@ export default function CoachesAcademyPage() {
           setSelectedBoardId((prev) => prev || data.activeBoard.id);
         }
         setPastSessions(data.pastSessions || []);
+        if (data.upcomingSessions && data.upcomingSessions.length > 0) {
+          setUpcomingSessions(data.upcomingSessions);
+        }
       }
     } catch (err) {
       console.warn("Failed to fetch session state:", err);
@@ -485,7 +506,7 @@ export default function CoachesAcademyPage() {
           fileType: uploadType,
           fileSize: uploadType.toUpperCase() + " Resource",
           category: selectedCategory,
-          subfolder: selectedCategory === "SPECIAL_TEAMS" ? null : uploadSubfolder,
+          subfolder: uploadSubfolder,
         }),
       });
       if (!res.ok) {
@@ -527,29 +548,57 @@ export default function CoachesAcademyPage() {
     setTimeout(() => setCopiedMeetingId(false), 2000);
   };
 
-  // Offense & Defense subfolder definitions
-  const OFFENSE_SUBFOLDERS = [
-    { key: "ALL", label: "All Offense" },
-    { key: "QB", label: "Quarterback (QB)" },
-    { key: "RB", label: "Running Back (RB)" },
-    { key: "WR_TE", label: "Wide Receiver & Tight End (WR/TE)" },
-    { key: "OL", label: "Offensive Line (OL)" },
-  ];
+  // Subfolder definitions based on selectedSport & selectedCategory
+  const activeSubfolders: SubfolderItem[] = React.useMemo(() => {
+    if (selectedSport === "FOOTBALL") {
+      if (selectedCategory === "OFFENSE") return FOOTBALL_OFFENSE_SUBFOLDERS;
+      if (selectedCategory === "DEFENSE") return FOOTBALL_DEFENSE_SUBFOLDERS;
+      if (selectedCategory === "SPECIAL_TEAMS") return FOOTBALL_SPECIAL_TEAMS_SUBFOLDERS;
+      if (selectedCategory === "OPERATIONS") return FOOTBALL_OPERATIONS_SUBFOLDERS;
+      return [];
+    }
+    if (selectedSport === "FLAG_FOOTBALL") {
+      if (selectedCategory === "OFFENSE") return FLAG_OFFENSE_SUBFOLDERS;
+      if (selectedCategory === "DEFENSE") return FLAG_DEFENSE_SUBFOLDERS;
+      return [];
+    }
+    if (selectedSport === "BASKETBALL") {
+      return BASKETBALL_SUBFOLDERS;
+    }
+    return [];
+  }, [selectedSport, selectedCategory]);
 
-  const DEFENSE_SUBFOLDERS = [
-    { key: "ALL", label: "All Defense" },
-    { key: "DL", label: "Defensive Line (DL)" },
-    { key: "EDGE", label: "Edge Rushers" },
-    { key: "LB", label: "Linebackers (LB)" },
-    { key: "SECONDARY", label: "Secondary / DBs" },
-  ];
+  const handleSelectSport = (sport: CoachSport) => {
+    setSelectedSport(sport);
+    setSelectedSubfolder("ALL");
+    if (sport === "FOOTBALL") {
+      setSelectedCategory("OFFENSE");
+      setUploadSubfolder("QB");
+    } else if (sport === "FLAG_FOOTBALL") {
+      setSelectedCategory("OFFENSE");
+      setUploadSubfolder("QB_CENTER");
+    } else if (sport === "BASKETBALL") {
+      setSelectedCategory("BASKETBALL");
+      setUploadSubfolder("POINT_GUARD");
+    }
+  };
 
-  const activeSubfolders =
-    selectedCategory === "OFFENSE"
-      ? OFFENSE_SUBFOLDERS
-      : selectedCategory === "DEFENSE"
-      ? DEFENSE_SUBFOLDERS
-      : [];
+  const uploadAvailableSubfolders: SubfolderItem[] = React.useMemo(() => {
+    if (selectedSport === "FOOTBALL") {
+      if (selectedCategory === "OFFENSE") return FOOTBALL_OFFENSE_SUBFOLDERS.filter(s => s.key !== "ALL");
+      if (selectedCategory === "DEFENSE") return FOOTBALL_DEFENSE_SUBFOLDERS.filter(s => s.key !== "ALL");
+      if (selectedCategory === "SPECIAL_TEAMS") return FOOTBALL_SPECIAL_TEAMS_SUBFOLDERS.filter(s => s.key !== "ALL");
+      if (selectedCategory === "OPERATIONS") return FOOTBALL_OPERATIONS_SUBFOLDERS.filter(s => s.key !== "ALL");
+    }
+    if (selectedSport === "FLAG_FOOTBALL") {
+      if (selectedCategory === "OFFENSE") return FLAG_OFFENSE_SUBFOLDERS.filter(s => s.key !== "ALL");
+      if (selectedCategory === "DEFENSE") return FLAG_DEFENSE_SUBFOLDERS.filter(s => s.key !== "ALL");
+    }
+    if (selectedSport === "BASKETBALL") {
+      return BASKETBALL_SUBFOLDERS.filter(s => s.key !== "ALL");
+    }
+    return [];
+  }, [selectedSport, selectedCategory]);
 
   // Content rendering wrapper
   const renderContent = () => {
@@ -647,6 +696,47 @@ export default function CoachesAcademyPage() {
               <p className="text-slate-400 text-sm leading-relaxed">
                 Structured scheme repositories categorized across Offense (QB, RB, WR/TE, OL), Defense (DL, Edge, LB, Secondary), Special Teams, and Game Operations.
               </p>
+            </div>
+          </div>
+
+          {/* Upcoming Masterclasses Schedule */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                  <Calendar className="w-4 h-4" /> Official 2026–2027 Masterclass Calendar
+                </div>
+                <h3 className="text-2xl font-black text-white">Upcoming Live Classroom Sessions</h3>
+              </div>
+              <p className="text-xs text-slate-400 max-w-md sm:text-right">
+                Live interactive masterclasses led by seasoned coaches and certified officials. Permanent 24-month archived replay paired with full collaborative whiteboard.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {upcomingSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 space-y-3 hover:border-amber-500/40 transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono">
+                      {session.date}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                      {session.department}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-base group-hover:text-amber-400 transition leading-snug">
+                      {session.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      {session.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -1250,6 +1340,72 @@ export default function CoachesAcademyPage() {
                 </div>
               )}
             </div>
+
+            {/* Upcoming Live Sessions Schedule */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-5 h-5 text-amber-400" />
+                  <h3 className="text-lg font-bold text-white tracking-wide">
+                    Upcoming Live Sessions Schedule
+                  </h3>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 font-semibold font-mono">
+                    {upcomingSessions.length} Scheduled
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Bi-weekly interactive chalk talks & referee-led instructional classes
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {upcomingSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="p-4 rounded-xl border bg-slate-950/60 border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between space-y-3 group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono">
+                          {session.date}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                          {session.department}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-white text-sm group-hover:text-amber-400 transition leading-snug">
+                        {session.title}
+                      </h4>
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {session.description}
+                      </p>
+                    </div>
+
+                    {isPresenter && (
+                      <button
+                        onClick={() => {
+                          setSelectedUpcomingPreset(session.id);
+                          setSessionTopic(session.title);
+                          setSessionDepartment(
+                            session.department === "OPERATIONS"
+                              ? "OPERATIONS"
+                              : session.department === "SPECIAL_TEAMS"
+                              ? "SPECIAL_TEAMS"
+                              : session.department === "DEFENSE"
+                              ? "DEFENSE"
+                              : "OFFENSE"
+                          );
+                          setShowStartModal(true);
+                        }}
+                        className="w-full text-xs py-2 px-3 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-200 font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Play className="w-3.5 h-3.5" /> Launch This Session
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1259,14 +1415,74 @@ export default function CoachesAcademyPage() {
            ───────────────────────────────────────────────────────────── */}
         {activeTab === "playbooks" && (
           <div className="space-y-6">
-            {/* Department Selector */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { key: "OFFENSE", label: "Offense", icon: Shield },
-                { key: "DEFENSE", label: "Defense", icon: Shield },
-                { key: "SPECIAL_TEAMS", label: "Special Teams", icon: Sparkles, pending: true },
-                { key: "OPERATIONS", label: "Operations", icon: Layers },
-              ].map((dept) => {
+            {/* Sport Selector Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider px-1">Select Sport:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleSelectSport("FOOTBALL")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedSport === "FOOTBALL"
+                        ? "bg-amber-500 text-slate-950 shadow-md"
+                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    🏈 Tackle Football
+                  </button>
+                  <button
+                    onClick={() => handleSelectSport("FLAG_FOOTBALL")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedSport === "FLAG_FOOTBALL"
+                        ? "bg-amber-500 text-slate-950 shadow-md"
+                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    🚩 Flag Football
+                  </button>
+                  <button
+                    onClick={() => handleSelectSport("BASKETBALL")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedSport === "BASKETBALL"
+                        ? "bg-amber-500 text-slate-950 shadow-md"
+                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    🏀 Basketball
+                  </button>
+                </div>
+              </div>
+              <span className="text-xs text-slate-400 px-2">
+                {selectedSport === "FOOTBALL" && "Positional schemes, special teams & rules"}
+                {selectedSport === "FLAG_FOOTBALL" && "Offense (QB/Center, WR/RB) & Defense (Rusher/LB, Secondary)"}
+                {selectedSport === "BASKETBALL" && "Position breakdown & offensive play sets"}
+              </span>
+            </div>
+
+            {/* Department / Category Selector */}
+            <div className={`grid gap-3 ${
+              selectedSport === "BASKETBALL"
+                ? "grid-cols-1"
+                : selectedSport === "FLAG_FOOTBALL"
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-2 md:grid-cols-4"
+            }`}>
+              {(selectedSport === "FOOTBALL"
+                ? [
+                    { key: "OFFENSE", label: "Offense", icon: Shield, subtitle: "QB, RB / H Back, WR/TE, OL Schemes" },
+                    { key: "DEFENSE", label: "Defense", icon: Shield, subtitle: "DL, Edge, LB, Secondary" },
+                    { key: "SPECIAL_TEAMS", label: "Special Teams", icon: Sparkles, subtitle: "Punt, Kickoff, Ex Point / FG" },
+                    { key: "OPERATIONS", label: "Operations", icon: Layers, subtitle: "Rules of the Game, Game Management & Scouting" },
+                  ]
+                : selectedSport === "FLAG_FOOTBALL"
+                ? [
+                    { key: "OFFENSE", label: "Flag Offense", icon: Shield, subtitle: "QB/Center, WR/RB" },
+                    { key: "DEFENSE", label: "Flag Defense", icon: Shield, subtitle: "Rusher/LB, Secondary" },
+                  ]
+                : [
+                    { key: "BASKETBALL", label: "Basketball Positional Playbooks", icon: Award, subtitle: "Center, Point Guard, Shooting Guard, Forward, Power Forward" },
+                  ]
+              ).map((dept) => {
                 const Icon = dept.icon;
                 const isSelected = selectedCategory === dept.key;
                 return (
@@ -1276,7 +1492,7 @@ export default function CoachesAcademyPage() {
                       setSelectedCategory(dept.key);
                       setSelectedSubfolder("ALL");
                     }}
-                    className={`p-4 rounded-2xl border text-left transition flex flex-col justify-between ${
+                    className={`p-4 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
                       isSelected
                         ? "bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/5"
                         : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white"
@@ -1284,56 +1500,33 @@ export default function CoachesAcademyPage() {
                   >
                     <div className="flex items-center justify-between">
                       <Icon className={`w-5 h-5 ${isSelected ? "text-amber-400" : "text-slate-500"}`} />
-                      {dept.pending && (
-                        <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          Awaiting Client Names
-                        </span>
-                      )}
                     </div>
                     <div className="mt-3">
                       <h4 className="font-bold text-base text-white">{dept.label}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {dept.key === "OFFENSE" && "QB, RB, WR/TE, OL Schemes"}
-                        {dept.key === "DEFENSE" && "DL, Edge, LB, Secondary"}
-                        {dept.key === "SPECIAL_TEAMS" && "Child categories pending from staff"}
-                        {dept.key === "OPERATIONS" && "Game management & scouting"}
-                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">{dept.subtitle}</p>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Subfolder Chips (For Offense & Defense) */}
+            {/* Subfolder Chips (Dynamic Across All Sports & Categories) */}
             {activeSubfolders.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-                <span className="text-xs font-semibold text-slate-400 px-2">Subfolders:</span>
+              <div className="flex flex-wrap items-center gap-2 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+                <span className="text-xs font-bold text-amber-400 px-2 uppercase tracking-wide">Subfolders:</span>
                 {activeSubfolders.map((sub) => (
                   <button
                     key={sub.key}
                     onClick={() => setSelectedSubfolder(sub.key)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                       selectedSubfolder === sub.key
-                        ? "bg-amber-500 text-slate-950 font-bold"
-                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                        ? "bg-amber-500 text-slate-950 font-bold shadow-md"
+                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white"
                     }`}
                   >
                     {sub.label}
                   </button>
                 ))}
-              </div>
-            )}
-
-            {/* Special Teams Pending Notice */}
-            {selectedCategory === "SPECIAL_TEAMS" && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-slate-300 flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <h4 className="font-bold text-white text-base">Special Teams Structure: Waiting on Client</h4>
-                  <p className="text-sm text-slate-300">
-                    As confirmed during today's strategy meeting, Darius and Terry are providing the exact positional child-folder names for Special Teams. Once received, they will appear here automatically.
-                  </p>
-                </div>
               </div>
             )}
 
@@ -1348,8 +1541,13 @@ export default function CoachesAcademyPage() {
 
               {isPresenter && (
                 <Button
-                  onClick={() => setShowUploadModal(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs"
+                  onClick={() => {
+                    if (uploadAvailableSubfolders.length > 0) {
+                      setUploadSubfolder(uploadAvailableSubfolders[0].key);
+                    }
+                    setShowUploadModal(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Upload Material
                 </Button>
@@ -1550,6 +1748,46 @@ export default function CoachesAcademyPage() {
               </div>
 
               <form onSubmit={handleStartSession} className="space-y-4">
+                {/* Field for Upcoming Sessions */}
+                <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                      Upcoming Sessions Field
+                    </label>
+                    <span className="text-[11px] text-slate-400">Select to load scheduled masterclass</span>
+                  </div>
+                  <select
+                    value={selectedUpcomingPreset}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedUpcomingPreset(val);
+                      if (val) {
+                        const matching = upcomingSessions.find((s) => s.id === val);
+                        if (matching) {
+                          setSessionTopic(matching.title);
+                          setSessionDepartment(
+                            matching.department === "OPERATIONS"
+                              ? "OPERATIONS"
+                              : matching.department === "SPECIAL_TEAMS"
+                              ? "SPECIAL_TEAMS"
+                              : matching.department === "DEFENSE"
+                              ? "DEFENSE"
+                              : "OFFENSE"
+                          );
+                        }
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:border-amber-500 outline-none"
+                  >
+                    <option value="">-- Choose from Scheduled Masterclasses --</option>
+                    {upcomingSessions.map((session) => (
+                      <option key={session.id} value={session.id}>
+                        {session.date} — {session.title} ({session.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Chalk Talk Topic / Title *
@@ -1725,36 +1963,22 @@ export default function CoachesAcademyPage() {
                     </select>
                   </div>
 
-                  {selectedCategory !== "SPECIAL_TEAMS" && (
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Subfolder</label>
-                      <select
-                        value={uploadSubfolder}
-                        onChange={(e) => setUploadSubfolder(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-amber-500 outline-none"
-                      >
-                        {selectedCategory === "OFFENSE" && (
-                          <>
-                            <option value="QB">Quarterback (QB)</option>
-                            <option value="RB">Running Back (RB)</option>
-                            <option value="WR_TE">Wide Receiver & Tight End</option>
-                            <option value="OL">Offensive Line (OL)</option>
-                          </>
-                        )}
-                        {selectedCategory === "DEFENSE" && (
-                          <>
-                            <option value="DL">Defensive Line (DL)</option>
-                            <option value="EDGE">Edge</option>
-                            <option value="LB">Linebackers (LB)</option>
-                            <option value="SECONDARY">Secondary / DBs</option>
-                          </>
-                        )}
-                        {selectedCategory === "OPERATIONS" && (
-                          <option value="OPERATIONS">Operations</option>
-                        )}
-                      </select>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Subfolder ({selectedCategory})
+                    </label>
+                    <select
+                      value={uploadSubfolder}
+                      onChange={(e) => setUploadSubfolder(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-amber-500 outline-none"
+                    >
+                      {uploadAvailableSubfolders.map((sub) => (
+                        <option key={sub.key} value={sub.key}>
+                          {sub.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-3">

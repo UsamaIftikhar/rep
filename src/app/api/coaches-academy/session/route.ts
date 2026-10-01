@@ -4,6 +4,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 import { getAuthenticatedOrgId } from "@/lib/org";
 import { canAccessCoachesAcademy } from "@/lib/entitlements";
 import { isCoachesAcademyPresenter } from "@/lib/permissions";
+import { UPCOMING_COACHES_SESSIONS } from "@/lib/coaches-academy";
 
 // GET /api/coaches-academy/session - Fetch active session & past archives
 export async function GET(req: Request) {
@@ -154,6 +155,15 @@ export async function GET(req: Request) {
         where: { isActive: true },
       })) || Boolean(process.env.MIRO_ACCESS_TOKEN);
 
+    // 5. Fetch custom upcoming scheduled sessions from database if any
+    const dbUpcomingSessions = await db.coachesAcademySession.findMany({
+      where: {
+        status: "scheduled",
+      },
+      orderBy: { scheduledDate: "asc" },
+      take: 15,
+    });
+
     return NextResponse.json({
       allowed: true,
       isPresenter: access.isPresenter,
@@ -165,6 +175,8 @@ export async function GET(req: Request) {
       pastSessions,
       activeBoard,
       allBoards,
+      upcomingSessions: UPCOMING_COACHES_SESSIONS,
+      dbUpcomingSessions,
     });
   } catch (error: any) {
     console.error("[COACHES_ACADEMY_SESSION_GET]", error);
