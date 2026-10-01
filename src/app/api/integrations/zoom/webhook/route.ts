@@ -45,34 +45,80 @@ export async function POST(req: Request) {
     // 3. Handle Event: meeting.ended
     if (event === "meeting.ended" && payload?.object?.id) {
       const zoomMeetingId = String(payload.object.id);
+      const cleanId = zoomMeetingId.replace(/[^0-9]/g, "");
+      const twentyFourMonthsLater = new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000);
+
       await db.zoomMeeting.updateMany({
-        where: { zoomMeetingId },
+        where: {
+          OR: [{ zoomMeetingId }, { zoomMeetingId: cleanId }],
+        },
         data: { status: "ended" },
       });
-      return NextResponse.json({ success: true, event });
+
+      await db.coachesAcademySession.updateMany({
+        where: {
+          OR: [
+            { zoomMeetingId },
+            { zoomMeetingId: cleanId },
+            { status: "started" },
+          ],
+        },
+        data: {
+          status: "ended",
+          retentionUntil: twentyFourMonthsLater,
+        },
+      });
+
+      return NextResponse.json({ success: true, event, message: "Meeting marked ended and archived" });
     }
 
     // 4. Handle Event: recording.completed
     if (event === "recording.completed" && payload?.object?.id) {
       const zoomMeetingId = String(payload.object.id);
-      const meeting = await db.zoomMeeting.findUnique({
-        where: { zoomMeetingId },
-      });
-
-      if (!meeting) {
-        console.warn(`Meeting ${zoomMeetingId} not found in database`);
-        return NextResponse.json({ success: true, message: "Meeting not tracked" });
-      }
-
+      const cleanId = zoomMeetingId.replace(/[^0-9]/g, "");
       const recordingFiles = payload.object.recording_files || [];
       const downloadToken = payload.download_token || "";
 
-      // Trigger async processing pipeline — DO NOT BLOCK webhook response
-      processRecordingPipeline(meeting, recordingFiles, downloadToken).catch((err) => {
-        console.error("Async recording pipeline error:", err);
+      // 1-Click recording passcode embedding for Coaches Academy archive
+      const mp4File = recordingFiles.find((f: any) => f.file_type === "MP4") || recordingFiles[0];
+      let shareUrl = payload.object.share_url || mp4File?.play_url || mp4File?.download_url;
+      const passcode = payload.object.recording_play_passcode || (payload.object.password ? encodeURIComponent(payload.object.password) : "");
+      if (passcode && shareUrl && !shareUrl.includes("pwd=")) {
+        shareUrl += `${shareUrl.includes("?") ? "&" : "?"}pwd=${passcode}`;
+      }
+
+      if (shareUrl) {
+        const twentyFourMonthsLater = new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000);
+        await db.coachesAcademySession.updateMany({
+          where: {
+            OR: [
+              { zoomMeetingId },
+              { zoomMeetingId: cleanId },
+              { status: "started" },
+            ],
+          },
+          data: {
+            recordingUrl: shareUrl,
+            status: "ended",
+            retentionUntil: twentyFourMonthsLater,
+          },
+        });
+      }
+
+      const meeting = await db.zoomMeeting.findFirst({
+        where: {
+          OR: [{ zoomMeetingId }, { zoomMeetingId: cleanId }],
+        },
       });
 
-      return NextResponse.json({ success: true, message: "Recording processing job triggered" });
+      if (meeting) {
+        // Trigger async processing pipeline — DO NOT BLOCK webhook response
+        processRecordingPipeline(meeting, recordingFiles, downloadToken).catch((err) => {
+          console.error("Async recording pipeline error:", err);
+        });
+      }
+
+      return NextResponse.json({ success: true, message: "Recording processing job triggered and academy session archived" });
     }
 
     return NextResponse.json({ success: true, event });

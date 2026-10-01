@@ -111,17 +111,34 @@ export async function POST(req: Request) {
     // 3. Handle Meeting Ended Event
     if (body.event === "meeting.ended") {
       const meetingId = String(body.payload?.object?.id || "");
-      if (meetingId) {
+      const cleanId = meetingId.replace(/[^0-9]/g, "");
+      const twentyFourMonthsLater = new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000);
+
+      if (meetingId || cleanId) {
         await db.coachesAcademySession.updateMany({
-          where: { zoomMeetingId: meetingId },
-          data: { status: "ended" },
+          where: {
+            OR: [
+              { zoomMeetingId: meetingId },
+              { zoomMeetingId: cleanId },
+              { status: "started" },
+            ],
+          },
+          data: {
+            status: "ended",
+            retentionUntil: twentyFourMonthsLater,
+          },
         });
         await db.zoomMeeting.updateMany({
-          where: { zoomMeetingId: meetingId },
+          where: {
+            OR: [
+              { zoomMeetingId: meetingId },
+              { zoomMeetingId: cleanId },
+            ],
+          },
           data: { status: "ended" },
         });
       }
-      return NextResponse.json({ success: true, message: "Meeting marked ended" });
+      return NextResponse.json({ success: true, message: "Meeting marked ended and archived" });
     }
 
     return NextResponse.json({ received: true });

@@ -294,16 +294,25 @@ export default function CoachesAcademyPage() {
         setHasAccess(true);
         setIsPresenter(!!data.isPresenter);
         setIsMiroConnected(!!data.isMiroConnected);
-        setActiveSession(data.activeSession || null);
-        setActiveMeeting(data.activeMeeting || null);
+        const liveSession =
+          data.activeSession && data.activeSession.status === "started"
+            ? data.activeSession
+            : null;
+        const liveMeeting =
+          data.activeMeeting && data.activeMeeting.status === "started"
+            ? data.activeMeeting
+            : null;
+
+        setActiveSession(liveSession);
+        setActiveMeeting(liveMeeting);
         setLatestMeeting(data.latestMeeting || null);
         setActiveBoard(data.activeBoard || null);
         setAllBoards(data.allBoards || []);
-        if (data.activeSession?.whiteboardId) {
+        if (liveSession?.whiteboardId) {
           const matching = (data.allBoards || []).find(
             (b: any) =>
-              b.miroBoardId === data.activeSession.whiteboardId ||
-              b.id === data.activeSession.whiteboardId
+              b.miroBoardId === liveSession.whiteboardId ||
+              b.id === liveSession.whiteboardId
           );
           if (matching) {
             setSelectedBoardId(matching.id);
@@ -313,7 +322,7 @@ export default function CoachesAcademyPage() {
         } else if (data.activeBoard) {
           setSelectedBoardId((prev) => prev || data.activeBoard.id);
         }
-        if (!data.activeSession || data.activeSession.status === "ended") {
+        if (!liveSession) {
           setHasJoinedLiveSession(false);
         }
         setPastSessions(data.pastSessions || []);
@@ -359,6 +368,19 @@ export default function CoachesAcademyPage() {
       fetchFiles();
     }
   }, [hasAccess, fetchSessionData, fetchFiles]);
+
+  // Real-time live session polling: checks Zoom status every 4s while a live session is active so the page immediately archives & resets when the meeting is ended
+  React.useEffect(() => {
+    if (!hasAccess) return;
+    const isLive = activeSession?.status === "started" || activeMeeting?.status === "started";
+    if (!isLive) return;
+
+    const interval = setInterval(() => {
+      fetchSessionData();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [hasAccess, activeSession?.status, activeMeeting?.status, fetchSessionData]);
 
   // Auto-sync polling: automatically checks Zoom every 15s if a meeting was ended recently without recordingUrl
   React.useEffect(() => {
@@ -1125,7 +1147,21 @@ export default function CoachesAcademyPage() {
                         onToggleTheatre={() =>
                           setRoomLayout((prev) => (prev === "zoom_focus" ? "split" : "zoom_focus"))
                         }
-                        onLeave={() => setHasJoinedLiveSession(false)}
+                        onLeave={async () => {
+                          if (isPresenter) {
+                            try {
+                              await fetch("/api/coaches-academy/session", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "end" }),
+                              });
+                            } catch (e) {
+                              console.warn("Failed to conclude session on leave:", e);
+                            }
+                          }
+                          setHasJoinedLiveSession(false);
+                          await fetchSessionData();
+                        }}
                         onForceClose={fetchSessionData}
                       />
                     ) : (

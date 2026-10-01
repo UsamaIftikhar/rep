@@ -11,7 +11,8 @@ import {
   Globe,
   Radio,
   Lock,
-  Hash
+  Hash,
+  LogOut
 } from "lucide-react";
 
 interface ZoomEmbeddedMeetingProps {
@@ -233,6 +234,17 @@ export function ZoomEmbeddedMeeting({
               <Globe className="w-3 h-3 text-emerald-400" />
               <span className="hidden sm:inline">Browser Tab</span>
             </a>
+          )}
+
+          {onLeave && (
+            <button
+              onClick={onLeave}
+              className="text-[10px] sm:text-[11px] text-red-400 hover:text-white flex items-center gap-1 bg-red-500/10 hover:bg-red-600/30 border border-red-500/30 px-2 py-1 rounded transition-colors"
+              title={role === 1 ? "End Meeting & Archive Session" : "Leave Live Classroom"}
+            >
+              <LogOut className="w-3 h-3 text-red-400" />
+              <span className="hidden sm:inline">{role === 1 ? "End Session" : "Leave"}</span>
+            </button>
           )}
 
           <button

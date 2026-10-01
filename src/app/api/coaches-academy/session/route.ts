@@ -81,6 +81,82 @@ export async function GET(req: Request) {
       }
     }
 
+    // 1b. Real-time Zoom Cloud Verification: If activeSession is marked "started", verify if host ended the meeting
+    if (activeSession && activeSession.status === "started" && activeSession.zoomMeetingId) {
+      try {
+        const { getValidZoomAccessToken } = await import("@/lib/integrations/zoom");
+        const token = await getValidZoomAccessToken(orgId);
+        const cleanId = activeSession.zoomMeetingId.replace(/[^0-9]/g, "");
+
+        if (cleanId) {
+          const zMeetingRes = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (zMeetingRes.ok) {
+            const zData = await zMeetingRes.json();
+            const isWaitingOrEnded = zData.status === "ended" || zData.status === "waiting";
+            const sessionAgeMs = Date.now() - new Date(activeSession.createdAt || activeSession.scheduledDate).getTime();
+            const isOverOneMin = sessionAgeMs > 60 * 1000;
+
+            let hasConcluded = zData.status === "ended";
+
+            if (!hasConcluded && isWaitingOrEnded && isOverOneMin) {
+              const recRes = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}/recordings`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (recRes.ok) {
+                const recData = await recRes.json();
+                if (recData.recording_files && recData.recording_files.length > 0) {
+                  hasConcluded = true;
+                  const mp4 = recData.recording_files.find((f: any) => f.file_type === "MP4") || recData.recording_files[0];
+                  let recUrl = recData.share_url || mp4?.play_url || mp4?.download_url;
+                  const passcode = recData.recording_play_passcode || (recData.password ? encodeURIComponent(recData.password) : "");
+                  if (passcode && recUrl && !recUrl.includes("pwd=")) {
+                    recUrl += `${recUrl.includes("?") ? "&" : "?"}pwd=${passcode}`;
+                  }
+                  if (recUrl) {
+                    await db.coachesAcademySession.update({
+                      where: { id: activeSession.id },
+                      data: { recordingUrl: recUrl },
+                    });
+                  }
+                }
+              }
+            }
+
+            if (hasConcluded) {
+              const twentyFourMonthsLater = new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000);
+              await db.coachesAcademySession.updateMany({
+                where: {
+                  OR: [
+                    { id: activeSession.id },
+                    { zoomMeetingId: activeSession.zoomMeetingId },
+                  ],
+                },
+                data: {
+                  status: "ended",
+                  retentionUntil: twentyFourMonthsLater,
+                },
+              });
+              await db.zoomMeeting.updateMany({
+                where: {
+                  OR: [
+                    { zoomMeetingId: activeSession.zoomMeetingId },
+                    { zoomMeetingId: cleanId },
+                  ],
+                },
+                data: { status: "ended" },
+              });
+              activeSession = null;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[CHECK_ZOOM_LIVE_STATUS_WARNING]", e);
+      }
+    }
+
     // 2. Fetch active and latest Zoom meetings
     const activeMeeting = await db.zoomMeeting.findFirst({
       where: {
