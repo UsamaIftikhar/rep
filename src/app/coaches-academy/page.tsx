@@ -38,6 +38,7 @@ import {
   GraduationCap,
   CheckCircle2,
   ArrowRight,
+  Upload,
 } from "lucide-react";
 import {
   UPCOMING_COACHES_SESSIONS,
@@ -136,6 +137,8 @@ export default function CoachesAcademyPage() {
   const [editRecordingSession, setEditRecordingSession] = React.useState<HistoricalSession | null>(null);
   const [recordingInputUrl, setRecordingInputUrl] = React.useState<string>("");
   const [savingRecordingUrl, setSavingRecordingUrl] = React.useState<boolean>(false);
+  const [uploadingRecordingFile, setUploadingRecordingFile] = React.useState<boolean>(false);
+  const [uploadRecordingProgress, setUploadRecordingProgress] = React.useState<string>("");
   const [videoPlayerUrl, setVideoPlayerUrl] = React.useState<string | null>(null);
 
   const displayedBoard = React.useMemo(() => {
@@ -473,6 +476,37 @@ export default function CoachesAcademyPage() {
     }
   };
 
+  // Direct upload of local MP4 file to DigitalOcean Spaces S3 storage
+  const handleUploadRecordingFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRecordingFile(true);
+    setUploadRecordingProgress(`Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "academy-recordings");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to upload video file");
+      }
+      const data = await res.json();
+      if (data.url) {
+        setRecordingInputUrl(data.url);
+        setUploadRecordingProgress("Uploaded successfully to cloud storage!");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to upload video");
+      setUploadRecordingProgress("");
+    } finally {
+      setUploadingRecordingFile(false);
+    }
+  };
+
   // Save or Edit Recording URL for an archived session (Presenter only)
   const handleSaveRecordingUrl = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -495,6 +529,7 @@ export default function CoachesAcademyPage() {
       }
       setEditRecordingSession(null);
       setRecordingInputUrl("");
+      setUploadRecordingProgress("");
       await fetchSessionData();
     } catch (err: any) {
       alert("Error saving recording: " + err.message);
@@ -2173,6 +2208,36 @@ export default function CoachesAcademyPage() {
                   />
                   <p className="text-[11px] text-slate-500 mt-1">
                     Once saved, members will immediately see the "Watch Recording" button and can stream or review this archived masterclass.
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Or Upload Local Zoom Recording (.mp4)
+                    </label>
+                    <span className="text-[11px] text-amber-400 font-medium">DigitalOcean Cloud</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <label className={`px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer transition w-fit border border-slate-700 ${uploadingRecordingFile ? "opacity-50 pointer-events-none" : ""}`}>
+                      <Upload className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{uploadingRecordingFile ? "Uploading to Cloud..." : "Choose MP4 from Computer"}</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/*"
+                        onChange={handleUploadRecordingFile}
+                        className="hidden"
+                        disabled={uploadingRecordingFile}
+                      />
+                    </label>
+                    {uploadRecordingProgress && (
+                      <span className="text-[11px] text-amber-300 font-mono">
+                        {uploadRecordingProgress}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Zoom automatically saves your recordings to: <span className="font-mono text-slate-400">Documents &gt; Zoom</span>. You can select the <span className="font-mono text-slate-300">.mp4</span> file directly to host and play it here.
                   </p>
                 </div>
 
