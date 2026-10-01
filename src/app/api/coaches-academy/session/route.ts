@@ -103,6 +103,46 @@ export async function GET(req: Request) {
       take: 25,
     });
 
+    // Auto-sync any recent ended sessions (< 4 hours) still missing recordings from Zoom Cloud
+    const pendingAutoSync = pastSessions.filter(
+      (s) =>
+        s.status === "ended" &&
+        !s.recordingUrl &&
+        s.zoomMeetingId &&
+        Date.now() - new Date(s.scheduledDate).getTime() < 4 * 60 * 60 * 1000
+    );
+
+    if (pendingAutoSync.length > 0) {
+      try {
+        const { getValidZoomAccessToken } = await import("@/lib/integrations/zoom");
+        const token = await getValidZoomAccessToken(orgId);
+        for (const pending of pendingAutoSync) {
+          const cleanId = pending.zoomMeetingId!.replace(/[^0-9]/g, "");
+          const zoomRes = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}/recordings`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (zoomRes.ok) {
+            const zData = await zoomRes.json();
+            const mp4 = zData.recording_files?.find((f: any) => f.file_type === "MP4") || zData.recording_files?.[0];
+            let recUrl = zData.share_url || mp4?.play_url || mp4?.download_url;
+            const passcode = zData.recording_play_passcode || (zData.password ? encodeURIComponent(zData.password) : "");
+            if (passcode && recUrl && !recUrl.includes("pwd=")) {
+              recUrl += `${recUrl.includes("?") ? "&" : "?"}pwd=${passcode}`;
+            }
+            if (recUrl) {
+              await db.coachesAcademySession.update({
+                where: { id: pending.id },
+                data: { recordingUrl: recUrl },
+              });
+              pending.recordingUrl = recUrl;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[AUTO_SYNC_ZOOM_ERROR]", err);
+      }
+    }
+
     // Also fetch recent zoom meetings for any older sessions
     const recentZoomMeetings = await db.zoomMeeting.findMany({
       where: {

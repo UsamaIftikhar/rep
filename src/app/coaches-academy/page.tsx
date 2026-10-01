@@ -356,6 +356,26 @@ export default function CoachesAcademyPage() {
     }
   }, [hasAccess, fetchSessionData, fetchFiles]);
 
+  // Auto-sync polling: automatically checks Zoom every 15s if a meeting was ended recently without recordingUrl
+  React.useEffect(() => {
+    if (!hasAccess) return;
+    const hasPendingRecording = pastSessions.some(
+      (s) =>
+        s.status === "ended" &&
+        !s.recordingUrl &&
+        s.zoomMeetingId &&
+        Date.now() - new Date(s.scheduledDate).getTime() < 30 * 60 * 1000
+    );
+
+    if (!hasPendingRecording) return;
+
+    const interval = setInterval(() => {
+      fetchSessionData();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [hasAccess, pastSessions, fetchSessionData]);
+
 
   // Activate annual pass (Stripe checkout or direct enrollment)
   const handleActivateAnnualPass = async () => {
@@ -1789,9 +1809,16 @@ export default function CoachesAcademyPage() {
                         </div>
                       ) : (
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Film className="w-3.5 h-3.5" /> Recording Archiving
-                          </span>
+                          {Date.now() - new Date(session.scheduledDate).getTime() < 30 * 60 * 1000 ? (
+                            <span className="text-xs text-amber-400 flex items-center gap-1.5 font-medium animate-pulse">
+                              <RotateCcw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                              <span>Archiving (Auto-syncing...)</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              <Film className="w-3.5 h-3.5" /> Recording Archiving
+                            </span>
+                          )}
                           {isPresenter && (
                             <>
                               {session.zoomMeetingId && (

@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     }
 
     const zoomSecret =
+      process.env.ZOOM_WEBHOOK_SECRET ||
       process.env.ZOOM_WEBHOOK_SECRET_TOKEN ||
       process.env.ZOOM_SECRET_TOKEN ||
       process.env.ZOOM_CLIENT_SECRET ||
