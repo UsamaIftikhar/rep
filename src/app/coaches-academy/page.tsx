@@ -874,6 +874,11 @@ export default function CoachesAcademyPage() {
     }
 
 
+    const isSessionLive = Boolean(
+      (activeMeeting?.status === "started" || activeSession?.status === "started") &&
+      (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)
+    );
+
     return (
       <div className="space-y-8 pb-12">
         {/* Top Control Bar */}
@@ -1413,8 +1418,10 @@ export default function CoachesAcademyPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="hidden sm:inline-block text-[10px] font-semibold text-slate-400 bg-slate-800 px-2.5 py-1 rounded-md">
-                        {(activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)
-                          ? "Live Chalk Talk Active"
+                        {isSessionLive
+                          ? (!isPresenter && !hasJoinedLiveSession
+                              ? "Locked • Join Meeting to Access"
+                              : "Live Chalk Talk Active")
                           : "Meeting Finished • Board Closed"}
                       </span>
                       {isPresenter && (
@@ -1433,7 +1440,7 @@ export default function CoachesAcademyPage() {
                           Show Zoom
                         </button>
                       )}
-                      {displayedBoard && (
+                      {displayedBoard && (isPresenter || hasJoinedLiveSession || !isSessionLive) && (
                         <a
                           href={`https://miro.com/app/board/${displayedBoard.miroBoardId || displayedBoard.id}/`}
                           target="_blank"
@@ -1449,7 +1456,41 @@ export default function CoachesAcademyPage() {
 
                   {/* Whiteboard Canvas */}
                   <div className="w-full flex-1 bg-slate-950 relative flex flex-col">
-                    {!((activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)) && !overrideShowBoardWhenEnded ? (
+                    {/* CASE 1: Session is live, but student hasn't joined the meeting yet */}
+                    {isSessionLive && !isPresenter && !hasJoinedLiveSession ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 space-y-6">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                          <Lock className="w-8 h-8 text-amber-400" />
+                        </div>
+
+                        <div className="space-y-2 max-w-md">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-amber-400 font-semibold tracking-wide uppercase">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            Tactical Whiteboard Paired
+                          </div>
+                          <h4 className="text-xl font-bold text-white tracking-tight">
+                            Join the Meeting to Access Whiteboard
+                          </h4>
+                          <p className="text-xs text-slate-400 leading-relaxed">
+                            This collaborative chalk-talk board is synchronized with the live stream. Join the live classroom session to participate and view real-time diagrams.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 w-full max-w-xs">
+                          <button
+                            type="button"
+                            onClick={() => setHasJoinedLiveSession(true)}
+                            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all transform hover:scale-[1.02] cursor-pointer"
+                          >
+                            <Video className="w-4 h-4 fill-current" />
+                            <span>Join Live Classroom</span>
+                          </button>
+                          <p className="text-[11px] text-slate-500">
+                            Unlocks both live video and interactive whiteboard
+                          </p>
+                        </div>
+                      </div>
+                    ) : !isSessionLive && !overrideShowBoardWhenEnded ? (
                       isPresenter ? (
                         <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 space-y-4">
                           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
@@ -1524,7 +1565,7 @@ export default function CoachesAcademyPage() {
                       )
                     ) : displayedBoard ? (
                       <div className="w-full h-full flex flex-col">
-                        {!((activeMeeting?.status === "started" || activeSession?.status === "started") && (activeMeeting?.zoomMeetingId || activeSession?.zoomMeetingId)) && (
+                        {!isSessionLive && (
                           <div className="bg-amber-950/80 border-b border-amber-800/60 px-4 py-2 flex items-center justify-between text-xs text-amber-200">
                             <span className="font-medium flex items-center gap-1.5">
                               <CheckCircle2 className="w-4 h-4 text-amber-400" />
