@@ -56,7 +56,12 @@ export async function POST(req: Request) {
         files.find((f: any) => f.file_extension === "MP4") ||
         files[0];
 
-      const recordingUrl = mp4File?.play_url || mp4File?.download_url || meetingObj.share_url;
+      let recordingUrl = meetingObj.share_url || mp4File?.play_url || mp4File?.download_url;
+      const passcode = meetingObj.recording_play_passcode || (meetingObj.password ? encodeURIComponent(meetingObj.password) : "");
+      if (passcode && recordingUrl && !recordingUrl.includes("pwd=")) {
+        const separator = recordingUrl.includes("?") ? "&" : "?";
+        recordingUrl = `${recordingUrl}${separator}pwd=${passcode}`;
+      }
 
       // Calculate 24-Month Retention
       const retentionUntil = new Date();
