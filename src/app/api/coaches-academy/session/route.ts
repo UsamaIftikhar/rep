@@ -207,6 +207,27 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, topic, department, customJoinUrl, customMiroUrl, recordingUrl } = body;
 
+    // --- Action: 'update_recording' (Attach or edit recording URL) ---
+    if (action === "update_recording") {
+      const { sessionId } = body;
+      if (!sessionId) {
+        return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+      }
+
+      const updated = await db.coachesAcademySession.update({
+        where: { id: sessionId },
+        data: {
+          recordingUrl: recordingUrl ? String(recordingUrl).trim() : null,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        session: updated,
+        message: "Recording link updated successfully.",
+      });
+    }
+
     // --- Action: 'end' or 'close_in_progress' ---
     if (action === "end" || action === "close_in_progress") {
       // 1. Terminate all live Zoom meetings on Zoom Cloud

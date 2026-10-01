@@ -132,6 +132,12 @@ export default function CoachesAcademyPage() {
   const [copiedMeetingId, setCopiedMeetingId] = React.useState<boolean>(false);
   const [copiedMeetingPwd, setCopiedMeetingPwd] = React.useState<boolean>(false);
 
+  // Recording management & Video Player modal state
+  const [editRecordingSession, setEditRecordingSession] = React.useState<HistoricalSession | null>(null);
+  const [recordingInputUrl, setRecordingInputUrl] = React.useState<string>("");
+  const [savingRecordingUrl, setSavingRecordingUrl] = React.useState<boolean>(false);
+  const [videoPlayerUrl, setVideoPlayerUrl] = React.useState<string | null>(null);
+
   const displayedBoard = React.useMemo(() => {
     if (selectedBoardId && allBoards.length > 0) {
       const found = allBoards.find(
@@ -464,6 +470,36 @@ export default function CoachesAcademyPage() {
       alert("Failed to sync recording: " + e.message);
     } finally {
       setSyncingRecordingId(null);
+    }
+  };
+
+  // Save or Edit Recording URL for an archived session (Presenter only)
+  const handleSaveRecordingUrl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editRecordingSession) return;
+    setSavingRecordingUrl(true);
+    try {
+      const res = await fetch("/api/coaches-academy/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_recording",
+          sessionId: editRecordingSession.id,
+          recordingUrl: recordingInputUrl.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Failed to update recording link");
+        return;
+      }
+      setEditRecordingSession(null);
+      setRecordingInputUrl("");
+      await fetchSessionData();
+    } catch (err: any) {
+      alert("Error saving recording: " + err.message);
+    } finally {
+      setSavingRecordingUrl(false);
     }
   };
 
@@ -1685,30 +1721,69 @@ export default function CoachesAcademyPage() {
                     {/* Paired Assets Actions */}
                     <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-800">
                       {session.recordingUrl ? (
-                        <a
-                          href={session.recordingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-4 py-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 text-xs font-semibold flex items-center gap-1.5"
-                        >
-                          <Film className="w-3.5 h-3.5" /> Watch Recording
-                        </a>
-                      ) : (
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (
+                                session.recordingUrl?.endsWith(".mp4") ||
+                                session.recordingUrl?.includes("digitaloceanspaces")
+                              ) {
+                                setVideoPlayerUrl(session.recordingUrl);
+                              } else if (session.recordingUrl) {
+                                window.open(session.recordingUrl, "_blank", "noopener,noreferrer");
+                              }
+                            }}
+                            className="px-4 py-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm transition"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" /> Watch Recording
+                          </button>
+                          {isPresenter && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditRecordingSession(session);
+                                setRecordingInputUrl(session.recordingUrl || "");
+                              }}
+                              className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer px-1 transition"
+                              title="Edit or change the recording link"
+                            >
+                              Edit Link
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Film className="w-3.5 h-3.5" /> Recording Archiving
                           </span>
-                          {isPresenter && session.zoomMeetingId && (
-                            <button
-                              type="button"
-                              onClick={() => handleSyncRecording(session.id, session.zoomMeetingId)}
-                              disabled={syncingRecordingId === session.id}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-[11px] font-semibold flex items-center gap-1 border border-slate-700"
-                              title="Query Zoom Cloud API to retrieve the finished cloud recording"
-                            >
-                              <RotateCcw className={`w-3 h-3 ${syncingRecordingId === session.id ? "animate-spin" : ""}`} />
-                              <span>{syncingRecordingId === session.id ? "Syncing..." : "Sync Zoom Cloud"}</span>
-                            </button>
+                          {isPresenter && (
+                            <>
+                              {session.zoomMeetingId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSyncRecording(session.id, session.zoomMeetingId)}
+                                  disabled={syncingRecordingId === session.id}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-[11px] font-semibold flex items-center gap-1 border border-slate-700 cursor-pointer transition"
+                                  title="Query Zoom Cloud API to retrieve the finished cloud recording"
+                                >
+                                  <RotateCcw className={`w-3 h-3 ${syncingRecordingId === session.id ? "animate-spin" : ""}`} />
+                                  <span>{syncingRecordingId === session.id ? "Syncing..." : "Sync Zoom Cloud"}</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditRecordingSession(session);
+                                  setRecordingInputUrl(session.recordingUrl || "");
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-1 border border-amber-500/30 cursor-pointer transition"
+                                title="Attach recording link or video URL directly"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Attach Link</span>
+                              </button>
+                            </>
                           )}
                         </div>
                       )}
@@ -2063,6 +2138,118 @@ export default function CoachesAcademyPage() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            MODAL: ATTACH / EDIT RECORDING URL (PRESENTER ONLY)
+           ───────────────────────────────────────────────────────────── */}
+        {editRecordingSession && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Film className="w-5 h-5 text-amber-400" /> Attach / Edit Session Recording
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Provide a direct video link (Zoom Cloud share link, DigitalOcean Spaces S3 MP4, YouTube, Vimeo) for:{" "}
+                  <span className="text-white font-semibold">{editRecordingSession.title}</span>.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveRecordingUrl} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Recording Video URL *
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    value={recordingInputUrl}
+                    onChange={(e) => setRecordingInputUrl(e.target.value)}
+                    placeholder="https://zoom.us/rec/share/... or https://rep1.nyc3.digitaloceanspaces.com/..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-amber-500 outline-none font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Once saved, members will immediately see the "Watch Recording" button and can stream or review this archived masterclass.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditRecordingSession(null);
+                      setRecordingInputUrl("");
+                    }}
+                    className="border-slate-800 hover:bg-slate-800 text-slate-300 text-xs rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={savingRecordingUrl}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl"
+                  >
+                    {savingRecordingUrl ? "Saving Recording..." : "Save Recording Link"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            MODAL: IN-APP VIDEO PLAYER
+           ───────────────────────────────────────────────────────────── */}
+        {videoPlayerUrl && (
+          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden max-w-4xl w-full space-y-4 shadow-2xl p-4 sm:p-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Film className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-bold text-white text-base">Archived Masterclass Replay</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVideoPlayerUrl(null)}
+                  className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+                {videoPlayerUrl.endsWith(".mp4") ? (
+                  <video
+                    src={videoPlayerUrl}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <iframe
+                    src={videoPlayerUrl}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+                <span>REP 1 24-Month Retained Masterclass Archive</span>
+                <a
+                  href={videoPlayerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-amber-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  Open in New Tab <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
           </div>
         )}

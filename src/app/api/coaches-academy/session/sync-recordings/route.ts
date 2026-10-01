@@ -51,12 +51,16 @@ export async function POST(req: Request) {
 
       if (!res.ok) {
         const errText = await res.text();
+        let message = `Zoom Cloud returned ${res.status}: recordings may still be processing on Zoom Cloud.`;
+        if (errText.includes("4711") || errText.includes("cloud_recording") || errText.includes("scope")) {
+          message = "Zoom API: Your Zoom App is missing the 'cloud_recording:read:list_recording_files' scope in Zoom App Marketplace. You can also manually attach the recording URL using 'Attach Link'.";
+        }
         return NextResponse.json(
           {
-            error: `Zoom Cloud returned ${res.status}: recordings may still be processing on Zoom Cloud.`,
+            error: message,
             details: errText,
           },
-          { status: 404 }
+          { status: 400 }
         );
       }
 

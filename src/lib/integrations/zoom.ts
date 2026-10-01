@@ -20,7 +20,7 @@ export function getZoomAuthUrl(orgId: string): string {
     client_id: getZoomClientId(),
     redirect_uri: getZoomRedirectUri(),
     state,
-    scope: "meeting:write:meeting meeting:read:meeting user:read:user meeting:update:status meeting:delete:meeting",
+    scope: "meeting:write:meeting meeting:read:meeting user:read:user meeting:update:status meeting:delete:meeting cloud_recording:read:list_recording_files recording:read:recording",
   });
   return `https://zoom.us/oauth/authorize?${params.toString()}`;
 }
