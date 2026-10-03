@@ -876,44 +876,181 @@ export default function CoachesAcademyPage() {
             </div>
           </div>
 
-          {/* Upcoming Masterclasses Schedule */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 sm:p-10 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                  <Calendar className="w-4 h-4" /> Official 2026–2027 Masterclass Calendar
+          {/* Upcoming Live Sessions Schedule */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-8 shadow-2xl">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                  <Calendar className="w-3.5 h-3.5" /> Official 2026–2027 Curriculum
                 </div>
-                <h3 className="text-2xl font-black text-white">Upcoming Live Classroom Sessions</h3>
+                <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                  Upcoming Live Sessions Schedule
+                </h2>
+                <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  Interactive bi-weekly masterclasses led by veteran college coaches, NFL alumni, and certified officials. Check out the scheduled sessions below to see what you unlock upon registration.
+                </p>
               </div>
-              <p className="text-xs text-slate-400 max-w-md sm:text-right">
-                Live interactive masterclasses led by seasoned coaches and certified officials. Permanent 24-month archived replay paired with full collaborative whiteboard.
-              </p>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                {isAuthenticated ? (
+                  <Button
+                    onClick={handleActivateAnnualPass}
+                    disabled={activatingMembership}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md shadow-amber-500/10"
+                  >
+                    {activatingMembership ? "Activating..." : "Register to Attend All Sessions"}
+                  </Button>
+                ) : (
+                  <Link href="/signup?plan=coaches&callbackUrl=/coaches-academy">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm shadow-md shadow-amber-500/10 flex items-center gap-1.5">
+                      Register to Attend All Sessions <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
 
+            {/* What Registered Coaches Get - Deliverables Banner */}
+            <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 rounded-2xl p-5 sm:p-6">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" /> What You Get As A Registered Coach:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    <Video className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Live Zoom Classroom</span>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Direct interactive audio/video participation with coaches & guest referees during live chalk talks.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    <Presentation className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Interactive Whiteboard</span>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Live collaborative Miro board for diagramming route trees, blitz schemes, and coverage rules.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    <History className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>24-Month Retained Archives</span>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Full video recordings and paired whiteboard history retained for 2 full years for anytime replay.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    <Folder className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Full Playbook Vaults</span>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">
+                    Downloadable PDFs and scheme breakdowns across Offense, Defense, and Special Teams.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sessions Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {upcomingSessions.map((session) => (
                 <div
                   key={session.id}
-                  className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-5 space-y-3 hover:border-amber-500/40 transition group"
+                  className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-5 space-y-4 hover:border-amber-500/50 hover:bg-slate-950 transition flex flex-col justify-between group"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono">
-                      {session.date}
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      {session.department}
-                    </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" /> {session.date}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        {session.department}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-white text-base group-hover:text-amber-400 transition leading-snug">
+                        {session.title}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1.5 line-clamp-3 leading-relaxed">
+                        {session.description}
+                      </p>
+                    </div>
+
+                    {session.presenter && (
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-slate-900">
+                        <Users className="w-3 h-3 text-amber-400/80" />
+                        <span>Instructor: <strong className="text-slate-300 font-medium">{session.presenter}</strong></span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="font-bold text-white text-base group-hover:text-amber-400 transition leading-snug">
-                      {session.title}
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {session.description}
-                    </p>
+
+                  <div className="pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400/90">
+                      <Lock className="w-3 h-3" /> Included with Pass
+                    </span>
+                    {isAuthenticated ? (
+                      <button
+                        onClick={handleActivateAnnualPass}
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        Enroll <ArrowRight className="w-3 h-3" />
+                      </button>
+                    ) : (
+                      <Link
+                        href="/signup?plan=coaches&callbackUrl=/coaches-academy"
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 group-hover:translate-x-0.5 transition"
+                      >
+                        Register <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Bottom Call to Action Strip */}
+            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-0.5 text-center sm:text-left">
+                <div className="text-sm font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-amber-400" />
+                  Ready to attend the next live session on {upcomingSessions[0]?.date || "October 12th"}?
+                </div>
+                <p className="text-xs text-slate-400">
+                  Annual membership gives you 365-day access to all upcoming live sessions, recordings, and whiteboard archives.
+                </p>
+              </div>
+
+              {isAuthenticated ? (
+                <Button
+                  onClick={handleActivateAnnualPass}
+                  disabled={activatingMembership}
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm whitespace-nowrap"
+                >
+                  {activatingMembership ? "Enrolling..." : "Enroll for $69.99/year"}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link href="/signup?plan=coaches&callbackUrl=/coaches-academy">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm whitespace-nowrap">
+                      Sign Up ($69.99/yr)
+                    </Button>
+                  </Link>
+                  <Link href="/login?callbackUrl=/coaches-academy">
+                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs px-3.5 py-2.5 rounded-xl">
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
