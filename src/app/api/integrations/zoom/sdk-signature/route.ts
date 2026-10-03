@@ -66,13 +66,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const isAllowed =
-      user.email === "usama@rep1recruiting.com" ||
-      user.email === "student@rep1recruiting.com";
+    const { canAccessCoachesAcademy } = await import("@/lib/entitlements");
+    const access = await canAccessCoachesAcademy(user.id);
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
-    if (!isAllowed) {
+    if (!access.allowed && !isAdmin) {
       return NextResponse.json(
-        { error: "Access denied during testing phase" },
+        { error: "Access denied. Active Coaches Academy subscription required." },
         { status: 403 }
       );
     }
@@ -98,7 +98,6 @@ export async function POST(req: Request) {
     // Role validation:
     // Only verified platform administrators may request role = 1 (host).
     // For standard participants/athletes, strictly enforce role = 0.
-    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
     const requestedRole = Number(role);
     const roleNumber = isAdmin && requestedRole === 1 ? 1 : 0;
 
