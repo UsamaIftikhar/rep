@@ -15,6 +15,7 @@ export function PublicNavbar() {
 
   const unauthLinks = [
     { label: "Home", href: "/" },
+    { label: "Recruits", href: "/recruiting/search" },
     { label: "Student Academy", href: "/academy" },
     { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
     { label: "Elite Pacific Sports", href: "/elite-pacific" },

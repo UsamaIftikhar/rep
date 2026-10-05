@@ -41,6 +41,10 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isPlatformRoute && !session) {
+    // Allow public preview of the recruits directory
+    if (pathname.startsWith("/recruiting/search")) {
+      return NextResponse.next();
+    }
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);

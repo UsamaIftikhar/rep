@@ -6,14 +6,10 @@ import { canAccessRecruitDatabase } from "@/lib/permissions";
 
 export async function GET(req: Request) {
   const currentUser = await getAuthenticatedUser();
-  if (!currentUser) {
-    return NextResponse.json(
-      { error: "Authentication required to access the recruit database." },
-      { status: 401 }
-    );
-  }
+  const isPublicPreview = !currentUser;
 
-  if (!canAccessRecruitDatabase(currentUser)) {
+  // Authenticated users: must be recruiter or admin
+  if (currentUser && !canAccessRecruitDatabase(currentUser)) {
     return NextResponse.json(
       {
         error:
@@ -194,6 +190,37 @@ export async function GET(req: Request) {
     db.athleteProfile.count({ where }),
   ]);
 
+  // Public preview: return limited athlete fields (no bio, no metrics)
+  if (isPublicPreview) {
+    return NextResponse.json({
+      athletes: athletes.map((a: any) => ({
+        id: a.id,
+        slug: a.slug,
+        sport: a.sport,
+        position: a.position,
+        schoolClub: a.schoolClub,
+        graduationYear: a.graduationYear,
+        location: a.location,
+        profilePhoto: a.profilePhoto,
+        potentialDivision: a.potentialDivision,
+        user: {
+          id: a.user.id,
+          firstName: a.user.firstName,
+          lastName: a.user.lastName,
+          name: a.user.name,
+          badges: a.user.badges,
+        },
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+      isPublicPreview: true,
+    });
+  }
+
   return NextResponse.json({
     athletes,
     pagination: {
@@ -202,5 +229,6 @@ export async function GET(req: Request) {
       limit,
       totalPages: Math.ceil(total / limit) || 1,
     },
+    isPublicPreview: false,
   });
 }
