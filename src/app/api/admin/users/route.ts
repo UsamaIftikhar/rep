@@ -109,7 +109,25 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.json({ users });
+  const sanitizedUsers = users.map((u) => {
+    const isImageBase64 = !!(u.image && u.image.length > 2048);
+    const isPhotoBase64 = !!(
+      u.athleteProfile?.profilePhoto && u.athleteProfile.profilePhoto.length > 2048
+    );
+
+    return {
+      ...u,
+      image: isImageBase64 ? null : u.image,
+      athleteProfile: u.athleteProfile
+        ? {
+            ...u.athleteProfile,
+            profilePhoto: isPhotoBase64 ? null : u.athleteProfile.profilePhoto,
+          }
+        : null,
+    };
+  });
+
+  return NextResponse.json({ users: sanitizedUsers });
 }
 
 export async function PATCH(req: Request) {
