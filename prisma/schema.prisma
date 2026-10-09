@@ -16,6 +16,7 @@ enum UserRole {
   SUPER_ADMIN
   COACHES_ACADEMY_PRESENTER
   COACHES_ACADEMY_MEMBER
+  SALESPERSON
 }
 
 enum UserStatus {
@@ -28,6 +29,11 @@ enum EnrollmentStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+enum AttributionSource {
+  SALESPERSON
+  SOCIAL_MEDIA
 }
 
 enum EnrollmentSource {
@@ -68,6 +74,10 @@ model User {
   status            UserStatus         @default(ACTIVE)
   emailVerified     DateTime?
   image             String?
+  attributionSource AttributionSource? // SALES_REP or SOCIAL_MEDIA
+  salespersonId      String? // FK to User.id when attributionSource = SALES_REP
+  salesperson        User?   @relation("SalesAttribution", fields: [salespersonId], references: [id])
+  otherAttribution   String? // Reserved for future use
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 

@@ -31,6 +31,10 @@ function SignupForm() {
       ? "international"
       : "us"
   );
+  const [attributionSource, setAttributionSource] = React.useState<string>('SOCIAL_MEDIA');
+  const [salespersonId, setSalespersonId] = React.useState<string | null>(null);
+  const [salespeople, setSalespeople] = React.useState<Array<{id:string; name:string}>>([]);
+  const [otherAttribution, setOtherAttribution] = React.useState<string>("");
 
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
@@ -103,6 +107,8 @@ function SignupForm() {
             : "ATHLETE",
         planType: region,
         courseId: courseIdParam || undefined,
+        attributionSource,
+        otherAttribution,
       });
 
       if (!res.success) {
@@ -249,6 +255,45 @@ function SignupForm() {
               onChange={(e) => setSport(e.target.value)}
               disabled={isSubmitting}
             />
+          </div>
+          <div className="mt-4">
+            <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">
+              How did you hear about REP 1?
+            </label>
+            <Select
+              options={[
+                // Sales Representatives
+                { value: "Keven Jackson", label: "Keven Jackson (Sales Rep)" },
+                { value: "Justin Riley", label: "Justin Riley (Sales Rep)" },
+                { value: "Kieth Mosley", label: "Kieth Mosley (Sales Rep)" },
+                { value: "Daniel Pettey", label: "Daniel Pettey (Sales Rep)" },
+                { value: "Terrance Doc Martin", label: "Terrance Doc Martin (Sales Rep)" },
+                // Social / Other Sources
+                { value: "Instagram", label: "Instagram" },
+                { value: "X", label: "X" },
+                { value: "TikTok", label: "TikTok" },
+                { value: "YouTube", label: "YouTube" },
+                { value: "Facebook", label: "Facebook" },
+                { value: "Other", label: "Other" },
+              ]}
+              value={attributionSource}
+              onChange={(e) => setAttributionSource(e.target.value)}
+              disabled={isSubmitting}
+            />
+            {attributionSource === "Other" && (
+              <div className="mt-2">
+                <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">
+                  Please specify
+                </label>
+                <Input
+                  placeholder="e.g., Friend, Google, Event, etc."
+                  value={otherAttribution}
+                  onChange={(e) => setOtherAttribution(e.target.value)}
+                  required={attributionSource === "Other"}
+                  disabled={isSubmitting}
+                />
+              </div>
+            )}
           </div>
 
           <div>

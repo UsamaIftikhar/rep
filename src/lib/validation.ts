@@ -13,6 +13,12 @@ export const signUpSchema = z.object({
   location: z.string().optional(),
   sport: z.string().optional(),
   position: z.string().optional(),
+  attributionSource: z.enum(['SALESPERSON','SOCIAL_MEDIA']).optional(),
+  salespersonId: z.string().optional().refine((val,ctx)=>{
+    const source = ctx.parent.attributionSource;
+    if(source==='SALESPERSON' && (!val || val.trim()==='')) return false;
+    return true;
+  },{message:'Salesperson ID required when attribution source is SALESPERSON'}),
 });
 
 export const signInSchema = z.object({

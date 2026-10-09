@@ -29,6 +29,9 @@ export async function POST(req: Request) {
       location,
       sport,
       position,
++      attributionSource,
++      salespersonId,
++      otherAttribution,
     } = result.data;
 
     const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" | "RECRUITER" | "COACHES" =
@@ -96,6 +99,9 @@ export async function POST(req: Request) {
         name: fullName,
         role: userRole,
         status: UserStatus.PENDING_PAYMENT,
+        attributionSource,
+        salespersonId: salespersonId || undefined,
+        otherAttribution,
         athleteProfile: {
           create: {
             slug: uniqueSlug,

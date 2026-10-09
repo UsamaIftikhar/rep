@@ -25,6 +25,21 @@ export function isRecruiter(user: SessionUser | null | undefined): boolean {
   return user.role === UserRole.RECRUITER || isAdmin(user);
 }
 
+// New helper to check for a sales person role
+export function isSalesperson(user: SessionUser | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === UserRole.SALESPERSON;
+}
+
+// Permission to access sales‑person‑specific sections
+export function canAccessSalesSection(user: SessionUser | null | undefined): boolean {
+  // Salespeople may access their own dashboard; admins can also view it
+  return isSalesperson(user) || isAdmin(user);
+}
+  if (!user) return false;
+  return user.role === UserRole.RECRUITER || isAdmin(user);
+}
+
 export function canManageUsers(user: SessionUser | null | undefined): boolean {
   return isAdmin(user);
 }
