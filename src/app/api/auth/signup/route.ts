@@ -29,9 +29,9 @@ export async function POST(req: Request) {
       location,
       sport,
       position,
-+      attributionSource,
-+      salespersonId,
-+      otherAttribution,
+      attributionSource,
+      salespersonId,
+      otherAttribution,
     } = result.data;
 
     const planType: "US_ATHLETE" | "INTERNATIONAL" | "COURSE" | "RECRUITER" | "COACHES" =

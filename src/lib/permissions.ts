@@ -36,9 +36,6 @@ export function canAccessSalesSection(user: SessionUser | null | undefined): boo
   // Salespeople may access their own dashboard; admins can also view it
   return isSalesperson(user) || isAdmin(user);
 }
-  if (!user) return false;
-  return user.role === UserRole.RECRUITER || isAdmin(user);
-}
 
 export function canManageUsers(user: SessionUser | null | undefined): boolean {
   return isAdmin(user);

@@ -13,13 +13,21 @@ export const signUpSchema = z.object({
   location: z.string().optional(),
   sport: z.string().optional(),
   position: z.string().optional(),
-  attributionSource: z.enum(['SALESPERSON','SOCIAL_MEDIA']).optional(),
-  salespersonId: z.string().optional().refine((val,ctx)=>{
-    const source = ctx.parent.attributionSource;
-    if(source==='SALESPERSON' && (!val || val.trim()==='')) return false;
+  attributionSource: z.enum(['SALESPERSON', 'SOCIAL_MEDIA']).optional(),
+  salespersonId: z.string().optional(),
+  otherAttribution: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.attributionSource === 'SALESPERSON' && (!data.salespersonId || data.salespersonId.trim() === '')) {
+      return false;
+    }
     return true;
-  },{message:'Salesperson ID required when attribution source is SALESPERSON'}),
-});
+  },
+  {
+    message: 'Salesperson ID required when attribution source is SALESPERSON',
+    path: ['salespersonId'],
+  }
+);
 
 export const signInSchema = z.object({
   email: z.string().email("Invalid email address"),

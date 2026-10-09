@@ -216,6 +216,9 @@ async function main() {{
 main().catch(console.error).finally(() => process.exit(0));
 " """)
 
+# Upsert salespeople accounts directly to production database
+run_cmd(f"cd {REMOTE_DIR} && npx --yes tsx scripts/create_salespeople.ts")
+
 # 7. Build Next.js Production Bundle
 run_cmd(f"cd {REMOTE_DIR} && npm run build")
 

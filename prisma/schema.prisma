@@ -77,6 +77,7 @@ model User {
   attributionSource AttributionSource? // SALES_REP or SOCIAL_MEDIA
   salespersonId      String? // FK to User.id when attributionSource = SALES_REP
   salesperson        User?   @relation("SalesAttribution", fields: [salespersonId], references: [id])
+  referredUsers      User[]  @relation("SalesAttribution")
   otherAttribution   String? // Reserved for future use
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
