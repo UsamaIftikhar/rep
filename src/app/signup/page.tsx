@@ -267,7 +267,7 @@ function SignupForm() {
                 { value: "Justin Riley", label: "Justin Riley (Sales Rep)" },
                 { value: "Kieth Mosley", label: "Kieth Mosley (Sales Rep)" },
                 { value: "Daniel Pettey", label: "Daniel Pettey (Sales Rep)" },
-                { value: "Terrance Doc Martin", label: "Terrance Doc Martin (Sales Rep)" },
+                { value: "Terrance Doc Martin", label: "Terrance Doc Martin (Basketball Operations)" },
                 // Social / Other Sources
                 { value: "Instagram", label: "Instagram" },
                 { value: "X", label: "X" },
