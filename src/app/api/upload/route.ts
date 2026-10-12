@@ -27,11 +27,15 @@ export async function POST(req: Request) {
     const s3Key = `${folder}/${Date.now()}_${cleanName}${ext}`;
 
     // Upload directly to DigitalOcean Spaces: https://rep1.nyc3.digitaloceanspaces.com
-    const publicUrl = await uploadBufferToS3(buffer, s3Key, file.type || "application/octet-stream");
+    const spacesUrl = await uploadBufferToS3(buffer, s3Key, file.type || "application/octet-stream");
+
+    // Secure application download URL that pre-signs on the fly (prevents AccessDenied from private DigitalOcean Spaces)
+    const downloadUrl = `/api/coaches-academy/files/download?url=${encodeURIComponent(spacesUrl)}`;
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: downloadUrl,
+      spacesUrl,
       s3Key,
       fileSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
       fileName: file.name,

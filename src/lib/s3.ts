@@ -35,6 +35,12 @@ export function getPublicS3Url(s3Key: string): string {
 export function extractS3KeyFromUrl(url: string): string | null {
   try {
     if (!url || typeof url !== "string") return null;
+    if (url.includes("?url=") || url.includes("&url=")) {
+      const match = url.match(/[?&]url=([^&]+)/);
+      if (match && match[1]) {
+        return extractS3KeyFromUrl(decodeURIComponent(match[1]));
+      }
+    }
     if (!url.includes(S3_BUCKET) && !url.includes("digitaloceanspaces.com")) {
       return null;
     }

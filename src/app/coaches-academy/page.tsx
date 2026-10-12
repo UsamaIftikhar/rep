@@ -2482,21 +2482,21 @@ export default function CoachesAcademyPage() {
                   />
                   {uploadingFileToSpaces && (
                     <p className="text-xs text-amber-400 flex items-center gap-1.5 mt-1 animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Uploading to DigitalOcean Spaces S3 bucket...
+                      <Loader2 className="w-3 h-3 animate-spin" /> Uploading to DigitalOcean Spaces...
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    File URL (Direct S3 or External Link) *
+                    File URL (DigitalOcean Spaces or External Link) *
                   </label>
                   <input
                     type="url"
                     required
                     value={uploadUrl}
                     onChange={(e) => setUploadUrl(e.target.value)}
-                    placeholder="https://rep1.nyc3.digitaloceanspaces.com/..."
+                    placeholder="https://rep1exposure.com/api/coaches-academy/files/download?..."
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-amber-500 outline-none font-mono text-xs"
                   />
                 </div>
