@@ -11,7 +11,7 @@ export const S3_PUBLIC_BASE_URL =
   process.env.S3_PUBLIC_BASE_URL ||
   `https://${S3_BUCKET}.nyc3.digitaloceanspaces.com`;
 
-const s3Client = new S3Client({
+export const s3Client = new S3Client({
   endpoint: S3_ENDPOINT,
   region: S3_REGION,
   credentials: {
@@ -30,29 +30,45 @@ export function getPublicS3Url(s3Key: string): string {
 }
 
 /**
+ * Extracts S3 key from a DigitalOcean Spaces URL or returns null if not an S3 URL.
+ */
+export function extractS3KeyFromUrl(url: string): string | null {
+  try {
+    if (!url || typeof url !== "string") return null;
+    if (!url.includes(S3_BUCKET) && !url.includes("digitaloceanspaces.com")) {
+      return null;
+    }
+    const parsed = new URL(url);
+    const key = parsed.pathname.startsWith("/") ? parsed.pathname.substring(1) : parsed.pathname;
+    return decodeURIComponent(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Uploads a Buffer directly to DigitalOcean Spaces / S3 and returns the public URL.
  */
 export async function uploadBufferToS3(
   buffer: Buffer,
   s3Key: string,
-  contentType: string = "application/octet-stream",
-  isPublic: boolean = true
+  contentType: string = "application/octet-stream"
 ): Promise<string> {
+  const cleanKey = s3Key.startsWith("/") ? s3Key.substring(1) : s3Key;
   try {
     const command = new PutObjectCommand({
       Bucket: S3_BUCKET,
-      Key: s3Key,
+      Key: cleanKey,
       Body: buffer,
       ContentType: contentType,
-      ACL: isPublic ? "public-read" : undefined,
+      // Note: Do NOT specify ACL as DigitalOcean Spaces private buckets reject unsupported ACL configurations
     });
 
     await s3Client.send(command);
-    return getPublicS3Url(s3Key);
-  } catch (err) {
+    return getPublicS3Url(cleanKey);
+  } catch (err: any) {
     console.error("S3/Spaces Upload Error:", err);
-    // Return direct DigitalOcean Spaces URL fallback
-    return getPublicS3Url(s3Key);
+    throw new Error(err.message || "Failed to upload file to DigitalOcean Spaces");
   }
 }
 
@@ -64,37 +80,43 @@ export async function uploadStreamToS3(
   s3Key: string,
   contentType: string = "video/mp4"
 ): Promise<{ bucket: string; key: string; url: string }> {
+  const cleanKey = s3Key.startsWith("/") ? s3Key.substring(1) : s3Key;
   try {
     const command = new PutObjectCommand({
       Bucket: S3_BUCKET,
-      Key: s3Key,
+      Key: cleanKey,
       Body: body as any,
       ContentType: contentType,
-      ACL: "public-read",
     });
 
     await s3Client.send(command);
-    return { bucket: S3_BUCKET, key: s3Key, url: getPublicS3Url(s3Key) };
-  } catch (err) {
+    return { bucket: S3_BUCKET, key: cleanKey, url: getPublicS3Url(cleanKey) };
+  } catch (err: any) {
     console.error("S3 Stream Upload Error:", err);
-    return { bucket: S3_BUCKET, key: s3Key, url: getPublicS3Url(s3Key) };
+    throw new Error(err.message || "Failed to upload stream to DigitalOcean Spaces");
   }
 }
 
 /**
  * Generates a short-lived pre-signed download URL or returns the direct public URL.
  */
-export async function getPresignedS3Url(s3Key: string, expiresInSeconds: number = 3600): Promise<string> {
-  const expires = Math.min(expiresInSeconds, 3600);
+export async function getPresignedS3Url(
+  s3Key: string,
+  expiresInSeconds: number = 3600,
+  contentDisposition?: string
+): Promise<string> {
+  const cleanKey = s3Key.startsWith("/") ? s3Key.substring(1) : s3Key;
+  const expires = Math.min(expiresInSeconds, 86400);
   try {
     const command = new GetObjectCommand({
       Bucket: S3_BUCKET,
-      Key: s3Key,
+      Key: cleanKey,
+      ResponseContentDisposition: contentDisposition,
     });
     return await getSignedUrl(s3Client, command, { expiresIn: expires });
   } catch (err) {
     console.error("Failed to generate pre-signed S3 URL:", err);
-    return getPublicS3Url(s3Key);
+    return getPublicS3Url(cleanKey);
   }
 }
 
@@ -102,10 +124,11 @@ export async function getPresignedS3Url(s3Key: string, expiresInSeconds: number 
  * Deletes an object from DigitalOcean Spaces / S3 bucket.
  */
 export async function deleteFromS3(s3Key: string): Promise<boolean> {
+  const cleanKey = s3Key.startsWith("/") ? s3Key.substring(1) : s3Key;
   try {
     const command = new DeleteObjectCommand({
       Bucket: S3_BUCKET,
-      Key: s3Key,
+      Key: cleanKey,
     });
     await s3Client.send(command);
     return true;

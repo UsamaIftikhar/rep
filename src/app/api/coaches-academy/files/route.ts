@@ -33,7 +33,14 @@ export async function GET(req: Request) {
       orderBy: { uploadedAt: "desc" },
     });
 
-    return NextResponse.json({ files, isPresenter: access.isPresenter });
+    const enrichedFiles = files.map((file) => ({
+      ...file,
+      downloadUrl: file.fileUrl.includes("digitaloceanspaces.com")
+        ? `/api/coaches-academy/files/download?id=${file.id}`
+        : file.fileUrl,
+    }));
+
+    return NextResponse.json({ files: enrichedFiles, isPresenter: access.isPresenter });
   } catch (error: any) {
     console.error("[COACHES_ACADEMY_FILES_GET]", error);
     return NextResponse.json(

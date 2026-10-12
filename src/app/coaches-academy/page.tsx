@@ -61,6 +61,7 @@ interface AcademyFile {
   title: string;
   description?: string;
   fileUrl: string;
+  downloadUrl?: string;
   fileSize?: string;
   fileType?: string;
   category: string; // OPERATIONS | OFFENSE | DEFENSE | SPECIAL_TEAMS
@@ -2101,7 +2102,7 @@ export default function CoachesAcademyPage() {
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
                       <a
-                        href={file.fileUrl}
+                        href={file.downloadUrl || (file.fileUrl.includes("digitaloceanspaces.com") ? `/api/coaches-academy/files/download?id=${file.id}` : file.fileUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center text-xs font-semibold text-amber-400 hover:text-amber-300 gap-1.5"
