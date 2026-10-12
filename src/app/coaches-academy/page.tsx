@@ -245,7 +245,10 @@ export default function CoachesAcademyPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setUploadUrl(data.url);
+        const fullUrl = data.url.startsWith("/") && typeof window !== "undefined"
+          ? `${window.location.origin}${data.url}`
+          : data.url;
+        setUploadUrl(fullUrl);
         if (!uploadTitle) {
           setUploadTitle(file.name.replace(/\.[^/.]+$/, ""));
         }
@@ -2492,7 +2495,7 @@ export default function CoachesAcademyPage() {
                     File URL (DigitalOcean Spaces or External Link) *
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     required
                     value={uploadUrl}
                     onChange={(e) => setUploadUrl(e.target.value)}

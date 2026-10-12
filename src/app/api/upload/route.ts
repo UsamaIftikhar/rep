@@ -30,7 +30,10 @@ export async function POST(req: Request) {
     const spacesUrl = await uploadBufferToS3(buffer, s3Key, file.type || "application/octet-stream");
 
     // Secure application download URL that pre-signs on the fly (prevents AccessDenied from private DigitalOcean Spaces)
-    const downloadUrl = `/api/coaches-academy/files/download?url=${encodeURIComponent(spacesUrl)}`;
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "rep1exposure.com";
+    const proto = req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+    const origin = `${proto}://${host}`;
+    const downloadUrl = `${origin}/api/coaches-academy/files/download?url=${encodeURIComponent(spacesUrl)}`;
 
     return NextResponse.json({
       success: true,
