@@ -33,12 +33,20 @@ export async function GET(req: Request) {
       orderBy: { uploadedAt: "desc" },
     });
 
-    const enrichedFiles = files.map((file) => ({
-      ...file,
-      downloadUrl: file.fileUrl.includes("digitaloceanspaces.com")
-        ? `/api/coaches-academy/files/download?id=${file.id}`
-        : file.fileUrl,
-    }));
+    const enrichedFiles = files.map((file) => {
+      const isOfficeDoc = /\.(pptx?|ppsx?|potx?|docx?|xlsx?)$/i.test(file.fileUrl) || file.fileType === "presentation";
+      const isSpaces = file.fileUrl.includes("digitaloceanspaces.com") || file.fileUrl.includes("/api/coaches-academy/files/download");
+      return {
+        ...file,
+        downloadUrl: isSpaces
+          ? `/api/coaches-academy/files/download?id=${file.id}`
+          : file.fileUrl,
+        viewerUrl: isOfficeDoc && isSpaces
+          ? `/api/coaches-academy/files/download?id=${file.id}&view=1`
+          : null,
+        isOfficeDoc,
+      };
+    });
 
     return NextResponse.json({ files: enrichedFiles, isPresenter: access.isPresenter });
   } catch (error: any) {

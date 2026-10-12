@@ -74,8 +74,22 @@ export async function GET(req: Request) {
     // Generate pre-signed URL (valid for 1 hour)
     const presignedUrl = await getPresignedS3Url(s3Key, 3600);
 
+    const isOfficeDoc = /\.(pptx?|ppsx?|potx?|docx?|xlsx?)$/i.test(s3Key);
+    const officeViewerUrl = isOfficeDoc
+      ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(presignedUrl)}`
+      : null;
+
     if (searchParams.get("format") === "json") {
-      return NextResponse.json({ url: presignedUrl });
+      return NextResponse.json({
+        url: presignedUrl,
+        viewerUrl: officeViewerUrl || presignedUrl,
+        isOfficeDoc,
+      });
+    }
+
+    // If view=1 or preview=1 requested for office presentation/document, redirect to Microsoft Office Online Viewer
+    if ((searchParams.get("view") === "1" || searchParams.get("preview") === "1") && officeViewerUrl) {
+      return NextResponse.redirect(officeViewerUrl);
     }
 
     // Redirect browser directly to the pre-signed download/view URL

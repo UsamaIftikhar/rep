@@ -41,6 +41,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Upload,
+  Eye,
+  X,
 } from "lucide-react";
 import {
   UPCOMING_COACHES_SESSIONS,
@@ -62,6 +64,8 @@ interface AcademyFile {
   description?: string;
   fileUrl: string;
   downloadUrl?: string;
+  viewerUrl?: string | null;
+  isOfficeDoc?: boolean;
   fileSize?: string;
   fileType?: string;
   category: string; // OPERATIONS | OFFENSE | DEFENSE | SPECIAL_TEAMS
@@ -226,6 +230,7 @@ export default function CoachesAcademyPage() {
   const [uploadSubfolder, setUploadSubfolder] = React.useState<string>("QB");
   const [isUploading, setIsUploading] = React.useState<boolean>(false);
   const [uploadingFileToSpaces, setUploadingFileToSpaces] = React.useState<boolean>(false);
+  const [slidePreviewModal, setSlidePreviewModal] = React.useState<{ isOpen: boolean; title: string; url: string; downloadUrl: string } | null>(null);
 
   // Direct DigitalOcean Spaces file uploader
   const handleFileUploadToSpaces = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2104,14 +2109,39 @@ export default function CoachesAcademyPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
-                      <a
-                        href={file.downloadUrl || (file.fileUrl.includes("digitaloceanspaces.com") ? `/api/coaches-academy/files/download?id=${file.id}` : file.fileUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center text-xs font-semibold text-amber-400 hover:text-amber-300 gap-1.5"
-                      >
-                        <Download className="w-3.5 h-3.5" /> Download / View
-                      </a>
+                      <div className="flex items-center gap-2">
+                        {file.viewerUrl ? (
+                          <>
+                            <button
+                              onClick={() => setSlidePreviewModal({
+                                isOpen: true,
+                                title: file.title,
+                                url: file.viewerUrl!,
+                                downloadUrl: file.downloadUrl || file.fileUrl
+                              })}
+                              className="inline-flex items-center text-xs font-semibold text-amber-400 hover:text-amber-300 gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 transition cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View Slides
+                            </button>
+                            <a
+                              href={file.downloadUrl || file.fileUrl}
+                              className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-slate-200 gap-1 px-2 py-1.5 rounded-lg hover:bg-slate-800 transition"
+                              title="Download presentation file"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </>
+                        ) : (
+                          <a
+                            href={file.downloadUrl || (file.fileUrl.includes("digitaloceanspaces.com") ? `/api/coaches-academy/files/download?id=${file.id}` : file.fileUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center text-xs font-semibold text-amber-400 hover:text-amber-300 gap-1.5"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Download / View
+                          </a>
+                        )}
+                      </div>
 
                       {isPresenter && (
                         <button
@@ -2760,6 +2790,56 @@ export default function CoachesAcademyPage() {
                 >
                   Open in New Tab <ExternalLink className="w-3.5 h-3.5" />
                 </a>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* In-Browser Presentation Slide Viewer Modal */}
+        {slidePreviewModal?.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in">
+            <div className="w-full max-w-6xl h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-950/90">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400">
+                    <Presentation className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white truncate max-w-lg">
+                      {slidePreviewModal.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Interactive PowerPoint Presentation Viewer</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={slidePreviewModal.downloadUrl}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download PPTX
+                  </a>
+                  <a
+                    href={slidePreviewModal.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    title="Open in new window"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> Full Tab
+                  </a>
+                  <button
+                    onClick={() => setSlidePreviewModal(null)}
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 bg-slate-950 relative">
+                <iframe
+                  src={slidePreviewModal.url}
+                  className="w-full h-full border-0"
+                  allowFullScreen
+                />
               </div>
             </div>
           </div>
