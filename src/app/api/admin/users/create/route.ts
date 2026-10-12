@@ -10,7 +10,17 @@ const createUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  role: z.enum(["ATHLETE", "RECRUITER", "ADMIN", "SUPER_ADMIN"]).default("ATHLETE"),
+  role: z
+    .enum([
+      "ATHLETE",
+      "RECRUITER",
+      "ADMIN",
+      "SUPER_ADMIN",
+      "COACHES_ACADEMY_MEMBER",
+      "COACHES_ACADEMY_PRESENTER",
+      "SALESPERSON",
+    ])
+    .default("ATHLETE"),
   customRoleId: z.string().nullable().optional(),
   status: z.enum(["ACTIVE", "SUSPENDED", "PENDING_PAYMENT"]).default("ACTIVE"),
   grantMembership: z.boolean().default(true),
@@ -104,12 +114,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // If grantMembership is true (or admin-handled payment), create active ACADEMY entitlement
+    // If grantMembership is true (or admin-handled payment), create active entitlement
     if (grantMembership) {
+      const entType =
+        role === "COACHES_ACADEMY_MEMBER" || role === "COACHES_ACADEMY_PRESENTER"
+          ? EntitlementType.COACHES_ACADEMY
+          : EntitlementType.ACADEMY;
       await db.entitlement.create({
         data: {
           userId: newUser.id,
-          type: EntitlementType.ACADEMY,
+          type: entType,
           source: EntitlementSource.ADMIN,
           startsAt: new Date(),
         },

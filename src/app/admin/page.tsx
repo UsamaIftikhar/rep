@@ -59,7 +59,14 @@ interface AdminUserItem {
   name: string | null;
   firstName: string | null;
   lastName: string | null;
-  role: "ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN";
+  role:
+    | "ATHLETE"
+    | "RECRUITER"
+    | "ADMIN"
+    | "SUPER_ADMIN"
+    | "COACHES_ACADEMY_MEMBER"
+    | "COACHES_ACADEMY_PRESENTER"
+    | "SALESPERSON";
   status: "ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT";
   createdAt: string;
   image?: string | null;
@@ -136,7 +143,15 @@ export default function AdminDashboardPage() {
   const [createPassword, setCreatePassword] = React.useState("");
   const [createFirstName, setCreateFirstName] = React.useState("");
   const [createLastName, setCreateLastName] = React.useState("");
-  const [createRole, setCreateRole] = React.useState<"ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN">("ATHLETE");
+  const [createRole, setCreateRole] = React.useState<
+    | "ATHLETE"
+    | "RECRUITER"
+    | "ADMIN"
+    | "SUPER_ADMIN"
+    | "COACHES_ACADEMY_MEMBER"
+    | "COACHES_ACADEMY_PRESENTER"
+    | "SALESPERSON"
+  >("ATHLETE");
   const [createCustomRoleId, setCreateCustomRoleId] = React.useState("");
   const [createStatus, setCreateStatus] = React.useState<"ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT">("ACTIVE");
   const [createGrantMembership, setCreateGrantMembership] = React.useState(true);
@@ -160,7 +175,15 @@ export default function AdminDashboardPage() {
   const [formFirstName, setFormFirstName] = React.useState("");
   const [formLastName, setFormLastName] = React.useState("");
   const [formEmail, setFormEmail] = React.useState("");
-  const [formRole, setFormRole] = React.useState<"ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN">("ATHLETE");
+  const [formRole, setFormRole] = React.useState<
+    | "ATHLETE"
+    | "RECRUITER"
+    | "ADMIN"
+    | "SUPER_ADMIN"
+    | "COACHES_ACADEMY_MEMBER"
+    | "COACHES_ACADEMY_PRESENTER"
+    | "SALESPERSON"
+  >("ATHLETE");
   const [formStatus, setFormStatus] = React.useState<"ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT">("ACTIVE");
 
   // Profile Form State
@@ -500,7 +523,14 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const [userTypeFilter, setUserTypeFilter] = React.useState<"ALL" | "CLASSROOM_ONLY" | "RECRUITING_ATHLETES" | "RECRUITERS" | "ADMINS">("ALL");
+  const [userTypeFilter, setUserTypeFilter] = React.useState<
+    | "ALL"
+    | "CLASSROOM_ONLY"
+    | "RECRUITING_ATHLETES"
+    | "RECRUITERS"
+    | "ADMINS"
+    | "COACHES"
+  >("ALL");
 
   const filteredUsers = React.useMemo(() => {
     return users.filter((u) => {
@@ -523,6 +553,12 @@ export default function AdminDashboardPage() {
         return false;
       if (userTypeFilter === "RECRUITERS" && u.role !== "RECRUITER") return false;
       if (userTypeFilter === "ADMINS" && u.role !== "ADMIN" && u.role !== "SUPER_ADMIN")
+        return false;
+      if (
+        userTypeFilter === "COACHES" &&
+        u.role !== "COACHES_ACADEMY_MEMBER" &&
+        u.role !== "COACHES_ACADEMY_PRESENTER"
+      )
         return false;
 
       if (!searchQuery.trim()) return true;
@@ -1013,6 +1049,16 @@ export default function AdminDashboardPage() {
                   }`}
                 >
                   Admins ({users.filter((u) => u.role === "ADMIN" || u.role === "SUPER_ADMIN").length})
+                </button>
+                <button
+                  onClick={() => setUserTypeFilter("COACHES")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    userTypeFilter === "COACHES"
+                      ? "bg-amber-500/30 text-amber-300 border border-amber-500/50"
+                      : "bg-white/5 text-[#A3A3A3] hover:text-white border border-white/5"
+                  }`}
+                >
+                  Coaches Academy ({users.filter((u) => u.role === "COACHES_ACADEMY_MEMBER" || u.role === "COACHES_ACADEMY_PRESENTER").length})
                 </button>
               </div>
 
@@ -1639,6 +1685,9 @@ export default function AdminDashboardPage() {
                           { value: "RECRUITER", label: "Recruiter" },
                           { value: "ADMIN", label: "Admin" },
                           { value: "SUPER_ADMIN", label: "Super Admin" },
+                          { value: "COACHES_ACADEMY_MEMBER", label: "Coaches Academy Member" },
+                          { value: "COACHES_ACADEMY_PRESENTER", label: "Coaches Academy Presenter" },
+                          { value: "SALESPERSON", label: "Sales Rep" },
                         ]}
                       />
                     </div>
@@ -1958,6 +2007,9 @@ export default function AdminDashboardPage() {
                         { value: "RECRUITER", label: "Recruiter" },
                         { value: "ADMIN", label: "Admin" },
                         { value: "SUPER_ADMIN", label: "Super Admin" },
+                        { value: "COACHES_ACADEMY_MEMBER", label: "Coaches Academy Member" },
+                        { value: "COACHES_ACADEMY_PRESENTER", label: "Coaches Academy Presenter" },
+                        { value: "SALESPERSON", label: "Sales Rep" },
                       ]}
                       className="bg-[#171717]"
                     />

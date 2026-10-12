@@ -99,7 +99,15 @@ export default function PublicAthleteProfilePage() {
   const [formFirstName, setFormFirstName] = React.useState("");
   const [formLastName, setFormLastName] = React.useState("");
   const [formEmail, setFormEmail] = React.useState("");
-  const [formRole, setFormRole] = React.useState<"ATHLETE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN">("ATHLETE");
+  const [formRole, setFormRole] = React.useState<
+    | "ATHLETE"
+    | "RECRUITER"
+    | "ADMIN"
+    | "SUPER_ADMIN"
+    | "COACHES_ACADEMY_MEMBER"
+    | "COACHES_ACADEMY_PRESENTER"
+    | "SALESPERSON"
+  >("ATHLETE");
   const [formStatus, setFormStatus] = React.useState<"ACTIVE" | "SUSPENDED" | "PENDING_PAYMENT">("ACTIVE");
 
   // Profile Form State
@@ -1115,6 +1123,9 @@ export default function PublicAthleteProfilePage() {
                           { value: "RECRUITER", label: "Recruiter" },
                           { value: "ADMIN", label: "Admin" },
                           { value: "SUPER_ADMIN", label: "Super Admin" },
+                          { value: "COACHES_ACADEMY_MEMBER", label: "Coaches Academy Member" },
+                          { value: "COACHES_ACADEMY_PRESENTER", label: "Coaches Academy Presenter" },
+                          { value: "SALESPERSON", label: "Sales Rep" },
                         ]}
                       />
                     </div>

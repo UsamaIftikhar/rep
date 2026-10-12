@@ -9,7 +9,17 @@ const updateUserSchema = z.object({
   email: z.string().email().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  role: z.enum(["ATHLETE", "RECRUITER", "ADMIN", "SUPER_ADMIN"]).optional(),
+  role: z
+    .enum([
+      "ATHLETE",
+      "RECRUITER",
+      "ADMIN",
+      "SUPER_ADMIN",
+      "COACHES_ACADEMY_MEMBER",
+      "COACHES_ACADEMY_PRESENTER",
+      "SALESPERSON",
+    ])
+    .optional(),
   status: z.enum(["ACTIVE", "SUSPENDED", "PENDING_PAYMENT"]).optional(),
   profile: z
     .object({

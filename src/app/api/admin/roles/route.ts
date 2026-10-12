@@ -33,6 +33,27 @@ const DEFAULT_SYSTEM_ROLES = [
     permissions: ["all_permissions", "manage_roles", "manage_system"],
     isSystem: true,
   },
+  {
+    name: "COACHES_ACADEMY_MEMBER",
+    displayName: "Coaches Academy Member",
+    description: "Coaching staff enrolled in the REP 1 Coaches Academy with access to live classrooms and playbooks.",
+    permissions: ["access_coaches_academy"],
+    isSystem: true,
+  },
+  {
+    name: "COACHES_ACADEMY_PRESENTER",
+    displayName: "Coaches Academy Presenter",
+    description: "Presenter/instructor for the REP 1 Coaches Academy with classroom hosting and file upload powers.",
+    permissions: ["access_coaches_academy", "manage_coaches_academy"],
+    isSystem: true,
+  },
+  {
+    name: "SALESPERSON",
+    displayName: "Sales Representative",
+    description: "REP 1 Sales Representative with affiliate attribution tracking.",
+    permissions: ["view_sales_stats"],
+    isSystem: true,
+  },
 ];
 
 const createRoleSchema = z.object({
