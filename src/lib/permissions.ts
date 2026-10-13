@@ -54,6 +54,7 @@ export const COACHES_ACADEMY_PRESENTER_EMAILS = [
   "terry@rep1recruiting.com",
   "darius@rep1recruiting.com",
   "usama@rep1recruiting.com",
+  "usamaiftikhar59@gmail.com",
 ];
 
 export function isCoachesAcademyPresenter(user: SessionUser | null | undefined): boolean {
