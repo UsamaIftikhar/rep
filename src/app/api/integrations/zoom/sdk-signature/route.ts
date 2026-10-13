@@ -100,11 +100,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Role validation:
-    // Only verified platform administrators may request role = 1 (host).
-    // For standard participants/athletes, strictly enforce role = 0.
-    const requestedRole = Number(role);
-    const roleNumber = isAdmin && requestedRole === 1 ? 1 : 0;
+    // For embedded Web SDK, role 0 (attendee) allows seamless in-browser joining
+    // without requiring a host ZAK (Zoom Access Key) token, which triggers Error 3707.
+    const roleNumber = 0;
 
     // Retrieve Zoom General App Meeting SDK credentials
     const sdkKey = process.env.ZOOM_SDK_KEY || process.env.ZOOM_CLIENT_ID || "";

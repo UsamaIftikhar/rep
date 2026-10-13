@@ -1347,7 +1347,7 @@ export default function CoachesAcademyPage() {
                         password={activeMeeting?.password || activeSession?.zoomPassword || undefined}
                         userName={user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Coach Member")}
                         userEmail={user?.email || ""}
-                        role={isPresenter ? 1 : 0}
+                        role={0}
                         height="100%"
                         isTheatre={roomLayout === "zoom_focus"}
                         onToggleTheatre={() =>

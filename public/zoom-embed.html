@@ -436,7 +436,7 @@
                 isConflict = true;
                 errorTitle = 'Another Meeting in Progress';
                 errorMsg = 'Zoom reports that your host account already has another meeting in progress. Click "Close In-Progress Meetings" to terminate prior sessions and reconnect.';
-              } else if (payload.errorCode === 3008) {
+              } else if (payload.errorCode === 3008 || payload.errorCode === 3707) {
                 errorTitle = 'Waiting for Host to Start Meeting';
                 errorMsg = 'The meeting has not been started yet by the host. Auto-checking every 7 seconds — you will be joined automatically as soon as the host begins the session.';
                 if (!window._retryPollTimer) {
