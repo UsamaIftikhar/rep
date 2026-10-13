@@ -25,12 +25,17 @@ function generateZoomSDKJWT(
   const exp = iat + 60 * 60 * 2;
   const tokenExp = exp;
 
+  const numericMeetingNumber = parseInt(
+    String(meetingNumber).replace(/[^0-9]/g, ""),
+    10
+  );
+
   const header = { alg: "HS256", typ: "JWT" };
   const payload = {
     appKey: sdkKey,
     sdkKey: sdkKey,
-    mn: meetingNumber,
-    role: role,
+    mn: numericMeetingNumber,
+    role: Number(role),
     iat: iat,
     exp: exp,
     tokenExp: tokenExp,
