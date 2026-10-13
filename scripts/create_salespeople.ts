@@ -20,8 +20,9 @@ async function main() {
       where: { email: { equals: sp.email, mode: "insensitive" } },
     });
 
+    let userRecord = existing;
     if (existing) {
-      await prisma.user.update({
+      userRecord = await prisma.user.update({
         where: { id: existing.id },
         data: {
           email: sp.email.toLowerCase(),
@@ -35,7 +36,7 @@ async function main() {
       });
       console.log(`Updated ${sp.email}`);
     } else {
-      await prisma.user.create({
+      userRecord = await prisma.user.create({
         data: {
           email: sp.email.toLowerCase(),
           passwordHash,
@@ -47,6 +48,15 @@ async function main() {
         },
       });
       console.log(`Created ${sp.email}`);
+    }
+
+    if (userRecord) {
+      const deletedProfiles = await prisma.athleteProfile.deleteMany({
+        where: { userId: userRecord.id },
+      });
+      if (deletedProfiles.count > 0) {
+        console.log(`Removed ${deletedProfiles.count} athleteProfile for ${sp.email}`);
+      }
     }
   }
 }
