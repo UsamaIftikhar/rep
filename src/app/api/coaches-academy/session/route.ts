@@ -81,6 +81,19 @@ export async function GET(req: Request) {
       }
     }
 
+    const isValidZoomId = (id: string | null | undefined): boolean => {
+      if (!id) return false;
+      const clean = String(id).replace(/[^0-9]/g, "");
+      return clean.length >= 9 && clean.length <= 11;
+    };
+
+    if (activeSession && !isValidZoomId(activeSession.zoomMeetingId)) {
+      activeSession.zoomMeetingId = "85747867942";
+      if (!activeSession.zoomJoinUrl?.startsWith("http")) {
+        activeSession.zoomJoinUrl = "https://zoom.us/j/85747867942";
+      }
+    }
+
     // 1b. Real-time Zoom Cloud Verification: If activeSession is marked "started", verify if host ended the meeting
     if (activeSession && activeSession.status === "started" && activeSession.zoomMeetingId) {
       try {
@@ -405,14 +418,36 @@ export async function POST(req: Request) {
     let joinUrl = "";
     let meetingPassword = "";
 
+    const isValidZoomIdPost = (id: string | null | undefined): boolean => {
+      if (!id) return false;
+      const clean = String(id).replace(/[^0-9]/g, "");
+      return clean.length >= 9 && clean.length <= 11;
+    };
+
     if (customJoinUrl) {
       joinUrl = customJoinUrl.trim();
-      const match = joinUrl.match(/\/j\/(\d+)/) || joinUrl.match(/\/wc\/(\d+)/) || joinUrl.match(/^(\d+)$/);
+      const match =
+        joinUrl.match(/\/j\/(\d{9,11})/) ||
+        joinUrl.match(/\/wc\/(?:join\/)?(\d{9,11})/) ||
+        joinUrl.match(/\/meeting\/(\d{9,11})/) ||
+        joinUrl.match(/\/my\/(\d{9,11})/) ||
+        joinUrl.match(/^(\d{9,11})$/);
+
       if (match && match[1]) {
         zoomMeetingId = match[1];
       } else {
-        zoomMeetingId = joinUrl.replace(/[^0-9]/g, "");
+        const digits = joinUrl.replace(/[^0-9]/g, "");
+        if (digits.length >= 9 && digits.length <= 11) {
+          zoomMeetingId = digits;
+        } else if (digits.length > 11) {
+          zoomMeetingId = digits.slice(0, 11);
+        }
       }
+
+      if (zoomMeetingId && !joinUrl.startsWith("http")) {
+        joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
+      }
+
       const pwdMatch = joinUrl.match(/[?&]pwd=([^&]+)/);
       if (pwdMatch && pwdMatch[1]) {
         meetingPassword = decodeURIComponent(pwdMatch[1]);
@@ -550,18 +585,23 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback if no Zoom meeting ID or join URL created via Zoom API
-    if (!zoomMeetingId && !joinUrl) {
-      const latestMeeting = await db.zoomMeeting.findFirst({
+    // Fallback if no valid Zoom meeting ID or join URL created via Zoom API
+    if (!isValidZoomIdPost(zoomMeetingId) || !joinUrl) {
+      const candidates = await db.zoomMeeting.findMany({
         where: { orgId },
         orderBy: { createdAt: "desc" },
+        take: 10,
       });
-      if (latestMeeting?.zoomMeetingId) {
-        zoomMeetingId = latestMeeting.zoomMeetingId;
-        joinUrl = latestMeeting.joinUrl || `https://zoom.us/j/${zoomMeetingId}`;
-        meetingPassword = latestMeeting.password || "";
+      const validCandidate = candidates.find((m) => isValidZoomIdPost(m.zoomMeetingId));
+      if (validCandidate?.zoomMeetingId) {
+        zoomMeetingId = validCandidate.zoomMeetingId;
+        joinUrl =
+          validCandidate.joinUrl && validCandidate.joinUrl.startsWith("http")
+            ? validCandidate.joinUrl
+            : `https://zoom.us/j/${zoomMeetingId}`;
+        meetingPassword = validCandidate.password || "";
       } else {
-        zoomMeetingId = "7788990011";
+        zoomMeetingId = "85747867942";
         joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
         meetingPassword = "";
       }
