@@ -110,7 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        return { success: false, error: data.error || "Sign up failed" };
+        let errorMsg = data.error || "Sign up failed";
+        if (data.details && typeof data.details === "object") {
+          const fieldMsgs = Object.values(data.details).flat().filter(Boolean);
+          if (fieldMsgs.length > 0) {
+            errorMsg = fieldMsgs.join(". ");
+          }
+        }
+        return { success: false, error: errorMsg };
       }
 
       if (data.checkoutUrl) {

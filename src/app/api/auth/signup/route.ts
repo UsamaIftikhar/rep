@@ -53,6 +53,49 @@ export async function POST(req: Request) {
         : (role || "ATHLETE");
 
     const courseId = body.courseId;
+    const callbackUrl = body.callbackUrl;
+
+    // Normalize attribution source to Prisma AttributionSource enum
+    let finalAttributionSource: "SALESPERSON" | "SOCIAL_MEDIA" | null = null;
+    let finalSalespersonId: string | null = salespersonId || null;
+    let finalOtherAttribution: string | null = otherAttribution || null;
+
+    if (attributionSource) {
+      const salesRepNames = [
+        "keven jackson",
+        "justin riley",
+        "kieth mosley",
+        "daniel pettey",
+        "terrance doc martin",
+        "doc martin",
+      ];
+      const lower = attributionSource.toLowerCase();
+
+      if (attributionSource === "SALESPERSON" || salesRepNames.some((name) => lower.includes(name))) {
+        finalAttributionSource = "SALESPERSON";
+        if (!finalSalespersonId) {
+          const matchedSp = await db.user.findFirst({
+            where: {
+              role: "SALESPERSON",
+              OR: [
+                { name: { contains: attributionSource, mode: "insensitive" } },
+                { firstName: { contains: attributionSource.split(" ")[0], mode: "insensitive" } },
+              ],
+            },
+          });
+          if (matchedSp) {
+            finalSalespersonId = matchedSp.id;
+          }
+        }
+      } else {
+        finalAttributionSource = "SOCIAL_MEDIA";
+        if (attributionSource !== "SOCIAL_MEDIA") {
+          finalOtherAttribution = finalOtherAttribution
+            ? `${attributionSource} - ${finalOtherAttribution}`
+            : attributionSource;
+        }
+      }
+    }
 
     const existingUser = await db.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -68,6 +111,7 @@ export async function POST(req: Request) {
           type: planType,
           courseId,
           origin,
+          callbackUrl,
         });
 
         return NextResponse.json({
@@ -99,19 +143,23 @@ export async function POST(req: Request) {
         name: fullName,
         role: userRole,
         status: UserStatus.PENDING_PAYMENT,
-        attributionSource,
-        salespersonId: salespersonId || undefined,
-        otherAttribution,
-        athleteProfile: {
-          create: {
-            slug: uniqueSlug,
-            schoolClub,
-            graduationYear,
-            location,
-            sport,
-            position,
-          },
-        },
+        attributionSource: finalAttributionSource || undefined,
+        salespersonId: finalSalespersonId || undefined,
+        otherAttribution: finalOtherAttribution || undefined,
+        ...(userRole === "ATHLETE"
+          ? {
+              athleteProfile: {
+                create: {
+                  slug: uniqueSlug,
+                  schoolClub,
+                  graduationYear,
+                  location,
+                  sport,
+                  position,
+                },
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -148,6 +196,7 @@ export async function POST(req: Request) {
       type: planType,
       courseId,
       origin,
+      callbackUrl,
     });
 
     return NextResponse.json({

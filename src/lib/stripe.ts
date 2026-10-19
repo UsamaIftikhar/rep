@@ -12,12 +12,14 @@ export async function createStripeCheckoutSession({
   type,
   courseId,
   origin,
+  callbackUrl,
 }: {
   userId: string;
   userEmail: string;
   type: "SUBSCRIPTION" | "COURSE" | "ELITE_PACIFIC" | "US_ATHLETE" | "INTERNATIONAL" | "RECRUITER" | "COACHES";
   courseId?: string;
   origin: string;
+  callbackUrl?: string;
 }) {
   if (!process.env.STRIPE_SECRET_KEY) {
     // In dev mode without Stripe keys, simulate instant checkout completion for rapid testing
@@ -85,7 +87,7 @@ export async function createStripeCheckoutSession({
         },
       });
 
-      return { url: `${origin}/dashboard?subscribed=true` };
+      return { url: `${origin}${callbackUrl || "/recruiting/search"}?subscribed=true` };
     }
 
     if (type === "INTERNATIONAL" || type === "ELITE_PACIFIC") {
@@ -266,18 +268,19 @@ export async function createStripeCheckoutSession({
     ];
   }
 
+  const defaultPath = callbackUrl || (type === "COACHES" ? "/coaches-academy" : type === "RECRUITER" ? "/recruiting/search" : "/dashboard");
+  const sep = defaultPath.includes("?") ? "&" : "?";
+  const cancelPath = callbackUrl || (type === "COACHES" ? "/coaches-academy" : "/settings");
+  const cancelSep = cancelPath.includes("?") ? "&" : "?";
+
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer_email: userEmail,
     line_items: lineItems,
     mode,
     managed_payments: { enabled: false },
     payment_method_types: ["card"],
-    success_url: type === "COACHES" 
-      ? `${origin}/coaches-academy?checkout_success=true&session_id={CHECKOUT_SESSION_ID}` 
-      : `${origin}/dashboard?checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: type === "COACHES"
-      ? `${origin}/coaches-academy?checkout_cancelled=true`
-      : `${origin}/settings?checkout_cancelled=true`,
+    success_url: `${origin}${defaultPath}${sep}checkout_success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}${cancelPath}${cancelSep}checkout_cancelled=true`,
     metadata: {
       userId,
       type,

@@ -107,6 +107,7 @@ function SignupForm() {
             : "ATHLETE",
         planType: region,
         courseId: courseIdParam || undefined,
+        callbackUrl: callbackUrlParam || undefined,
         attributionSource,
         otherAttribution,
       });
