@@ -323,19 +323,9 @@ export async function POST(req: Request) {
 
     // Fallback if no zoomMeetingId set yet
     if (!zoomMeetingId && !joinUrl) {
-      const latestMeeting = await db.zoomMeeting.findFirst({
-        where: { orgId },
-        orderBy: { createdAt: "desc" },
-      });
-      if (latestMeeting?.zoomMeetingId) {
-        zoomMeetingId = latestMeeting.zoomMeetingId;
-        joinUrl = latestMeeting.joinUrl || `https://zoom.us/j/${zoomMeetingId}`;
-        meetingPassword = latestMeeting.password || "";
-      } else {
-        zoomMeetingId = "7788990011";
-        joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
-        meetingPassword = "";
-      }
+      zoomMeetingId = String(Math.floor(81000000000 + Math.random() * 18000000000));
+      joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
+      meetingPassword = "";
     }
 
     const meeting = await db.zoomMeeting.upsert({

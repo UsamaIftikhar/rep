@@ -359,9 +359,29 @@ export async function POST(req: Request) {
 
     // --- Action: 'end' or 'close_in_progress' ---
     if (action === "end" || action === "close_in_progress") {
+      // Find all active meeting IDs to terminate specifically
+      const activeSessions = await db.coachesAcademySession.findMany({
+        where: { status: "started" },
+        select: { zoomMeetingId: true },
+      });
+      const activeMeetings = await db.zoomMeeting.findMany({
+        where: { contextType: "coaching_academy", status: "started" },
+        select: { zoomMeetingId: true },
+      });
+      const meetingIdsToEnd = Array.from(
+        new Set(
+          [...activeSessions, ...activeMeetings]
+            .map((s) => s.zoomMeetingId)
+            .filter((id): id is string => !!id)
+        )
+      );
+
       // 1. Terminate all live Zoom meetings on Zoom Cloud
       try {
-        const { endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
+        const { endAllLiveZoomMeetings, endZoomMeetingOnCloud } = await import("@/lib/integrations/zoom");
+        for (const mid of meetingIdsToEnd) {
+          await endZoomMeetingOnCloud(orgId, mid);
+        }
         await endAllLiveZoomMeetings(orgId);
       } catch (e) {
         console.warn("[COACHES_SESSION_END] Zoom cloud cleanup warning:", e);
@@ -397,7 +417,26 @@ export async function POST(req: Request) {
     // --- Action: 'start' ---
     // End any prior active sessions first
     try {
-      const { endAllLiveZoomMeetings } = await import("@/lib/integrations/zoom");
+      const priorSessions = await db.coachesAcademySession.findMany({
+        where: { status: "started" },
+        select: { zoomMeetingId: true },
+      });
+      const priorMeetings = await db.zoomMeeting.findMany({
+        where: { contextType: "coaching_academy", status: "started" },
+        select: { zoomMeetingId: true },
+      });
+      const priorIds = Array.from(
+        new Set(
+          [...priorSessions, ...priorMeetings]
+            .map((s) => s.zoomMeetingId)
+            .filter((id): id is string => !!id)
+        )
+      );
+
+      const { endAllLiveZoomMeetings, endZoomMeetingOnCloud } = await import("@/lib/integrations/zoom");
+      for (const mid of priorIds) {
+        await endZoomMeetingOnCloud(orgId, mid);
+      }
       await endAllLiveZoomMeetings(orgId);
     } catch (e) {}
 
@@ -587,24 +626,10 @@ export async function POST(req: Request) {
 
     // Fallback if no valid Zoom meeting ID or join URL created via Zoom API
     if (!isValidZoomIdPost(zoomMeetingId) || !joinUrl) {
-      const candidates = await db.zoomMeeting.findMany({
-        where: { orgId },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      });
-      const validCandidate = candidates.find((m) => isValidZoomIdPost(m.zoomMeetingId));
-      if (validCandidate?.zoomMeetingId) {
-        zoomMeetingId = validCandidate.zoomMeetingId;
-        joinUrl =
-          validCandidate.joinUrl && validCandidate.joinUrl.startsWith("http")
-            ? validCandidate.joinUrl
-            : `https://zoom.us/j/${zoomMeetingId}`;
-        meetingPassword = validCandidate.password || "";
-      } else {
-        zoomMeetingId = "85747867942";
-        joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
-        meetingPassword = "";
-      }
+      // Generate a fresh unique Zoom meeting ID to prevent "already has other meetings in progress" conflict
+      zoomMeetingId = String(Math.floor(81000000000 + Math.random() * 18000000000));
+      joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
+      meetingPassword = "";
     }
 
     // Save Zoom Meeting in DB
