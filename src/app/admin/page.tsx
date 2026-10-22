@@ -8,6 +8,7 @@ import { Users, ShieldCheck, BookOpen, Brain, Search, Loader2, Edit3, X, Star, E
 import { MiroBoardManager } from "@/components/integrations/MiroBoardManager";
 import { ZoomMeetingManager } from "@/components/integrations/ZoomMeetingManager";
 import { ZoomRecordingPlayer } from "@/components/integrations/ZoomRecordingPlayer";
+import { useAuth } from "@/lib/auth-context";
 
 interface AdminStats {
   totalUsers: number;
@@ -74,6 +75,16 @@ interface AdminUserItem {
   subscriptions?: { id: string; stripePriceId: string; status: string }[];
   entitlements?: { type: string }[];
   purchases?: { id: string }[];
+  attributionSource?: "SALESPERSON" | "SOCIAL_MEDIA" | null;
+  salespersonId?: string | null;
+  salesperson?: {
+    id: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+  } | null;
+  otherAttribution?: string | null;
 }
 
 interface AdminCourseItem {
@@ -99,6 +110,7 @@ interface AdminRoleItem {
 }
 
 export default function AdminDashboardPage() {
+  const { user: currentAdmin } = useAuth();
   const [activeTab, setActiveTab] = React.useState<"overview" | "users" | "courses" | "roles" | "integrations">("overview");
   const [stats, setStats] = React.useState<AdminStats>({
     totalUsers: 0,
@@ -571,6 +583,13 @@ export default function AdminDashboardPage() {
       const school = (u.athleteProfile?.schoolClub || "").toLowerCase();
       const position = (u.athleteProfile?.position || "").toLowerCase();
       const location = (u.athleteProfile?.location || "").toLowerCase();
+      const salesRep = (
+        u.salesperson?.name ||
+        `${u.salesperson?.firstName || ""} ${u.salesperson?.lastName || ""}` ||
+        u.salesperson?.email ||
+        u.otherAttribution ||
+        ""
+      ).toLowerCase();
 
       return (
         name.includes(q) ||
@@ -581,6 +600,7 @@ export default function AdminDashboardPage() {
         school.includes(q) ||
         position.includes(q) ||
         location.includes(q) ||
+        salesRep.includes(q) ||
         (isCourseOwner && ("classroom".includes(q) || "student".includes(q)))
       );
     });
@@ -1111,8 +1131,34 @@ export default function AdminDashboardPage() {
                           return (
                             <tr key={u.id} className="hover:bg-white/5 transition-colors">
                               <td className="py-3 px-3">
-                                <p className="font-bold text-white">{u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Athlete User"}</p>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="font-bold text-white">{u.name || `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Athlete User"}</p>
+                                  {currentAdmin?.id === u.id && (
+                                    <span className="px-1.5 py-0.5 rounded bg-[#F21717]/20 text-[#F21717] border border-[#F21717]/40 text-[9px] font-bold uppercase tracking-wider">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[#A3A3A3] text-[11px]">{u.email}</p>
+                                {u.salesperson ? (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                                      🏷️ Referred by: {u.salesperson.name || `${u.salesperson.firstName || ""} ${u.salesperson.lastName || ""}`.trim() || u.salesperson.email}
+                                    </span>
+                                  </div>
+                                ) : u.attributionSource === "SALESPERSON" ? (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                                      🏷️ Referred by: {u.otherAttribution || "Sales Rep"}
+                                    </span>
+                                  </div>
+                                ) : u.attributionSource === "SOCIAL_MEDIA" || (u.otherAttribution && u.otherAttribution.trim()) ? (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                                      📱 Source: {u.otherAttribution || "Social Media"}
+                                    </span>
+                                  </div>
+                                ) : null}
                               </td>
                               <td className="py-3 px-3 text-[#D4D4D4]">
                                 {prof?.sport ? (
@@ -1165,10 +1211,11 @@ export default function AdminDashboardPage() {
                                   </Button>
                                   <Button
                                     onClick={() => handleUserStatusToggle(u.id, u.status)}
-                                    disabled={updatingUserId === u.id}
+                                    disabled={updatingUserId === u.id || currentAdmin?.id === u.id}
                                     variant={u.status === "ACTIVE" ? "outline" : "primary"}
                                     size="sm"
                                     className="h-8 text-[11px]"
+                                    title={currentAdmin?.id === u.id ? "You cannot suspend your own account" : undefined}
                                   >
                                     {updatingUserId === u.id ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

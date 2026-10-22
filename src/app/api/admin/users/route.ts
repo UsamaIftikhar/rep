@@ -79,11 +79,12 @@ export async function GET(req: Request) {
             { athleteProfile: { is: { schoolClub: { contains: q, mode: "insensitive" } } } },
             { athleteProfile: { is: { position: { contains: q, mode: "insensitive" } } } },
             { athleteProfile: { is: { location: { contains: q, mode: "insensitive" } } } },
+            { salesperson: { is: { name: { contains: q, mode: "insensitive" } } } },
           ],
         }
       : undefined,
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: 500,
     select: {
       id: true,
       email: true,
@@ -94,6 +95,18 @@ export async function GET(req: Request) {
       status: true,
       image: true,
       createdAt: true,
+      attributionSource: true,
+      salespersonId: true,
+      salesperson: {
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      otherAttribution: true,
       athleteProfile: true,
       subscriptions: {
         where: { status: "active" },

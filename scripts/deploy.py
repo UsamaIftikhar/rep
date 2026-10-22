@@ -44,15 +44,18 @@ try:
 except Exception:
     pass
 
-# 1. Create lightweight tar archive (excluding build/runtime temp dirs and scratch)
+# 1. Create ultra-lightweight tar archive (excluding build/runtime temp dirs and static assets already on server)
 print("Creating lightweight code archive...", flush=True)
 ignore_dirs = {".next", "node_modules", ".git", "scratch", "dist"}
 
 with tarfile.open(TAR_PATH, "w:gz") as tar:
     for root, dirs, files in os.walk(LOCAL_DIR):
-        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        dirs[:] = [
+            d for d in dirs
+            if d not in ignore_dirs and not (root.endswith("public") and d in ("images", "uploads"))
+        ]
         for file in files:
-            if file.endswith(".mov") or file.endswith(".mp4"):
+            if file.endswith((".mov", ".mp4", ".tsbuildinfo")):
                 continue
             full_path = os.path.join(root, file)
             rel_path = os.path.relpath(full_path, LOCAL_DIR)
