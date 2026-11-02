@@ -232,7 +232,17 @@
     <div id="error-view" style="display: none;">
       <div id="error-title" class="status-title" style="color: #f87171;">Connection Notice</div>
       <div id="error-message" class="status-sub">Unable to join session.</div>
+
+      <!-- Inline passcode prompt for Error 3712 -->
+      <div id="passcode-input-container" style="display: none; margin-top: 14px;">
+        <div style="display: flex; gap: 8px; justify-content: center; max-width: 320px; margin: 0 auto;">
+          <input id="inline-passcode-input" type="text" placeholder="Enter session passcode" style="padding: 8px 12px; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #fff; font-size: 13px; flex: 1; outline: none;" />
+          <button class="btn-action" onclick="submitInlinePasscode()">Join</button>
+        </div>
+      </div>
+
       <div class="action-row">
+        <button id="btn-captcha" class="btn-action" style="display: none; background: #2563eb;" onclick="openVerificationChallenge()">Complete Security Check</button>
         <button id="btn-force-close" class="btn-action" style="display: none; background: #dc2626;" onclick="forceCloseInProgressMeetings()">Close In-Progress Meetings</button>
         <button class="btn-action" onclick="joinMeeting()">Retry</button>
         <button id="btn-desktop" class="btn-action btn-secondary" onclick="openDesktopApp()">Open in Zoom App</button>
@@ -248,12 +258,18 @@
     const meetingNumber = urlParams.get('meetingNumber') || '';
     const cleanMeetingNumber = meetingNumber.replace(/[^0-9]/g, '');
     const role = parseInt(urlParams.get('role') || '0', 10);
-    const password = urlParams.get('passcode') || urlParams.get('password') || '';
+    let password = urlParams.get('passcode') || urlParams.get('password') || '';
+    const joinUrlParam = urlParams.get('joinUrl') || '';
+    if (!password && joinUrlParam) {
+      const match = joinUrlParam.match(/[?&]pwd=([^&]+)/);
+      if (match && match[1]) password = decodeURIComponent(match[1]);
+    }
     const userName = urlParams.get('userName') || 'Academy Member';
     const userEmail = urlParams.get('userEmail') || '';
 
     let client = null;
     let safetyTimer = null;
+    let currentCaptchaUrl = null;
 
     function openDesktopApp() {
       if (cleanMeetingNumber) {
@@ -269,7 +285,29 @@
       }
     }
 
-    function showErrorState(title, message, isMeetingsInProgress = false) {
+    function openVerificationChallenge() {
+      if (currentCaptchaUrl) {
+        const w = window.open(currentCaptchaUrl, 'ZoomVerification', 'width=620,height=720,menubar=no,toolbar=no');
+        const checkTimer = setInterval(() => {
+          if (!w || w.closed) {
+            clearInterval(checkTimer);
+            setTimeout(() => {
+              joinMeeting();
+            }, 1000);
+          }
+        }, 1000);
+      }
+    }
+
+    function submitInlinePasscode() {
+      const input = document.getElementById('inline-passcode-input');
+      if (input && input.value.trim()) {
+        password = input.value.trim();
+        joinMeeting();
+      }
+    }
+
+    function showErrorState(title, message, isMeetingsInProgress = false, captchaUrl = null, isPasscodeRequired = false) {
       if (safetyTimer) clearTimeout(safetyTimer);
       const statusOverlay = document.getElementById('status-overlay');
       const loadingView = document.getElementById('loading-view');
@@ -277,6 +315,8 @@
       const errorTitleEl = document.getElementById('error-title');
       const errorMessageEl = document.getElementById('error-message');
       const forceCloseBtn = document.getElementById('btn-force-close');
+      const captchaBtn = document.getElementById('btn-captcha');
+      const passContainer = document.getElementById('passcode-input-container');
 
       statusOverlay.style.display = 'flex';
       statusOverlay.style.opacity = '1';
@@ -286,14 +326,32 @@
       errorTitleEl.textContent = title || 'Connection Notice';
       errorMessageEl.textContent = message || 'Unable to join session.';
 
-      if (isMeetingsInProgress || message.includes('meetings in progress') || message.includes('Already has other meetings')) {
-        if (forceCloseBtn) {
-          forceCloseBtn.style.display = 'inline-block';
-        }
-      } else {
-        if (forceCloseBtn) {
-          forceCloseBtn.style.display = 'none';
-        }
+      if (forceCloseBtn) {
+        forceCloseBtn.style.display = (isMeetingsInProgress || message.includes('meetings in progress') || message.includes('Already has other meetings')) ? 'inline-block' : 'none';
+      }
+
+      currentCaptchaUrl = captchaUrl;
+      if (captchaBtn) {
+        captchaBtn.style.display = captchaUrl ? 'inline-block' : 'none';
+      }
+
+      if (passContainer) {
+        passContainer.style.display = isPasscodeRequired ? 'block' : 'none';
+      }
+
+      // Proactively notify parent component with structured error and launch URLs
+      if (window.parent) {
+        const desktopUrl = cleanMeetingNumber ? `zoommtg://zoom.us/join?confno=${cleanMeetingNumber}${password ? '&pwd=' + encodeURIComponent(password) : ''}` : '';
+        const webUrl = cleanMeetingNumber ? `https://zoom.us/wc/${cleanMeetingNumber}/join${password ? '?pwd=' + encodeURIComponent(password) : ''}` : '';
+        window.parent.postMessage({
+          type: 'ZOOM_ERROR',
+          errorTitle: title,
+          errorMessage: message,
+          captchaUrl: captchaUrl || null,
+          desktopUrl,
+          webUrl,
+          meetingNumber: cleanMeetingNumber
+        }, '*');
       }
     }
 
@@ -427,10 +485,17 @@
               let errorMsg = `Zoom connection failed (Error Code: ${payload.errorCode || 'unknown'}).`;
               let errorTitle = 'Connection Notice';
               let isConflict = false;
+              let captchaUrl = payload.url || null;
+              let isPasscodeRequired = false;
 
               if (payload.errorCode === 200) {
-                errorTitle = 'Domain Not Allowed';
-                errorMsg = `Zoom SDK domain authorization error (Error 200). Your domain (${window.location.origin}) must be added to the Domain Allow List in your Zoom Marketplace App settings (Features → Embed → Meeting SDK).`;
+                if (payload.url && payload.url.includes('recaptcha')) {
+                  errorTitle = 'Security Check Required';
+                  errorMsg = 'Zoom requires a quick security verification (CAPTCHA) to connect to this live session. Click "Complete Security Check" below, or launch immediately in the Zoom App or browser tab.';
+                } else {
+                  errorTitle = 'Domain Authorization Notice';
+                  errorMsg = `Zoom SDK domain authorization error (Error 200). Your domain (${window.location.origin}) must be authorized in your Zoom Marketplace App settings. You can join immediately via the Zoom App or Browser Tab below.`;
+                }
               } else if (payload.errorCode === 3000 || payload.errorCode === 3001) {
                 // Code 3001 in Zoom is either meeting not found OR already has other meetings in progress
                 isConflict = true;
@@ -447,11 +512,12 @@
                   }, 7000);
                 }
               } else if (payload.errorCode === 3712) {
+                isPasscodeRequired = true;
                 errorTitle = 'Passcode Required';
-                errorMsg = 'A valid meeting passcode is required to join this meeting.';
+                errorMsg = 'A valid meeting passcode is required to join this meeting. Please enter it below:';
               }
 
-              showErrorState(errorTitle, errorMsg, isConflict);
+              showErrorState(errorTitle, errorMsg, isConflict, captchaUrl, isPasscodeRequired);
             }
           });
         } catch (onErr) {
@@ -468,7 +534,7 @@
             console.warn('[Zoom SDK] Meeting connection timed out');
             showErrorState(
               'Session Slow to Connect',
-              'The Zoom session is taking longer than usual to connect. You can retry, close in-progress meetings, or open the session in the Zoom App.'
+              'The Zoom session is taking longer than usual to connect. You can retry, close in-progress meetings, or open the session directly in the Zoom App or Browser Tab.'
             );
           }
         }, 20000);
@@ -512,19 +578,21 @@
 
         let userMsg = msg;
         let title = 'Unable to Join Session';
+        let isPasscodeRequired = false;
 
         if (isConflict) {
           title = 'Another Meeting in Progress';
           userMsg = 'Zoom detected that your Zoom host account already has another meeting active. Click "Close In-Progress Meetings" below to terminate prior sessions and retry.';
         } else if (msg.includes('domain') || msg.includes('200')) {
-          userMsg = 'Zoom SDK domain authorization error. Please verify the domain allow list in your Zoom Marketplace App settings.';
+          userMsg = 'Zoom SDK domain authorization notice. You can join immediately using the Zoom App or Browser Tab buttons below.';
         } else if (msg.includes('Signature') || msg.includes('signature')) {
           userMsg = 'Zoom rejected the Meeting SDK authentication signature. Please verify the SDK Key and Secret configuration.';
         } else if (msg.includes('password') || msg.includes('passcode')) {
-          userMsg = 'Incorrect meeting passcode. Please check the meeting details and try again.';
+          isPasscodeRequired = true;
+          userMsg = 'Incorrect meeting passcode. Please enter the passcode below and try again:';
         }
 
-        showErrorState(title, userMsg, isConflict);
+        showErrorState(title, userMsg, isConflict, null, isPasscodeRequired);
       }
     }
 

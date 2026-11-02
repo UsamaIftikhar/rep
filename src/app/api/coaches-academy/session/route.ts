@@ -97,9 +97,14 @@ export async function GET(req: Request) {
     // 1b. Real-time Zoom Cloud Verification: If activeSession is marked "started", verify if host ended the meeting
     if (activeSession && activeSession.status === "started" && activeSession.zoomMeetingId) {
       try {
-        const { getValidZoomAccessToken } = await import("@/lib/integrations/zoom");
-        const token = await getValidZoomAccessToken(orgId);
-        const cleanId = activeSession.zoomMeetingId.replace(/[^0-9]/g, "");
+        const hasZoomIntegration = await db.zoomIntegration.findFirst({
+          where: { isActive: true },
+        });
+
+        if (hasZoomIntegration) {
+          const { getValidZoomAccessToken } = await import("@/lib/integrations/zoom");
+          const token = await getValidZoomAccessToken(orgId);
+          const cleanId = activeSession.zoomMeetingId.replace(/[^0-9]/g, "");
 
         if (cleanId) {
           const zMeetingRes = await fetch(`https://api.zoom.us/v2/meetings/${cleanId}`, {
@@ -164,6 +169,7 @@ export async function GET(req: Request) {
               activeSession = null;
             }
           }
+        }
         }
       } catch (e) {
         console.warn("[CHECK_ZOOM_LIVE_STATUS_WARNING]", e);
@@ -626,10 +632,11 @@ export async function POST(req: Request) {
 
     // Fallback if no valid Zoom meeting ID or join URL created via Zoom API
     if (!isValidZoomIdPost(zoomMeetingId) || !joinUrl) {
-      // Generate a fresh unique Zoom meeting ID to prevent "already has other meetings in progress" conflict
-      zoomMeetingId = String(Math.floor(81000000000 + Math.random() * 18000000000));
-      joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
-      meetingPassword = "";
+      // Use configured permanent meeting room or real default instead of non-existent random numbers
+      const defaultMeetingId = process.env.ZOOM_DEFAULT_MEETING_ID || "85747867942";
+      zoomMeetingId = defaultMeetingId;
+      joinUrl = process.env.ZOOM_DEFAULT_JOIN_URL || `https://zoom.us/j/${defaultMeetingId}`;
+      meetingPassword = process.env.ZOOM_DEFAULT_PASSWORD || "";
     }
 
     // Save Zoom Meeting in DB

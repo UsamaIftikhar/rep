@@ -323,9 +323,10 @@ export async function POST(req: Request) {
 
     // Fallback if no zoomMeetingId set yet
     if (!zoomMeetingId && !joinUrl) {
-      zoomMeetingId = String(Math.floor(81000000000 + Math.random() * 18000000000));
-      joinUrl = `https://zoom.us/j/${zoomMeetingId}`;
-      meetingPassword = "";
+      const defaultMeetingId = process.env.ZOOM_DEFAULT_MEETING_ID || "85747867942";
+      zoomMeetingId = defaultMeetingId;
+      joinUrl = process.env.ZOOM_DEFAULT_JOIN_URL || `https://zoom.us/j/${defaultMeetingId}`;
+      meetingPassword = process.env.ZOOM_DEFAULT_PASSWORD || "";
     }
 
     const meeting = await db.zoomMeeting.upsert({

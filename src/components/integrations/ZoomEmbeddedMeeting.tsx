@@ -48,6 +48,13 @@ export function ZoomEmbeddedMeeting({
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState(false);
   const [copiedPwd, setCopiedPwd] = React.useState(false);
+  const [zoomError, setZoomError] = React.useState<{
+    title: string;
+    message: string;
+    captchaUrl?: string | null;
+    desktopUrl?: string;
+    webUrl?: string;
+  } | null>(null);
 
   // Extract passcode from joinUrl if not explicitly provided
   let passcode = initialPassword || "";
@@ -121,6 +128,15 @@ export function ZoomEmbeddedMeeting({
       if (event.data && event.data.type === "ZOOM_FORCE_CLOSE") {
         if (onForceClose) onForceClose();
       }
+      if (event.data && event.data.type === "ZOOM_ERROR") {
+        setZoomError({
+          title: event.data.errorTitle || "Connection Notice",
+          message: event.data.errorMessage || "Unable to join session directly in embed.",
+          captchaUrl: event.data.captchaUrl || null,
+          desktopUrl: event.data.desktopUrl,
+          webUrl: event.data.webUrl
+        });
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -130,7 +146,7 @@ export function ZoomEmbeddedMeeting({
     cleanMeetingNumber
   )}&role=${role}&passcode=${encodeURIComponent(passcode)}&userName=${encodeURIComponent(
     userName
-  )}&userEmail=${encodeURIComponent(userEmail)}`;
+  )}&userEmail=${encodeURIComponent(userEmail)}${joinUrl ? `&joinUrl=${encodeURIComponent(joinUrl)}` : ""}`;
 
   return (
     <div
@@ -260,6 +276,51 @@ export function ZoomEmbeddedMeeting({
           </button>
         </div>
       </div>
+
+      {/* Intelligent Recovery Alert Banner (Displays if Zoom reports domain/captcha/join difficulty) */}
+      {zoomError && (
+        <div className="bg-gradient-to-r from-amber-950/90 via-slate-900 to-amber-950/90 border-b border-amber-500/30 px-3.5 py-2 text-xs flex flex-wrap items-center justify-between gap-2 text-amber-200 shrink-0 shadow-lg">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            <span className="font-semibold text-white shrink-0">{zoomError.title}:</span>
+            <span className="text-amber-300/90 text-[11px] truncate max-w-[260px] sm:max-w-[460px]">
+              {zoomError.message}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {zoomError.captchaUrl && (
+              <a
+                href={zoomError.captchaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] transition-colors shadow-sm inline-flex items-center gap-1"
+              >
+                Complete Check
+              </a>
+            )}
+            <a
+              href={`zoommtg://zoom.us/join?confno=${cleanMeetingNumber}${
+                passcode ? `&pwd=${encodeURIComponent(passcode)}` : ""
+              }`}
+              className="px-2.5 py-1 rounded bg-[#F21717] hover:bg-[#d90f0f] text-white font-semibold text-[11px] transition-colors inline-flex items-center gap-1 shadow-sm"
+              title="Launch directly inside Zoom Desktop Application"
+            >
+              <ExternalLink className="w-3 h-3" /> Launch Zoom App
+            </a>
+            <a
+              href={`https://zoom.us/wc/${cleanMeetingNumber}/join${
+                passcode ? `?pwd=${encodeURIComponent(passcode)}` : ""
+              }`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white text-[11px] transition-colors inline-flex items-center gap-1 border border-white/15"
+              title="Open full Zoom Web Client in a separate tab"
+            >
+              <Globe className="w-3 h-3 text-emerald-400" /> Browser Tab
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Main SDK Container (Same-Origin Iframe) */}
       <div className="flex-1 w-full relative bg-black overflow-hidden flex flex-col min-h-0">
