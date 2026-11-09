@@ -55,9 +55,9 @@ function SignupForm() {
     }
     if (region === "recruiter") {
       return {
-        title: "College Coach & Recruiter Pass",
-        amount: "$49.99",
-        subtitle: "Annual subscription for full access to prospect search, verified combine metrics, GPA, and recruiting film",
+        title: "Team Recruiter Pass",
+        amount: "$99.99",
+        subtitle: "Annual subscription for full coaching staff access to prospect search, verified combine metrics, GPA, and recruiting film",
         type: "RECRUITER",
       };
     }
@@ -213,7 +213,7 @@ function SignupForm() {
             <Select
               options={[
                 { value: "coaches", label: "Coaches Academy Annual Pass ($69.99/yr)" },
-                { value: "recruiter", label: "College Coach / Recruiter ($49.99/yr)" },
+                { value: "recruiter", label: "Team Recruiter Pass ($99.99/yr)" },
                 { value: "us", label: "US / American Athlete ($29.99)" },
                 { value: "international", label: "International Athlete ($29.99)" },
                 ...(region === "course" || initialPlan === "course"

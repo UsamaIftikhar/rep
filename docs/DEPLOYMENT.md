@@ -67,7 +67,7 @@ STRIPE_WEBHOOK_SECRET="<YOUR_STRIPE_WEBHOOK_SECRET>"
 # Live Stripe Price IDs
 STRIPE_PRICE_ATHLETE="price_1UFcWc9kvZo5XvSYDIsfI2Jd"        # $29.99 US Athlete Pass
 STRIPE_PRICE_ELITE_PACIFIC="price_1UGhDP9kvZo5XvSYLi8PsBfY"   # $75.00 International Athlete Pass
-STRIPE_PRICE_RECRUITER="price_1UJwRd9kvZo5XvSYcqTWSDnT"       # $49.99 College Coach / Recruiter Pass (Product ID: prod_VKbeDGxYQN3XVj)
+STRIPE_PRICE_RECRUITER="price_1UJwRd9kvZo5XvSYcqTWSDnT"       # $99.99 Team Recruiter Pass (Annual)
 STRIPE_PRICE_COURSE="price_1UFcTq9kvZo5XvSYon8PPFaF"          # $9.99 Standalone Course
 
 # Miro OAuth Integration
@@ -135,6 +135,6 @@ pm2 restart rep1-saas --update-env
 ## 5. Post-Deployment Verification Checklist
 
 1. **Public Site**: Open `https://rep1exposure.com/` and confirm landing page renders cleanly.
-2. **Recruiter Signup Flow**: Visit `https://rep1exposure.com/signup?plan=recruiter` and confirm Recruiter Pass is preselected at **$49.99/yr**.
-3. **Shareable Profiles**: Open an athlete profile link (e.g., `https://rep1exposure.com/athletes/[slug]`) and verify that unauthenticated visitors are prompted to join as a recruiter for $49.99/yr.
+2. **Recruiter Signup Flow**: Visit `https://rep1exposure.com/signup?plan=recruiter` and confirm Team Recruiter Pass is preselected at **$99.99/yr**.
+3. **Shareable Profiles**: Open an athlete profile link (e.g., `https://rep1exposure.com/athletes/[slug]`) and verify that unauthenticated visitors are prompted to join as a recruiter for $99.99/yr.
 4. **Academy & Courses**: Access `/academy` and confirm video player / Zoom embeds render without module resolution errors.

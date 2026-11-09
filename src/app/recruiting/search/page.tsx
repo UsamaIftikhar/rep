@@ -210,7 +210,7 @@ export default function RecruitSearchPage() {
               </Link>
               <Link href={`/signup?plan=recruiter&callbackUrl=/athletes/${signInModalSlug}`} className="w-full">
                 <Button variant="outline" className="w-full gap-2 border-white/20 hover:border-[#F21717] text-white font-semibold text-sm py-3 rounded-xl">
-                  <UserPlus className="w-4 h-4" /> Create Account ($49.99/yr)
+                  <UserPlus className="w-4 h-4" /> Create Account ($99.99/yr)
                 </Button>
               </Link>
             </div>

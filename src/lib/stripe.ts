@@ -199,11 +199,11 @@ export async function createStripeCheckoutSession({
         price_data: {
           currency: "usd",
           product_data: {
-            name: "REP 1 College Coach & Recruiter Pass",
-            description: "Annual subscription for full access to prospect search, verified combine metrics, GPA, and recruiting film",
+            name: "REP 1 Team Recruiter Pass",
+            description: "Annual subscription for full coaching staff & athletic department access to prospect search, verified combine metrics, GPA, and recruiting film",
             tax_code: "txcd_10000000",
           },
-          unit_amount: 4999,
+          unit_amount: 9999,
         },
         quantity: 1,
       },
@@ -306,14 +306,14 @@ export async function createStripeCheckoutSession({
         type === "COURSE"
           ? "REP 1 Academy Course"
           : type === "RECRUITER"
-          ? "REP 1 College Coach & Recruiter Pass"
+          ? "REP 1 Team Recruiter Pass"
           : type === "COACHES"
           ? "REP 1 Coaches Academy Annual Membership"
           : type === "INTERNATIONAL" || type === "ELITE_PACIFIC"
           ? "REP 1 International Athlete Pass (Elite Pacific)"
           : "REP 1 US Student Athlete Pass";
       const defaultAmount =
-        type === "COURSE" ? 999 : type === "RECRUITER" ? 4999 : type === "COACHES" ? 6999 : 2999;
+        type === "COURSE" ? 999 : type === "RECRUITER" ? 9999 : type === "COACHES" ? 6999 : 2999;
 
       const inlineParams: Stripe.Checkout.SessionCreateParams = {
         ...sessionParams,
