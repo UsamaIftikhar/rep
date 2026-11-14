@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Select, Textarea } from "@/components/ui";
 import { ShieldCheck, CreditCard, CheckCircle2, Loader2, Upload, Camera, Trash2, Copy, Check, ExternalLink, Share2, Video, Layout, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { US_STATES, GRADUATION_CLASSES, POSITIONS } from "@/lib/constants";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -23,11 +24,14 @@ export default function SettingsPage() {
   const [schoolClub, setSchoolClub] = React.useState("");
   const [graduationYear, setGraduationYear] = React.useState("2026");
   const [location, setLocation] = React.useState("");
-  const [sport, setSport] = React.useState("basketball");
-  const [position, setPosition] = React.useState("");
+  const [state, setState] = React.useState("NC");
+  const [sport, setSport] = React.useState("football");
+  const [position, setPosition] = React.useState("QB");
   const [bio, setBio] = React.useState("");
   const [profilePhoto, setProfilePhoto] = React.useState("");
   const [xUrl, setXUrl] = React.useState("");
+  const [instagramUrl, setInstagramUrl] = React.useState("");
+  const [collegeOffers, setCollegeOffers] = React.useState("");
   const [height, setHeight] = React.useState("");
   const [weight, setWeight] = React.useState("");
   const [benchPress, setBenchPress] = React.useState("");
@@ -56,11 +60,14 @@ export default function SettingsPage() {
           setSchoolClub(p.schoolClub || "");
           setGraduationYear(p.graduationYear ? String(p.graduationYear) : "2026");
           setLocation(p.location || "");
-          setSport(p.sport || "basketball");
-          setPosition(p.position || "");
+          setState(p.state || "NC");
+          setSport(p.sport || "football");
+          setPosition(p.position || "QB");
           setBio(p.bio || "");
           setProfilePhoto(p.profilePhoto || "");
           setXUrl(p.xUrl || "");
+          setInstagramUrl(p.instagramUrl || "");
+          setCollegeOffers(p.collegeOffers || "");
           setHeight(p.height || "");
           setWeight(p.weight || "");
           setBenchPress(p.benchPress || "");
@@ -120,11 +127,14 @@ export default function SettingsPage() {
           schoolClub,
           graduationYear: parseInt(graduationYear, 10) || 2026,
           location,
+          state,
           sport,
           position,
           bio,
           profilePhoto,
           xUrl,
+          instagramUrl: instagramUrl.trim() || null,
+          collegeOffers: collegeOffers.trim() || null,
           height,
           weight,
           benchPress,
@@ -330,27 +340,31 @@ export default function SettingsPage() {
                     <Input value={schoolClub} onChange={(e) => setSchoolClub(e.target.value)} placeholder="Mater Dei High School" />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Graduation Year</label>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Graduation Class</label>
                     <Select
                       value={graduationYear}
                       onChange={(e) => setGraduationYear(e.target.value)}
-                      options={[
-                        { value: "2024", label: "2024" },
-                        { value: "2025", label: "2025" },
-                        { value: "2026", label: "2026" },
-                        { value: "2027", label: "2027" },
-                        { value: "2028", label: "2028" },
-                        { value: "2029", label: "2029" },
-                      ]}
+                      options={GRADUATION_CLASSES}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Location / City</label>
-                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Los Angeles, CA" />
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Home State</label>
+                    <Select
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      options={US_STATES}
+                    />
                   </div>
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">City / Location Details</label>
+                    <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Charlotte, NC" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Primary Sport</label>
                     <Select
@@ -370,13 +384,17 @@ export default function SettingsPage() {
                       ]}
                     />
                   </div>
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Position</label>
+                    <Select
+                      value={position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      options={POSITIONS}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Position / Event</label>
-                    <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="Quarterback / Safety" />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Grade Point Average (GPA)</label>
                     <Input value={gpa} onChange={(e) => setGpa(e.target.value)} placeholder="e.g. 3.85" />
@@ -385,6 +403,25 @@ export default function SettingsPage() {
                     <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">ACT / SAT Score</label>
                     <Input value={actSat} onChange={(e) => setActSat(e.target.value)} placeholder="e.g. 28 / 1350" />
                   </div>
+                </div>
+
+                {/* College Scholarship Offers Box */}
+                <div className="p-4 rounded-xl bg-[#141414] border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-white block uppercase tracking-wider">
+                      Current College Scholarship Offers
+                    </label>
+                    <span className="text-[11px] text-[#F21717] font-semibold">Editable Anytime</span>
+                  </div>
+                  <Textarea
+                    value={collegeOffers}
+                    onChange={(e) => setCollegeOffers(e.target.value)}
+                    placeholder="e.g. Appalachian State, Charlotte, Coastal Carolina..."
+                    rows={3}
+                  />
+                  <span className="text-[11px] text-[#A3A3A3] block">
+                    Update this section whenever college programs extend official scholarship offers. Recruiter-verified on your profile.
+                  </span>
                 </div>
 
                 <div>
@@ -465,13 +502,18 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Instagram Handle / Link</label>
+                      <Input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle or @handle" />
+                    </div>
+                    <div>
                       <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">X (Twitter) Profile Link</label>
                       <Input value={xUrl} onChange={(e) => setXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
-                      <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
-                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Highlight Reel Video URL</label>
+                    <Input value={highlightVideoUrl} onChange={(e) => setHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/... or YouTube link" />
                   </div>
                 </div>
 

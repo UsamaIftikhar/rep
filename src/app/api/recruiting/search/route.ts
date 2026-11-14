@@ -24,6 +24,7 @@ export async function GET(req: Request) {
   const sport = searchParams.get("sport") || "";
   const graduationYear = searchParams.get("graduationYear");
   const location = searchParams.get("location") || "";
+  const state = searchParams.get("state") || "";
   const position = searchParams.get("position") || "";
   const level = searchParams.get("level") || "";
   const page = parseInt(searchParams.get("page") || "1", 10);
@@ -74,6 +75,18 @@ export async function GET(req: Request) {
 
   if (location) {
     where.location = { contains: location, mode: "insensitive" as const };
+  }
+
+  if (state) {
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : []),
+      {
+        OR: [
+          { state: { equals: state, mode: "insensitive" as const } },
+          { location: { contains: state, mode: "insensitive" as const } },
+        ],
+      },
+    ];
   }
 
   if (position) {
@@ -155,10 +168,14 @@ export async function GET(req: Request) {
         schoolClub: true,
         graduationYear: true,
         location: true,
+        state: true,
         sport: true,
         position: true,
         bio: true,
         profilePhoto: true,
+        xUrl: true,
+        instagramUrl: true,
+        collegeOffers: true,
         profileCompleteness: true,
         potentialDivision: true,
         user: {

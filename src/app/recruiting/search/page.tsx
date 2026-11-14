@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout";
 import { PageHeader, Card, CardContent, Button, Input, Select } from "@/components/ui";
 import { Search, Filter, MapPin, School, Calendar, ArrowRight, Loader2, UserCheck, Shield, Lock, User, ArrowLeft, X, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { US_STATES, POSITIONS } from "@/lib/constants";
 
 interface SearchAthlete {
   id: string;
@@ -14,10 +15,14 @@ interface SearchAthlete {
   schoolClub: string | null;
   graduationYear: number | null;
   location: string | null;
+  state?: string | null;
   sport: string | null;
   position: string | null;
   bio: string | null;
   profilePhoto: string | null;
+  xUrl?: string | null;
+  instagramUrl?: string | null;
+  collegeOffers?: string | null;
   profileCompleteness: number;
   potentialDivision?: string | null;
   user: {
@@ -42,6 +47,8 @@ export default function RecruitSearchPage() {
   const [sport, setSport] = React.useState("");
   const [gradYear, setGradYear] = React.useState("");
   const [location, setLocation] = React.useState("");
+  const [selectedState, setSelectedState] = React.useState("");
+  const [selectedPosition, setSelectedPosition] = React.useState("");
   const [level, setLevel] = React.useState("");
   const [athleteType, setAthleteType] = React.useState("");
 
@@ -67,6 +74,8 @@ export default function RecruitSearchPage() {
     if (sport) params.set("sport", sport);
     if (gradYear) params.set("graduationYear", gradYear);
     if (location) params.set("location", location);
+    if (selectedState) params.set("state", selectedState);
+    if (selectedPosition) params.set("position", selectedPosition);
     if (level) params.set("level", level);
     if (athleteType) params.set("athleteType", athleteType);
     params.set("page", String(page));
@@ -90,7 +99,7 @@ export default function RecruitSearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, query, sport, gradYear, location, level, athleteType, page]);
+  }, [user, query, sport, gradYear, location, selectedState, selectedPosition, level, athleteType, page]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -304,6 +313,32 @@ export default function RecruitSearchPage() {
                 />
 
                 <Select
+                  value={selectedState}
+                  onChange={(e) => {
+                    setSelectedState(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: "", label: "All States" },
+                    ...US_STATES,
+                  ]}
+                  className="w-full sm:w-40"
+                />
+
+                <Select
+                  value={selectedPosition}
+                  onChange={(e) => {
+                    setSelectedPosition(e.target.value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: "", label: "All Positions" },
+                    ...POSITIONS,
+                  ]}
+                  className="w-full sm:w-40"
+                />
+
+                <Select
                   value={sport}
                   onChange={(e) => {
                     setSport(e.target.value);
@@ -349,13 +384,15 @@ export default function RecruitSearchPage() {
                 <Filter className="w-3.5 h-3.5 text-[#F21717]" /> {total} Verified Prospects Found
               </span>
 
-              {(query || sport || gradYear || location || level || athleteType) && (
+              {(query || sport || gradYear || location || selectedState || selectedPosition || level || athleteType) && (
                 <button
                   onClick={() => {
                     setQuery("");
                     setSport("");
                     setGradYear("");
                     setLocation("");
+                    setSelectedState("");
+                    setSelectedPosition("");
                     setLevel("");
                     setAthleteType("");
                     setPage(1);
@@ -428,13 +465,40 @@ export default function RecruitSearchPage() {
                         <span>Class of {a.graduationYear}</span>
                       </div>
                     )}
-                    {a.location && (
+                    {(a.location || a.state) && (
                       <div className="flex items-center gap-2">
                         <MapPin className="w-3.5 h-3.5 text-[#F21717]" />
-                        <span>{a.location}</span>
+                        <span>{a.location || a.state}</span>
+                        {a.state && a.location && !a.location.includes(a.state) && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-white font-bold">
+                            {a.state}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
+
+                  {a.collegeOffers && (
+                    <div className="p-2.5 rounded-lg bg-[#F21717]/10 border border-[#F21717]/25 space-y-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#F21717] block">
+                        College Offers
+                      </span>
+                      <p className="text-xs text-white font-medium line-clamp-2">
+                        {a.collegeOffers}
+                      </p>
+                    </div>
+                  )}
+
+                  {(a.instagramUrl || a.xUrl) && (
+                    <div className="flex items-center gap-3 text-[11px] text-[#A3A3A3] pt-1">
+                      {a.instagramUrl && (
+                        <span className="text-pink-400 font-semibold">📸 Instagram</span>
+                      )}
+                      {a.xUrl && (
+                        <span className="text-sky-400 font-semibold">𝕏 Profile</span>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
 
                 <div className="p-6 pt-0">

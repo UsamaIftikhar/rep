@@ -94,6 +94,18 @@ if os.path.exists(local_video):
     else:
         print("video.mov already up to date on server!", flush=True)
 
+# Sync partner assets if present locally
+local_partners_dir = os.path.join(LOCAL_DIR, "public/images/partners")
+remote_partners_dir = f"{REMOTE_DIR}/public/images/partners"
+if os.path.exists(local_partners_dir):
+    run_cmd(f"mkdir -p {remote_partners_dir}")
+    for f in os.listdir(local_partners_dir):
+        l_file = os.path.join(local_partners_dir, f)
+        r_file = f"{remote_partners_dir}/{f}"
+        if os.path.isfile(l_file):
+            print(f"Uploading partner asset {f}...", flush=True)
+            sftp.put(l_file, r_file)
+
 sftp.close()
 
 # 4. Unpack code

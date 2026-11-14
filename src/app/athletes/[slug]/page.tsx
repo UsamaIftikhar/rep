@@ -15,11 +15,14 @@ interface PublicAthlete {
   schoolClub: string | null;
   graduationYear: number | null;
   location: string | null;
+  state?: string | null;
   sport: string | null;
   position: string | null;
   bio: string | null;
   profilePhoto: string | null;
   xUrl: string | null;
+  instagramUrl?: string | null;
+  collegeOffers?: string | null;
   height?: string | null;
   weight?: string | null;
   benchPress: string | null;
@@ -676,9 +679,9 @@ export default function PublicAthleteProfilePage() {
                         <Award className="w-3.5 h-3.5 text-amber-400" /> ACT/SAT: {athlete.actSat}
                       </span>
                     )}
-                    {athlete.location && (
+                    {(athlete.location || athlete.state) && (
                       <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#F21717]" /> {athlete.location}
+                        <MapPin className="w-3.5 h-3.5 text-[#F21717]" /> {athlete.location || athlete.state}
                       </span>
                     )}
                     {athlete.xUrl && (
@@ -689,6 +692,16 @@ export default function PublicAthleteProfilePage() {
                         className="inline-flex items-center gap-1 text-[#00D1B2] hover:underline font-semibold"
                       >
                         <ExternalLink className="w-3 h-3" /> X Profile
+                      </a>
+                    )}
+                    {athlete.instagramUrl && (
+                      <a
+                        href={athlete.instagramUrl.startsWith("http") ? athlete.instagramUrl : `https://instagram.com/${athlete.instagramUrl.replace("@", "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-pink-400 hover:text-pink-300 hover:underline font-semibold"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Instagram
                       </a>
                     )}
                   </div>
@@ -763,6 +776,32 @@ export default function PublicAthleteProfilePage() {
             {/* Profile Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
+                {/* Current College Scholarship Offers Card */}
+                {athlete.collegeOffers && (
+                  <Card className="bg-[#111111] border-[#F21717]/30 shadow-[0_0_25px_rgba(242,23,23,0.12)]">
+                    <CardContent className="pt-6 space-y-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-[#F21717]/20 border border-[#F21717]/40 flex items-center justify-center text-[#F21717]">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-[#F21717] block">
+                            COLLEGIATE SCHOLARSHIP OFFERS
+                          </span>
+                          <h3 className="font-display uppercase text-lg font-bold text-white tracking-wider">
+                            Current College Offers
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-[#171717] border border-white/10">
+                        <p className="text-sm text-white/95 leading-relaxed whitespace-pre-line font-medium">
+                          {athlete.collegeOffers}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Athletic Combine Performance Metrics */}
                 {(athlete.height || athlete.weight || athlete.benchPress || athlete.squat || athlete.powerClean || athlete.fortyTime || athlete.vertical || athlete.shuttleTime || athlete.broadJump) && (
                   <Card className="bg-[#111111] border-white/10">

@@ -18,7 +18,7 @@ export function PublicNavbar() {
     { label: "Recruits", href: "/recruiting/search" },
     { label: "Student Academy", href: "/academy" },
     { label: "REP 1 Coaches Academy", href: "/coaches-academy" },
-    { label: "Elite Pacific Sports", href: "/elite-pacific" },
+    { label: "Partners", href: "/partners" },
     { label: "Classroom", href: "/courses" },
     { label: "Mock AI Interview", href: "/interview" },
   ];
@@ -44,7 +44,7 @@ export function PublicNavbar() {
       list.push({ label: "Student Academy", href: "/academy" });
     }
 
-    list.push({ label: "Elite Pacific Sports", href: "/elite-pacific" });
+    list.push({ label: "Partners", href: "/partners" });
     return list;
   };
 

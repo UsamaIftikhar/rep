@@ -220,11 +220,14 @@ model AthleteProfile {
   schoolClub          String?
   graduationYear      Int?
   location            String?
+  state               String?
   sport               String?
   position            String?
   bio                 String?
   profilePhoto        String?
   xUrl                String?
+  instagramUrl        String?
+  collegeOffers       String?  @db.Text
   height              String?
   weight              String?
   benchPress          String?

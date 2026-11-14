@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, Button, Input, Select, Textarea } from "@/components/ui";
 import { Flame, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { US_STATES, GRADUATION_CLASSES, POSITIONS } from "@/lib/constants";
 
 export default function OnboardingPage() {
   const { user } = useAuth();
@@ -13,9 +14,13 @@ export default function OnboardingPage() {
 
   const [schoolClub, setSchoolClub] = React.useState("");
   const [graduationYear, setGraduationYear] = React.useState("2026");
-  const [location, setLocation] = React.useState("");
-  const [sport, setSport] = React.useState("basketball");
-  const [position, setPosition] = React.useState("");
+  const [state, setState] = React.useState("NC");
+  const [city, setCity] = React.useState("");
+  const [sport, setSport] = React.useState("football");
+  const [position, setPosition] = React.useState("QB");
+  const [instagramUrl, setInstagramUrl] = React.useState("");
+  const [xUrl, setXUrl] = React.useState("");
+  const [collegeOffers, setCollegeOffers] = React.useState("");
   const [bio, setBio] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -24,6 +29,8 @@ export default function OnboardingPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+
+    const fullLocation = city.trim() ? `${city.trim()}, ${state}` : state;
 
     try {
       const res = await fetch("/api/profile", {
@@ -34,9 +41,13 @@ export default function OnboardingPage() {
           lastName: user?.lastName || user?.name?.split(" ")[1] || "",
           schoolClub,
           graduationYear: parseInt(graduationYear, 10) || 2026,
-          location,
+          location: fullLocation,
+          state,
           sport,
           position,
+          instagramUrl: instagramUrl.trim() || null,
+          xUrl: xUrl.trim() || null,
+          collegeOffers: collegeOffers.trim() || null,
           bio,
           profileVisibility: true,
         }),
@@ -57,7 +68,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#070707] text-[#F5F5F5] flex flex-col justify-center items-center px-4 py-12">
-      <div className="w-full max-w-lg space-y-6">
+      <div className="w-full max-w-xl space-y-6">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
             <div className="w-9 h-9 rounded-lg bg-[#F21717] flex items-center justify-center text-white shadow-[0_0_20px_rgba(242,23,23,0.5)]">
@@ -71,7 +82,7 @@ export default function OnboardingPage() {
             Complete Your Athlete Profile
           </h1>
           <p className="text-xs text-[#A3A3A3] mt-1 max-w-md mx-auto">
-            Provide your basic recruiting info so college coaches and recruiters can identify you.
+            Provide your recruiting info, state, class, social handles, and current college offers so coaches can discover and evaluate you.
           </p>
         </div>
 
@@ -84,45 +95,53 @@ export default function OnboardingPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* High School & Graduation Class */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">High School / Club</label>
                   <Input
                     value={schoolClub}
                     onChange={(e) => setSchoolClub(e.target.value)}
-                    placeholder="Mater Dei High School"
+                    placeholder="e.g. Charlotte Catholic"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Graduation Year</label>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Graduation Class</label>
                   <Select
                     value={graduationYear}
                     onChange={(e) => setGraduationYear(e.target.value)}
                     disabled={isSubmitting}
-                    options={[
-                      { value: "2024", label: "2024" },
-                      { value: "2025", label: "2025" },
-                      { value: "2026", label: "2026" },
-                      { value: "2027", label: "2027" },
-                      { value: "2028", label: "2028" },
-                    ]}
+                    options={GRADUATION_CLASSES}
                   />
                 </div>
               </div>
 
+              {/* State Dropdown & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Location (City, State)</label>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Home State</label>
+                  <Select
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    disabled={isSubmitting}
+                    options={US_STATES}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">City</label>
                   <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Los Angeles, CA"
-                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Charlotte"
                     disabled={isSubmitting}
                   />
                 </div>
+              </div>
+
+              {/* Sport & Position Dropdown */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Primary Sport</label>
                   <Select
@@ -134,34 +153,69 @@ export default function OnboardingPage() {
                       { value: "flag_football", label: "Flag Football" },
                       { value: "basketball", label: "Basketball" },
                       { value: "volleyball", label: "Volleyball" },
-                      { value: "swimming", label: "Swimming" },
-                      { value: "golf", label: "Golf" },
-                      { value: "rugby", label: "Rugby League / Union" },
                       { value: "soccer", label: "Soccer" },
                       { value: "track", label: "Track & Field" },
                       { value: "other", label: "Other" },
                     ]}
                   />
                 </div>
+                <div>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Primary Position</label>
+                  <Select
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    disabled={isSubmitting}
+                    options={POSITIONS}
+                  />
+                </div>
               </div>
 
+              {/* Instagram & X Social Handles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Instagram Handle / Link</label>
+                  <Input
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="@yourhandle or full link"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">X (Twitter) Profile Link</label>
+                  <Input
+                    value={xUrl}
+                    onChange={(e) => setXUrl(e.target.value)}
+                    placeholder="https://x.com/yourhandle"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              {/* Current College Scholarship Offers */}
               <div>
-                <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Primary Position / Event</label>
-                <Input
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  placeholder="Quarterback / Safety"
-                  required
+                <label className="text-xs font-semibold text-white mb-1.5 block">
+                  Current College Scholarship Offers
+                </label>
+                <Textarea
+                  value={collegeOffers}
+                  onChange={(e) => setCollegeOffers(e.target.value)}
+                  placeholder="e.g. Appalachian State, Charlotte, Coastal Carolina (You can update and add more anytime after setup)"
+                  rows={2}
                   disabled={isSubmitting}
                 />
+                <span className="text-[11px] text-[#737373] mt-1 block">
+                  List any college programs that have extended scholarship offers. Leave blank if open.
+                </span>
               </div>
 
+              {/* Bio */}
               <div>
-                <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Short Recruiting Bio</label>
+                <label className="text-xs font-semibold text-[#A3A3A3] mb-1.5 block">Recruiting Bio</label>
                 <Textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell recruiters about your athletic goals and accomplishments..."
+                  placeholder="Tell recruiters about your athletic goals, combine metrics, and work ethic..."
                   rows={2}
                   disabled={isSubmitting}
                 />

@@ -70,8 +70,8 @@ const navItems: NavItem[] = [
     excludedRoles: ["ATHLETE", "RECRUITER"],
   },
   {
-    title: "Elite Pacific Sports",
-    href: "/elite-pacific",
+    title: "Partners",
+    href: "/partners",
     icon: MapPin,
   },
   {

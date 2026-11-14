@@ -18,7 +18,7 @@ export function AppHeader({ onMenuToggle }: AppHeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const getSectionTitle = () => {
-    if (pathname.startsWith("/elite-pacific")) return "Elite Pacific Sports";
+    if (pathname.startsWith("/partners") || pathname.startsWith("/elite-pacific")) return "Partners";
     if (pathname.startsWith("/academy")) return "Student Academy";
     if (pathname.startsWith("/courses")) return "Classroom";
     if (pathname.startsWith("/interview")) return "Mock AI Interview";
