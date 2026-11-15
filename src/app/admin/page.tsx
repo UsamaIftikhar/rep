@@ -9,6 +9,7 @@ import { MiroBoardManager } from "@/components/integrations/MiroBoardManager";
 import { ZoomMeetingManager } from "@/components/integrations/ZoomMeetingManager";
 import { ZoomRecordingPlayer } from "@/components/integrations/ZoomRecordingPlayer";
 import { useAuth } from "@/lib/auth-context";
+import { US_STATES } from "@/lib/constants";
 
 interface AdminStats {
   totalUsers: number;
@@ -25,9 +26,12 @@ interface FullAthleteProfile {
   schoolClub?: string | null;
   graduationYear?: number | null;
   location?: string | null;
+  state?: string | null;
   bio?: string | null;
   profilePhoto?: string | null;
   xUrl?: string | null;
+  instagramUrl?: string | null;
+  collegeOffers?: string | null;
   height?: string | null;
   weight?: string | null;
   benchPress?: string | null;
@@ -204,6 +208,9 @@ export default function AdminDashboardPage() {
   const [formSchoolClub, setFormSchoolClub] = React.useState("");
   const [formGraduationYear, setFormGraduationYear] = React.useState("");
   const [formLocation, setFormLocation] = React.useState("");
+  const [formState, setFormState] = React.useState("");
+  const [formInstagramUrl, setFormInstagramUrl] = React.useState("");
+  const [formCollegeOffers, setFormCollegeOffers] = React.useState("");
   const [formBio, setFormBio] = React.useState("");
   const [formPhoto, setFormPhoto] = React.useState("");
   const [formXUrl, setFormXUrl] = React.useState("");
@@ -628,6 +635,9 @@ export default function AdminDashboardPage() {
     setFormSchoolClub(prof.schoolClub || "");
     setFormGraduationYear(prof.graduationYear ? String(prof.graduationYear) : "");
     setFormLocation(prof.location || "");
+    setFormState(prof.state || "");
+    setFormInstagramUrl(prof.instagramUrl || "");
+    setFormCollegeOffers(prof.collegeOffers || "");
     setFormBio(prof.bio || "");
     setFormPhoto(prof.profilePhoto || u.image || "");
     setFormXUrl(prof.xUrl || "");
@@ -708,6 +718,9 @@ export default function AdminDashboardPage() {
           schoolClub: formSchoolClub || null,
           graduationYear: formGraduationYear ? parseInt(formGraduationYear) : null,
           location: formLocation || null,
+          state: formState || null,
+          instagramUrl: formInstagramUrl || null,
+          collegeOffers: formCollegeOffers || null,
           bio: formBio || null,
           profilePhoto: formPhoto || null,
           xUrl: formXUrl || null,
@@ -1841,9 +1854,20 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="font-bold text-[#A3A3A3] block mb-1">Location</label>
-                    <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Los Angeles, CA" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Home State</label>
+                      <Select
+                        value={formState}
+                        onChange={(e) => setFormState(e.target.value)}
+                        options={US_STATES}
+                        className="w-full bg-[#171717]"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">City / Location Details</label>
+                      <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="e.g. Charlotte, NC" />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1888,9 +1912,26 @@ export default function AdminDashboardPage() {
                     <Input value={formHighlightVideoUrl} onChange={(e) => setFormHighlightVideoUrl(e.target.value)} placeholder="https://hudl.com/v/..." />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">X (Twitter) Profile Link</label>
+                      <Input value={formXUrl} onChange={(e) => setFormXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Instagram Profile Link</label>
+                      <Input value={formInstagramUrl} onChange={(e) => setFormInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle" />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="font-bold text-[#A3A3A3] block mb-1">X (Twitter) Profile Link</label>
-                    <Input value={formXUrl} onChange={(e) => setFormXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Current College Scholarship Offers</label>
+                    <textarea
+                      value={formCollegeOffers}
+                      onChange={(e) => setFormCollegeOffers(e.target.value)}
+                      rows={2}
+                      className="w-full bg-[#171717] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                      placeholder="List any college scholarship offers (e.g. Duke, North Carolina, Coastal Carolina)..."
+                    />
                   </div>
 
                   <div>

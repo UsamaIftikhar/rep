@@ -28,6 +28,9 @@ const updateUserSchema = z.object({
       schoolClub: z.string().nullable().optional(),
       graduationYear: z.number().nullable().optional(),
       location: z.string().nullable().optional(),
+      state: z.string().nullable().optional(),
+      instagramUrl: z.string().nullable().optional(),
+      collegeOffers: z.string().nullable().optional(),
       bio: z.string().nullable().optional(),
       profilePhoto: z.string().nullable().optional(),
       xUrl: z.string().nullable().optional(),
@@ -79,6 +82,7 @@ export async function GET(req: Request) {
             { athleteProfile: { is: { schoolClub: { contains: q, mode: "insensitive" } } } },
             { athleteProfile: { is: { position: { contains: q, mode: "insensitive" } } } },
             { athleteProfile: { is: { location: { contains: q, mode: "insensitive" } } } },
+            { athleteProfile: { is: { state: { contains: q, mode: "insensitive" } } } },
             { salesperson: { is: { name: { contains: q, mode: "insensitive" } } } },
           ],
         }

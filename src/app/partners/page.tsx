@@ -47,13 +47,13 @@ const slides: MediaSlide[] = [
     imageUrl: "/images/combine_jump.jpeg",
     objectPosition: "object-center",
   },
-  {
-    id: 3,
-    title: "Rep 1 Coaching Staff — Exposure Has No Borders",
-    category: "Mentorship & Leadership",
-    imageUrl: "/images/IMG_7403.jpeg",
-    objectPosition: "object-top",
-  },
+  // {
+  //   id: 3,
+  //   title: "Rep 1 Coaching Staff — Exposure Has No Borders",
+  //   category: "Mentorship & Leadership",
+  //   imageUrl: "/images/IMG_7403.jpeg",
+  //   objectPosition: "object-top",
+  // },
   {
     id: 4,
     title: "Marvin Constant with Gridiron Prospects",

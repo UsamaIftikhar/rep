@@ -7,6 +7,7 @@ import { PublicNavbar, PublicFooter } from "@/components/layout";
 import { Button, Card, CardContent, Badge as UIBadge, Input, Select } from "@/components/ui";
 import { Shield, Award, MapPin, School, Calendar, Trophy, ArrowLeft, Lock, Video, ExternalLink, Activity, Star, Edit3, X, Check, Loader2, MessageSquare, BookOpen, CheckCircle2, Users, KeyRound, AlertCircle, Camera, Upload, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { US_STATES } from "@/lib/constants";
 
 interface PublicAthlete {
   id: string;
@@ -119,6 +120,9 @@ export default function PublicAthleteProfilePage() {
   const [formSchoolClub, setFormSchoolClub] = React.useState("");
   const [formGraduationYear, setFormGraduationYear] = React.useState("");
   const [formLocation, setFormLocation] = React.useState("");
+  const [formState, setFormState] = React.useState("");
+  const [formInstagramUrl, setFormInstagramUrl] = React.useState("");
+  const [formCollegeOffers, setFormCollegeOffers] = React.useState("");
   const [formBio, setFormBio] = React.useState("");
   const [formPhoto, setFormPhoto] = React.useState("");
   const [formXUrl, setFormXUrl] = React.useState("");
@@ -207,6 +211,9 @@ export default function PublicAthleteProfilePage() {
     setFormSchoolClub(athlete.schoolClub || "");
     setFormGraduationYear(athlete.graduationYear ? String(athlete.graduationYear) : "");
     setFormLocation(athlete.location || "");
+    setFormState(athlete.state || "");
+    setFormInstagramUrl(athlete.instagramUrl || "");
+    setFormCollegeOffers(athlete.collegeOffers || "");
     setFormBio(athlete.bio || "");
     setFormPhoto(athlete.profilePhoto || athlete.user.image || "");
     setFormXUrl(athlete.xUrl || "");
@@ -318,6 +325,9 @@ export default function PublicAthleteProfilePage() {
             schoolClub: formSchoolClub || null,
             graduationYear: formGraduationYear ? parseInt(formGraduationYear) : null,
             location: formLocation || null,
+            state: formState || null,
+            instagramUrl: formInstagramUrl || null,
+            collegeOffers: formCollegeOffers || null,
             bio: formBio || null,
             profilePhoto: formPhoto || null,
             xUrl: formXUrl || null,
@@ -1252,7 +1262,7 @@ export default function PublicAthleteProfilePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="font-bold text-[#A3A3A3] block mb-1">School / Club Team</label>
                       <Input value={formSchoolClub} onChange={(e) => setFormSchoolClub(e.target.value)} />
@@ -1261,15 +1271,44 @@ export default function PublicAthleteProfilePage() {
                       <label className="font-bold text-[#A3A3A3] block mb-1">Graduation Year</label>
                       <Input value={formGraduationYear} onChange={(e) => setFormGraduationYear(e.target.value)} placeholder="2026" />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="font-bold text-[#A3A3A3] block mb-1">Location / State</label>
-                      <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Sydney, NSW" />
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Home State</label>
+                      <Select
+                        value={formState}
+                        onChange={(e) => setFormState(e.target.value)}
+                        options={US_STATES}
+                        className="w-full bg-[#171717]"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">City / Location Details</label>
+                      <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="e.g. Charlotte, NC" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">X (Twitter) Profile Link</label>
+                      <Input value={formXUrl} onChange={(e) => setFormXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-[#A3A3A3] block mb-1">Instagram Profile Link</label>
+                      <Input value={formInstagramUrl} onChange={(e) => setFormInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="font-bold text-[#A3A3A3] block mb-1">X (Twitter) Profile Link</label>
-                    <Input value={formXUrl} onChange={(e) => setFormXUrl(e.target.value)} placeholder="https://x.com/yourhandle" />
+                    <label className="font-bold text-[#A3A3A3] block mb-1">Current College Scholarship Offers</label>
+                    <textarea
+                      value={formCollegeOffers}
+                      onChange={(e) => setFormCollegeOffers(e.target.value)}
+                      rows={2}
+                      className="w-full bg-[#171717] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#F21717]"
+                      placeholder="List any college scholarship offers (e.g. Duke, North Carolina, Coastal Carolina)..."
+                    />
                   </div>
 
                   <div>

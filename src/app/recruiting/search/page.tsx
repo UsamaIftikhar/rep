@@ -262,125 +262,140 @@ export default function RecruitSearchPage() {
 
       <div className="space-y-6 pb-16">
         {/* Search & Filters Toolbar */}
-        <Card className="bg-[#111111] border-white/10 p-4 sm:p-6">
+        <Card className="bg-[#111111] border-white/10 p-4 sm:p-5">
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <Search className="w-4 h-4 text-[#A3A3A3] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <Input
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Search athletes by name, school, or position..."
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-                <Select
-                  value={athleteType}
-                  onChange={(e) => {
-                    setAthleteType(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All Regions (US & Intl)" },
-                    { value: "us", label: "🇺🇸 US Athletes" },
-                    { value: "international", label: "🌏 International Athletes" },
-                  ]}
-                  className="w-full sm:w-48"
-                />
-
-                <Select
-                  value={level}
-                  onChange={(e) => {
-                    setLevel(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All Program Levels" },
-                    { value: "power_4", label: "Power 4" },
-                    { value: "division_1", label: "Division 1 (D1)" },
-                    { value: "division_2", label: "Division 2 (D2)" },
-                    { value: "division_3", label: "Division 3 (D3)" },
-                    { value: "juco", label: "JUCO (NJCAA)" },
-                    { value: "hbcu", label: "HBCU" },
-                    { value: "naia", label: "NAIA" },
-                  ]}
-                  className="w-full sm:w-44"
-                />
-
-                <Select
-                  value={selectedState}
-                  onChange={(e) => {
-                    setSelectedState(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All States" },
-                    ...US_STATES,
-                  ]}
-                  className="w-full sm:w-40"
-                />
-
-                <Select
-                  value={selectedPosition}
-                  onChange={(e) => {
-                    setSelectedPosition(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All Positions" },
-                    ...POSITIONS,
-                  ]}
-                  className="w-full sm:w-40"
-                />
-
-                <Select
-                  value={sport}
-                  onChange={(e) => {
-                    setSport(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All Sports" },
-                    { value: "football", label: "American Football" },
-                    { value: "flag_football", label: "Flag Football" },
-                    { value: "basketball", label: "Basketball" },
-                    { value: "volleyball", label: "Volleyball" },
-                    { value: "swimming", label: "Swimming" },
-                    { value: "golf", label: "Golf" },
-                    { value: "rugby", label: "Rugby League / Union" },
-                    { value: "soccer", label: "Soccer" },
-                    { value: "track", label: "Track & Field" },
-                    { value: "other", label: "Other" },
-                  ]}
-                  className="w-full sm:w-36"
-                />
-
-                <Select
-                  value={gradYear}
-                  onChange={(e) => {
-                    setGradYear(e.target.value);
-                    setPage(1);
-                  }}
-                  options={[
-                    { value: "", label: "All Class Years" },
-                    { value: "2024", label: "Class of 2024" },
-                    { value: "2025", label: "Class of 2025" },
-                    { value: "2026", label: "Class of 2026" },
-                    { value: "2027", label: "Class of 2027" },
-                    { value: "2028", label: "Class of 2028" },
-                  ]}
-                  className="w-full sm:w-36"
-                />
-              </div>
+            {/* Search Input Row - Full Width */}
+            <div className="w-full">
+              <Input
+                leftIcon={<Search className="w-4 h-4 text-[#A3A3A3]" />}
+                rightIcon={
+                  query ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setPage(1);
+                      }}
+                      className="p-1 hover:text-white transition-colors cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  ) : undefined
+                }
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search athletes by name, high school, club team, or position..."
+                className="w-full bg-[#171717]"
+              />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[#A3A3A3] pt-2 border-t border-white/5">
-              <span className="flex items-center gap-1.5 font-semibold">
+            {/* Filter Dropdowns Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 w-full">
+              <Select
+                value={athleteType}
+                onChange={(e) => {
+                  setAthleteType(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All Regions (US & Intl)" },
+                  { value: "us", label: "🇺🇸 US Athletes" },
+                  { value: "international", label: "🌏 International Athletes" },
+                ]}
+                className="w-full bg-[#171717]"
+              />
+
+              <Select
+                value={level}
+                onChange={(e) => {
+                  setLevel(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All Program Levels" },
+                  { value: "power_4", label: "Power 4" },
+                  { value: "division_1", label: "Division 1 (D1)" },
+                  { value: "division_2", label: "Division 2 (D2)" },
+                  { value: "division_3", label: "Division 3 (D3)" },
+                  { value: "juco", label: "JUCO (NJCAA)" },
+                  { value: "hbcu", label: "HBCU" },
+                  { value: "naia", label: "NAIA" },
+                ]}
+                className="w-full bg-[#171717]"
+              />
+
+              <Select
+                value={selectedState}
+                onChange={(e) => {
+                  setSelectedState(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All States" },
+                  ...US_STATES,
+                ]}
+                className="w-full bg-[#171717]"
+              />
+
+              <Select
+                value={selectedPosition}
+                onChange={(e) => {
+                  setSelectedPosition(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All Positions" },
+                  ...POSITIONS,
+                ]}
+                className="w-full bg-[#171717]"
+              />
+
+              <Select
+                value={sport}
+                onChange={(e) => {
+                  setSport(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All Sports" },
+                  { value: "football", label: "American Football" },
+                  { value: "flag_football", label: "Flag Football" },
+                  { value: "basketball", label: "Basketball" },
+                  { value: "volleyball", label: "Volleyball" },
+                  { value: "swimming", label: "Swimming" },
+                  { value: "golf", label: "Golf" },
+                  { value: "rugby", label: "Rugby League / Union" },
+                  { value: "soccer", label: "Soccer" },
+                  { value: "track", label: "Track & Field" },
+                  { value: "other", label: "Other" },
+                ]}
+                className="w-full bg-[#171717]"
+              />
+
+              <Select
+                value={gradYear}
+                onChange={(e) => {
+                  setGradYear(e.target.value);
+                  setPage(1);
+                }}
+                options={[
+                  { value: "", label: "All Class Years" },
+                  { value: "2024", label: "Class of 2024" },
+                  { value: "2025", label: "Class of 2025" },
+                  { value: "2026", label: "Class of 2026" },
+                  { value: "2027", label: "Class of 2027" },
+                  { value: "2028", label: "Class of 2028" },
+                ]}
+                className="w-full bg-[#171717]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] pt-2.5 border-t border-white/5">
+              <span className="flex items-center gap-1.5 font-semibold text-white/80">
                 <Filter className="w-3.5 h-3.5 text-[#F21717]" /> {total} Verified Prospects Found
               </span>
 
