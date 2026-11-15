@@ -68,13 +68,13 @@ const slides: MediaSlide[] = [
     imageUrl: "/images/IMG_1960.jpeg",
     objectPosition: "object-[center_12%]",
   },
-  {
-    id: 6,
-    title: "Partner Showcase Camp Field Session",
-    category: "Development Camp Series",
-    imageUrl: "/images/coach_shaka.jpeg",
-    objectPosition: "object-[center_10%]",
-  },
+  // {
+  //   id: 6,
+  //   title: "Partner Showcase Camp Field Session",
+  //   category: "Development Camp Series",
+  //   imageUrl: "/images/coach_shaka.jpeg",
+  //   objectPosition: "object-[center_10%]",
+  // },
 ];
 
 interface PartnerCardProps {
